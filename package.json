@@ -1,0 +1,28 @@
+{
+  "name": "api.distributed.press",
+  "version": "0.0.1",
+  "description": "API for the Distributed Press",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hyphacoop/api.distributed.press.git"
+  },
+  "keywords": [
+    "publish",
+    "dweb",
+    "hypercore",
+    "dat",
+    "ipfs",
+    "web monetization",
+    "ethereum"
+  ],
+  "author": "Distributed Press",
+  "license": "AGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/hyphacoop/api.distributed.press/issues"
+  },
+  "homepage": "https://distributed.press"
+}
