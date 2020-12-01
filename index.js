@@ -4,7 +4,7 @@ const fs = require('fs');
 const app = express();
 
 const apiVersion = 'v0';
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3030;
 
 let db = fs.readFileSync('db.json');
 let ethMap = JSON.parse(db);
@@ -30,7 +30,7 @@ app.get(`/${apiVersion}/monetization/:action/:org`, function(req, res) {
           })
       });
       break;
-  	case 'oc':
+    case 'oc':
       urlRemote = `https://opencollective.com/${req.params.org}.json`;
       console.log(`Fetching from remote ${urlRemote}`);
       fetch(urlRemote)
