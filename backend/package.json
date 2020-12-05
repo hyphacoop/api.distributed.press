@@ -1,7 +1,7 @@
 {
-  "name": "api.distributed.press",
+  "name": "distributed-press-backend",
   "version": "0.0.1",
-  "description": "API for the Distributed Press",
+  "description": "Backend for the Distributed Press",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -26,6 +26,7 @@
   },
   "homepage": "https://distributed.press",
   "dependencies": {
+    "cron": "^1.8.2",
     "express": "^4.17.1",
     "fs": "0.0.1-security",
     "node-fetch": "^2.6.1"
