@@ -11,7 +11,7 @@ const actions = [
 
 app.get(`/:project/${apiVersion}/:group/:action`, function(req, res) {
   try {
-    let resFile = fs.readFileSync(`../data/${req.params.project}/${apiVersion}/${req.params.group}/${req.params.action}.json`);
+    let resFile = fs.readFileSync(`../data/${req.params.project}/api/${apiVersion}/${req.params.group}/${req.params.action}.json`);
     res.json(JSON.parse(resFile))
   } catch (error) {
     // Check if action is supported
