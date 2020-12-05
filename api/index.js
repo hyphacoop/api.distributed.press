@@ -9,15 +9,15 @@ const actions = [
     'monetization/balances'
   ];
 
-app.get(`/${apiVersion}/:group/:action/:project`, function(req, res) {
+app.get(`/:project/${apiVersion}/:group/:action`, function(req, res) {
   try {
-    let resFile = fs.readFileSync(`../data/${req.params.project}/${req.params.group}/${req.params.action}.json`);
+    let resFile = fs.readFileSync(`../data/${req.params.project}/${apiVersion}/${req.params.group}/${req.params.action}.json`);
     res.json(JSON.parse(resFile))
   } catch (error) {
     // Check if action is supported
     if (!actions.includes(`${req.params.group}/${req.params.action}`)) {
       res.json({
-        error: `The action '${req.params.group}/${req.params.action}' is not a supported`,
+        error: `The action '${req.params.group}/${req.params.action}' is not supported`,
         errorCode: '1001'
       });
       return

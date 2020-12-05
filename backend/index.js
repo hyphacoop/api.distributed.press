@@ -2,6 +2,7 @@ const cron = require('cron');
 const fetch = require('node-fetch');
 const fs = require('fs');
 
+const apiVersion = 'v0';
 let confFile = fs.readFileSync(`../data/config.json`);
 let conf = JSON.parse(confFile);
 
@@ -58,9 +59,9 @@ const job = new cron.CronJob(`*/${conf['refreshPeriod']} * * * * *`, function() 
     Promise.all(fetchPromises).then(values => {
       // Write account balances to file
       const balances = JSON.stringify({ 'balances': values.filter(x => x) });
-      const dir = `../data/${project}/monetization/`;
+      const dir = `../data/${project}/${apiVersion}/monetization/`;
       if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir);
+        fs.mkdirSync(dir, { recursive: true });
       }
       fs.writeFile(`${dir}/balances.json`, balances, (err) => {
         if (err) {
