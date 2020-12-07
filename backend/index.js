@@ -108,7 +108,7 @@ const job = new cron.CronJob(`*/${conf['refreshPeriod']} * * * * *`, function() 
                 balances: []
               };
               tokenMap.forEach((mapValue, mapKey, map) => {
-                result['balances'].push({ balance: mapValue['value'], precision: mapValue['tokenDecimal'], currency: mapKey });
+                result['balances'].push({ balance: mapValue['value'].toString(), precision: mapValue['tokenDecimal'], currency: mapKey });
               });
               return result;
             })
