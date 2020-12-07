@@ -18,7 +18,7 @@ app.get(`/:project/${apiVersion}/:group/:action`, function(req, res) {
     if (!actions.includes(`${req.params.group}/${req.params.action}`)) {
       res.json({
         error: `The action '${req.params.group}/${req.params.action}' is not supported`,
-        errorCode: '1001'
+        errorCode: 1001
       });
       return
     }
@@ -26,13 +26,13 @@ app.get(`/:project/${apiVersion}/:group/:action`, function(req, res) {
     if (!fs.existsSync(`../data/${req.params.project}/`)) {
       res.json({
         error: `The project '${req.params.project}' is not available`,
-        errorCode: '1002'
+        errorCode: 1002
       });
       return
     }
     res.json({
       error: 'An unknown error occurred',
-      errorCode: '1000'
+      errorCode: 1000
     });
   }
 });
