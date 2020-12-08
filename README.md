@@ -40,6 +40,8 @@ The official instance of the Distributed Press API is hosted at [api.distributed
 
 ### Publication API
 
+#### `publish`
+
 **Request:**
 
 | Protocol         | Method | URL |
@@ -49,6 +51,8 @@ The official instance of the Distributed Press API is hosted at [api.distributed
 TBA
 
 ### Monetization API
+
+#### `balances`
 
 **Request:**
 
