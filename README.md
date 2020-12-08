@@ -46,9 +46,17 @@ The official instance of the Distributed Press API is hosted at [api.distributed
 
 | Protocol         | Method | URL |
 |:-----------------|:-------|:----|
-| http             | `POST` | `https://<domain>/<project>/v0/publication/publish?apikey=API_KEY` |
+| http             | `POST` | `https://<server.domain>/<project>/v0/publication/publish?apikey=API_KEY` |
 
 TBA
+
+**Example:** https://api.distributed.press/compost/v0/publication/publish?apikey=API_KEY
+
+Website available at:
+
+- https://one.compost.digital
+- hyper://KEY
+- ipns://one.compost.digital
 
 ### Monetization API
 
@@ -58,11 +66,11 @@ TBA
 
 | Protocol         | Method | URL |
 |:-----------------|:-------|:----|
-| http             | `GET`  | `https://<domain>/<project>/v0/monetization/balances` |
+| http             | `GET`  | `https://<server.domain>/<project>/v0/monetization/balances` |
 | hyper            | `GET`  | `hyper://<key>/<project>/v0/monetization/balances`    |
-| hyper-http proxy | `GET`  | `https://hyper.<domain>/<key>/v0/monetization/balances` |
-| ipfs             | `GET`  | `ipns://<dnslink>/<project>/v0/monetization/balances` |
-| ipfs-http proxy  | `GET`  | `https://ipfs.<domain>/ipns/<dnslink>/v0/monetization/balances` |
+| hyper-http proxy | `GET`  | `https://hyper.<server.domain>/<key>/v0/monetization/balances` |
+| ipfs             | `GET`  | `ipns://api.<project.domain>/<project>/v0/monetization/balances` |
+| ipfs-http proxy  | `GET`  | `https://ipfs.<server.domain>/ipns/api.<project.domain>/v0/monetization/balances` |
 
 **Response:**
 
