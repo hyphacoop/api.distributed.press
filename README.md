@@ -28,9 +28,9 @@ The official instance of the Distributed Press API is hosted at [api.distributed
        |  | resp               |
        v  |                    v
     +-----+---+      +------------------+
-    | Backend |      | Pinning Services |
-    +----+----+      +--+------------+--+
-         |              |            |
+    | Backend |      | Pinning Services +---> DNS updates
+    +----+----+      +--+------------+--+     (domain for WWW)
+         |              |            |        (dnslink for IPFS)
          v              v            v
     third-party      Hypercore      IPFS
     integrations     network        network
