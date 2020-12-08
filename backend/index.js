@@ -30,7 +30,7 @@ const job = new cron.CronJob(`*/${conf['refreshPeriod']} * * * * *`, function() 
                 balances: [
                   {
                     balance: json['balance'].toString(),
-                    precision: 2,
+                    decimal: 2,
                     currency: 'CAD'
                   }
                 ]
@@ -54,7 +54,7 @@ const job = new cron.CronJob(`*/${conf['refreshPeriod']} * * * * *`, function() 
                 balances: [
                   {
                     balance: cropPrecision(json['result'], 12),
-                    precision: 6,
+                    decimal: 6,
                     currency: 'ETH'
                   }
                 ]
@@ -108,7 +108,7 @@ const job = new cron.CronJob(`*/${conf['refreshPeriod']} * * * * *`, function() 
                 balances: []
               };
               tokenMap.forEach((mapValue, mapKey, map) => {
-                result['balances'].push({ balance: mapValue['value'].toString(), precision: mapValue['tokenDecimal'], currency: mapKey });
+                result['balances'].push({ balance: mapValue['value'].toString(), decimal: mapValue['tokenDecimal'], currency: mapKey });
               });
               return result;
             })
