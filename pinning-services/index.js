@@ -22,10 +22,9 @@ const job = new cron.CronJob(period, function() {
     let projFile = fs.readFileSync(`../data/${project}/config.json`);
     let proj = JSON.parse(projFile);
     let domain = proj['domain'];
-    let doToken = proj['digitalOceanAccessToken'];
 
     // Pin API responses to Hypercore
-    // updateDnsRecordDigitalOcean(domain, 'TXT', txtHypercore, `datkey=${hyperDriveKey}`, 300, doToken);
+    // updateDnsRecordDigitalOcean(domain, 'TXT', txtHypercore, `datkey=${hyperDriveKey}`, 300, conf['digitalOceanAccessToken']);
 
     // Pin API responses to IPFS
     ipfs.add(globSource(`../data/${project}/api`, { pin: true, recursive: true, timeout: 10000 }))
@@ -34,7 +33,7 @@ const job = new cron.CronJob(period, function() {
         console.log(`API responses pinned at ipfs/${cid}`);
 
         // Update DNS record
-        updateDnsRecordDigitalOcean(domain, 'TXT', txtIpfs, `dnslink=/ipfs/${cid}`, 300, doToken);
+        updateDnsRecordDigitalOcean(domain, 'TXT', txtIpfs, `dnslink=/ipfs/${cid}`, 300, conf['digitalOceanAccessToken']);
       })
       .catch(function(error) {
         console.log(error);
