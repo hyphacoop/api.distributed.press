@@ -14,13 +14,13 @@ The official instance of the Distributed Press API is hosted at [api.distributed
 ```
     +-----------------------------------+
     | Data Store                        |    +--------------+-------------+
-    +-----------------------------------+    | API          | HTTP server |  <---(GET/POST https://)
-    | ./<project>/config.json           |    +--------------+-------------+
-    |           ./api/v0/publication/*  |    | Publication  | Hypercore   |  <---(GET hyper://)
-    |                  ./monetization/* +--->| Monetization | network     |
+    +-----------------------------------+    | API          | HTTP server | <--- GET/POST/DELETE
+    | ./<project>/config.json           |    +--------------+-------------+      https://
+    |           ./api/v0/publication/*  |    | Publication  | Hypercore   |
+    |                  ./monetization/* +--->| Monetization | network     | <--- GET hyper://
     |                  ./identity/*     |    | Identity     +-------------+
-    |                  ./content/*      |    | Content      | IPFS        |  <---(GET ipns://)
-    |                  ./social/*       |    | Social       | network     |
+    |                  ./content/*      |    | Content      | IPFS        |
+    |                  ./social/*       |    | Social       | network     | <--- GET ipns://
     +--+-----------------------+--------+    +--------------+-------------+
        |  ^                    | 
   read |  |                    | API responses
