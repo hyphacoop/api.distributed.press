@@ -2,12 +2,18 @@ const cron = require('cron');
 const fetch = require('node-fetch');
 const fs = require('fs');
 
+// Application constants
 const apiVersion = 'v0';
-let confFile = fs.readFileSync(`../data/config.json`);
-let conf = JSON.parse(confFile);
 
-// Run this job every minute
-const job = new cron.CronJob(`*/${conf['refreshPeriod']} * * * * *`, function() {
+// Application configurations
+const confFile = fs.readFileSync(`../data/config.json`);
+const conf = JSON.parse(confFile);
+
+// Runtime settings
+const period = conf['dev']['refreshPeriod'] ? conf['dev']['refreshPeriod'] : '0 * * * * *'
+
+// Run this job every minute by default
+const job = new cron.CronJob(period, function() {
   conf['activeProjects'].forEach((project, index) => {
     let projFile = fs.readFileSync(`../data/${project}/config.json`);
     let proj = JSON.parse(projFile);
@@ -20,7 +26,7 @@ const job = new cron.CronJob(`*/${conf['refreshPeriod']} * * * * *`, function() 
         case 'oc':
           // Fetch Open Collective balance
           url = `https://opencollective.com/${item['account']}.json`;
-          console.log(`Fetching from remote ${url}`);
+          console.log(`GET ${url}`);
           fetchPromises.push(fetch(url)
             .then(res => res.json())
             .then(json => {
@@ -43,7 +49,7 @@ const job = new cron.CronJob(`*/${conf['refreshPeriod']} * * * * *`, function() 
         case 'eth':
           // Fetch Ethereum address ETH balance
           url = `https://api.etherscan.io/api?module=account&action=balance&address=${item['account']}&tag=latest&apikey=${conf['etherscanApikey']}`;
-          console.log(`Fetching from remote ${url}`);
+          console.log(`GET ${url}`);
           fetchPromises.push(fetch(url)
             .then(res => res.json())
             .then(json => {
@@ -67,7 +73,7 @@ const job = new cron.CronJob(`*/${conf['refreshPeriod']} * * * * *`, function() 
         case 'erc20':
           // Fetch Ethereum address ERC20 balances
           url = `https://api.etherscan.io/api?module=account&action=tokentx&address=${item['account']}&startblock=0&endblock=999999999&sort=asc&apikey=${conf['etherscanApikey']}`;
-          console.log(`Fetching from remote ${url}`);
+          console.log(`GET ${url}`);
           fetchPromises.push(fetch(url)
             .then(res => res.json())
             .then(json => {

@@ -64,13 +64,14 @@ Website available at:
 
 **Request:**
 
-| Protocol         | Method | URL |
-|:-----------------|:-------|:----|
-| http             | `GET`  | `https://<server.domain>/<project>/v0/monetization/balances` |
-| hyper            | `GET`  | `hyper://<key>/<project>/v0/monetization/balances`    |
-| hyper-http proxy | `GET`  | `https://hyper.<server.domain>/<key>/v0/monetization/balances` |
-| ipfs             | `GET`  | `ipns://api.<project.domain>/<project>/v0/monetization/balances` |
-| ipfs-http proxy  | `GET`  | `https://ipfs.<server.domain>/ipns/api.<project.domain>/v0/monetization/balances` |
+| Protocol       | Method | URL |
+|:---------------|:-------|:----|
+| HTTP           | `GET`  | `https://<server.domain>/<project>/v0/monetization/balances.json` |
+| Hypercore      | `GET`  | `hyper://api.<project.domain>/v0/monetization/balances.json`    |
+| IPFS / IPNS    | `GET`  | `ipns://api.<project.domain>/v0/monetization/balances.json` |
+| **HTTP proxy** |
+| Hypercore      | `GET`  | `https://hyper.<server.domain>/api.<project.domain>/v0/monetization/balances.json` |
+| IPFS / IPNS    | `GET`  | `https://ipfs.<server.domain>/ipns/api.<project.domain>/v0/monetization/balances.json` |
 
 **Response:**
 
@@ -84,7 +85,16 @@ Website available at:
 - `error`: the error message; or empty if the request succeeded
 - `errorCode`: the error code as an integer; or `0` if the request succeeded
 
-**Example:** https://api.distributed.press/compost/v0/monetization/balances
+**Example:**
+
+| Protocol       | Method | URL |
+|:---------------|:-------|:----|
+| HTTP           | `GET`  | https://api.distributed.press/compost/v0/monetization/balances.json |
+| Hypercore      | `GET`  | hyper://api.staging.compost.digital |
+| IPFS / IPNS    | `GET`  | ipns://api.staging.compost.digital/v0/monetization/balances.json |
+| **HTTP proxy** |
+| Hypercore      | `GET`  | https://hyper.distributed.press/api.staging.compost.digital/v0/monetization/balances.json |
+| IPFS / IPNS    | `GET`  | https://ipfs.distributed.press/ipns/api.staging.compost.digital/v0/monetization/balances.json |
 
 ```
 {

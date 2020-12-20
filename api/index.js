@@ -1,15 +1,16 @@
 const express = require('express');
 const fs = require('fs');
 
-const app = express();
 const apiVersion = 'v0';
+
+const app = express();
 const port = process.env.PORT || 3030;
 
 const actions = [
     'monetization/balances'
   ];
 
-app.get(`/:project/${apiVersion}/:group/:action`, function(req, res) {
+app.get(`/:project/${apiVersion}/:group/:action.json`, function(req, res) {
   try {
     let resFile = fs.readFileSync(`../data/${req.params.project}/api/${apiVersion}/${req.params.group}/${req.params.action}.json`);
     res.json(JSON.parse(resFile))
