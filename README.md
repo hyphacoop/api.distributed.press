@@ -90,13 +90,15 @@ Website available at:
 | Protocol       | Method | URL |
 |:---------------|:-------|:----|
 | HTTP           | `GET`  | https://api.distributed.press/compost/v0/monetization/balances.json |
-| Hypercore      | `GET`  | hyper://api.staging.compost.digital |
+| Hypercore      | `GET`  | hyper://api.staging.compost.digital/v0/monetization/balances.json |
 | IPFS / IPNS    | `GET`  | ipns://api.staging.compost.digital/v0/monetization/balances.json |
 | **HTTP proxy** |
 | Hypercore      | `GET`  | https://hyper.distributed.press/api.staging.compost.digital/v0/monetization/balances.json |
 | IPFS / IPNS    | `GET`  | https://ipfs.distributed.press/ipns/api.staging.compost.digital/v0/monetization/balances.json |
 
-```
+<details>
+<summary>Result</summary>
+<pre>
 {
   "result": [
     {
@@ -141,4 +143,5 @@ Website available at:
   "error": "",
   "errorCode": 0
 }
-```
+</pre>
+</details>
