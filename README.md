@@ -13,15 +13,15 @@ The official instance of the Distributed Press API is hosted at [api.distributed
 
 ```
     +-----------------------------------+
-    | Data Store                        |    +--------------+
-    +-----------------------------------+    | API          |
-    | ./<project>/config.json           |    +--------------+
-    |           ./api/v0/publication/*  |    | Publication  +----(GET/POST https://)--->
-    |                  ./monetization/* +--->| Monetization |
-    |                  ./identity/*     |    | Identity     +----(GET hyper://)-------->
-    |                  ./content/*      |    | Content      +----(GET ipns://)--------->
-    |                  ./social/*       |    | Social       |
-    +--+-----------------------+--------+    +--------------+
+    | Data Store                        |    +--------------+-------------+
+    +-----------------------------------+    | API          | HTTP server |  <---(GET/POST https://)
+    | ./<project>/config.json           |    +--------------+-------------+
+    |           ./api/v0/publication/*  |    | Publication  | Hypercore   |  <---(GET hyper://)
+    |                  ./monetization/* +--->| Monetization | network     |
+    |                  ./identity/*     |    | Identity     +-------------+
+    |                  ./content/*      |    | Content      | IPFS        |  <---(GET ipns://)
+    |                  ./social/*       |    | Social       | network     |
+    +--+-----------------------+--------+    +--------------+-------------+
        |  ^                    | 
   read |  |                    | API responses
   conf |  | write              | of GET requests 
@@ -44,9 +44,9 @@ The official instance of the Distributed Press API is hosted at [api.distributed
 
 **Request:**
 
-| Protocol         | Method | URL |
-|:-----------------|:-------|:----|
-| http             | `POST` | `https://<server.domain>/<project>/v0/publication/publish?apikey=API_KEY` |
+| Protocol | Method | URL |
+|:---------|:-------|:----|
+| HTTP     | `POST` | `https://<server.domain>/<project>/v0/publication/publish?apikey=API_KEY` |
 
 TBA
 
@@ -55,7 +55,7 @@ TBA
 Website available at:
 
 - https://one.compost.digital
-- hyper://KEY
+- hyper://one.compost.digital
 - ipns://one.compost.digital
 
 ### Monetization API
