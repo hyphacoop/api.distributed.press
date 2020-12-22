@@ -5,8 +5,10 @@ const hyperPublisher = require('hyperdrive-publisher')
 const ipfsClient = require('ipfs-http-client')
 
 // Application constants
-const txtIpfs = '_dnslink.api';
-const txtHypercore = 'api';
+const txtHypercoreWww = '@';
+const txtHypercoreApi = 'api';
+const txtIpfsWww = '_dnslink';
+const txtIpfsApi = '_dnslink.api';
 
 // Application configurations
 const confFile = fs.readFileSync(`../data/config.json`);
@@ -33,13 +35,44 @@ const job = new cron.CronJob(period, function() {
       let projFile = fs.readFileSync(`../data/${project}/config.json`);
       let proj = JSON.parse(projFile);
       let domain = proj['domain'];
-      let dir = `../data/${project}/api`;
+      let dirWww = `../data/${project}/www`;
+      let dirApi = `../data/${project}/api`;
 
-      // Pin API responses to Hypercore
-      getDatSeed(project, domain)
+      // Pin WWW site to Hypercore
+      getDatSeed('dat-seed-www', project, domain, txtHypercoreWww)
         .then(seed => hyperPublisher.sync({
           seed,
-          fsPath: dir,
+          fsPath: dirWww,
+          drivePath: '/'
+        }))
+        .then(({diff, url}) => {
+          // Log any changes to hyperdrive and return url
+          console.log(`WWW site for ${project} pinned at ${url}. Changes:`);
+          console.log(diff);
+          return url;
+        })
+        .catch(function(error) {
+          console.log(error);
+        });
+
+      // Pin WWW site to IPFS
+      ipfs.add(globSource(dirWww, { pin: true, recursive: true, timeout: 10000 }))
+        .then(file => file['cid'].toV1().toString())
+        .then(cid => {
+          console.log(`WWW site for ${project} pinned at ipfs/${cid}`);
+
+          // Update DNS record
+          return updateDnsRecordDigitalOcean(domain, 'TXT', txtIpfsWww, `dnslink=/ipfs/${cid}`, 300, conf['digitalOceanAccessToken']);
+        })
+        .catch(function(error) {
+          console.log(error);
+        });
+
+      // Pin API responses to Hypercore
+      getDatSeed('dat-seed-api', project, domain, txtHypercoreApi)
+        .then(seed => hyperPublisher.sync({
+          seed,
+          fsPath: dirApi,
           drivePath: '/'
         }))
         .then(({diff, url}) => {
@@ -53,13 +86,13 @@ const job = new cron.CronJob(period, function() {
         });
 
       // Pin API responses to IPFS
-      ipfs.add(globSource(dir, { pin: true, recursive: true, timeout: 10000 }))
+      ipfs.add(globSource(dirApi, { pin: true, recursive: true, timeout: 10000 }))
         .then(file => file['cid'].toV1().toString())
         .then(cid => {
           console.log(`API responses for ${project} pinned at ipfs/${cid}`);
 
           // Update DNS record
-          return updateDnsRecordDigitalOcean(domain, 'TXT', txtIpfs, `dnslink=/ipfs/${cid}`, 300, conf['digitalOceanAccessToken']);
+          return updateDnsRecordDigitalOcean(domain, 'TXT', txtIpfsApi, `dnslink=/ipfs/${cid}`, 300, conf['digitalOceanAccessToken']);
         })
         .catch(function(error) {
           console.log(error);
@@ -70,27 +103,27 @@ const job = new cron.CronJob(period, function() {
   });
 }, null, true);
 
-async function getDatSeed(project, domain) {
-  // Read private dat-seed
+async function getDatSeed(datSeedName, project, domain, recordName) {
+  // Read private Dat seed
   let dirPrivate = `../data/${project}/private`
   let seed;
   try {
-    seed = fs.readFileSync(`${dirPrivate}/dat-seed`);
+    seed = fs.readFileSync(`${dirPrivate}/${datSeedName}`);
   } catch (error) {
-    console.log('Project dat-seed not found');
+    console.log(`Project ${datSeedName} not found`);
   }
-  // If no dat-seed is stored, generate new dat-seed and publish hyperdrive
+  // If no Dat seed is stored, generate new Dat seed and publish hyperdrive
   if (seed === undefined) {
-    // Generate new dat-seed
-    console.log(`Generating new dat-seed ...`);
+    // Generate new Dat seed
+    console.log(`Generating new ${datSeedName} ...`);
     seed = require('crypto').randomBytes(32);
 
-    // Store new dat-seed in private directory of project
+    // Store new Dat seed in private directory of project
     if (!fs.existsSync(dirPrivate)) {
       fs.mkdirSync(dirPrivate, { recursive: true });
     }
-    fs.writeFileSync(`${dirPrivate}/dat-seed`, seed);
-    console.log(`Project dat-seed updated for ${project}`);
+    fs.writeFileSync(`${dirPrivate}/${datSeedName}`, seed);
+    console.log(`Project ${datSeedName} updated for ${project}`);
 
     // Publish hyperdrive to dat-store with new seed
     await hyperPublisher.getURL({seed})
@@ -101,11 +134,11 @@ async function getDatSeed(project, domain) {
 
           // Update DNS record
           let hyperdriveKey = url.replace('hyper://', '');
-          return updateDnsRecordDigitalOcean(domain, 'TXT', txtHypercore, `datkey=${hyperdriveKey}`, 300, conf['digitalOceanAccessToken']);
+          return updateDnsRecordDigitalOcean(domain, 'TXT', recordName, `datkey=${hyperdriveKey}`, 300, conf['digitalOceanAccessToken']);
         });
   }
   if (seed === undefined) {
-    throw new Error('Failed to get dat-seed');
+    throw new Error(`Failed to get ${datSeedName}`);
   } else {
     return seed;
   }
