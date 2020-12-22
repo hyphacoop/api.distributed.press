@@ -54,9 +54,14 @@ TBA
 
 Website available at:
 
-- https://one.compost.digital
-- hyper://one.compost.digital
-- ipns://one.compost.digital
+| Protocol       | Method | URL |
+|:---------------|:-------|:----|
+| HTTP           | `GET`  | https://staging.compost.digital |
+| Hypercore      | `GET`  | hyper://staging.compost.digital |
+| IPFS / IPNS    | `GET`  | ipns://staging.compost.digital |
+| **HTTP proxy** |
+| Hypercore      | `GET`  | https://hyper.distributed.press/staging.compost.digital/ |
+| IPFS / IPNS    | `GET`  | https://ipfs.distributed.press/ipns/staging.compost.digital/ |
 
 ### Monetization API
 
