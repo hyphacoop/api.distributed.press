@@ -43,7 +43,8 @@ const job = new cron.CronJob(period, function() {
         .then(seed => hyperPublisher.sync({
           seed,
           fsPath: dirWww,
-          drivePath: '/'
+          drivePath: '/',
+          syncTime: 600000 // Allow up to 10 minutes for sync
         }))
         .then(({diff, url}) => {
           // Log any changes to hyperdrive and return url
