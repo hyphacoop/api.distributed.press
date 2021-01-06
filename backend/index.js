@@ -4,10 +4,42 @@ const fs = require('fs');
 
 // Application constants
 const apiVersion = 'v0';
+const confDir = `${require('os').homedir()}/.distributed-press`;
+const confFile = `${confDir}/config.json`;
 
 // Application configurations
-const confFile = fs.readFileSync(`../data/config.json`);
-const conf = JSON.parse(confFile);
+let dataDir = `${confDir}/data`;
+let conf;
+try {
+  // Initialize configuration and data directory if they do not exist
+  if (!fs.existsSync(confFile)) {
+    if (!fs.existsSync(confDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
+    fs.copyFileSync('config.template.json', confFile, fs.constants.COPYFILE_EXCL);
+    console.log(`Set up application configuration at ${confFile}`);
+    process.exit(1);
+  }
+
+  // Read application configurations
+  const file = fs.readFileSync(confFile);
+  conf = JSON.parse(file);
+
+  // Read data directory from application configurations
+  if (conf['dataDirectory'] && conf['dataDirectory'].trim().length > 0) {
+    dataDir = conf['dataDirectory'];
+  }
+  if (!fs.existsSync(dataDir)) {
+    console.log(`Data directory not found at ${dataDir}`);
+    process.exit(1);
+  }
+
+  console.log(`Backend server started with configuration at ${confFile}`);
+  console.log(`Data directory located at ${dataDir}`);
+} catch (error) {
+  console.log(error);
+  process.exit(1);
+}
 
 // Runtime settings
 const period = conf['dev']['refreshPeriod'] ? conf['dev']['refreshPeriod'] : '0 * * * * *'
@@ -16,7 +48,7 @@ const period = conf['dev']['refreshPeriod'] ? conf['dev']['refreshPeriod'] : '0 
 const job = new cron.CronJob(period, function() {
   conf['activeProjects'].forEach((project, index) => {
     try {
-      let projFile = fs.readFileSync(`../data/${project}/config.json`);
+      let projFile = fs.readFileSync(`${dataDir}/${project}/config.json`);
       let proj = JSON.parse(projFile);
       let url = '';
 
@@ -49,7 +81,7 @@ const job = new cron.CronJob(period, function() {
             break;
           case 'eth':
             // Fetch Ethereum address ETH balance
-            url = `https://api.etherscan.io/api?module=account&action=balance&address=${item['account']}&tag=latest&apikey=${conf['etherscanApikey']}`;
+            url = `https://api.etherscan.io/api?module=account&action=balance&address=${item['account']}&tag=latest&apikey=${conf['etherscanApiKey']}`;
             console.log(`GET ${url}`);
             fetchPromises.push(fetch(url)
               .then(res => res.json())
@@ -73,7 +105,7 @@ const job = new cron.CronJob(period, function() {
             break;
           case 'erc20':
             // Fetch Ethereum address ERC20 balances
-            url = `https://api.etherscan.io/api?module=account&action=tokentx&address=${item['account']}&startblock=0&endblock=999999999&sort=asc&apikey=${conf['etherscanApikey']}`;
+            url = `https://api.etherscan.io/api?module=account&action=tokentx&address=${item['account']}&startblock=0&endblock=999999999&sort=asc&apikey=${conf['etherscanApiKey']}`;
             console.log(`GET ${url}`);
             fetchPromises.push(fetch(url)
               .then(res => res.json())
@@ -131,7 +163,7 @@ const job = new cron.CronJob(period, function() {
       Promise.all(fetchPromises).then(values => {
         // Write account balances to file
         const balances = JSON.stringify({ 'result': values.filter(x => x), 'error': '', 'errorCode': 0, 'timestamp': new Date().toJSON() });
-        const dir = `../data/${project}/api/${apiVersion}/monetization`;
+        const dir = `${dataDir}/${project}/api/${apiVersion}/monetization`;
         if (!fs.existsSync(dir)) {
           fs.mkdirSync(dir, { recursive: true });
         }

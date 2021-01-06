@@ -5,14 +5,42 @@ const hyperPublisher = require('hyperdrive-publisher')
 const ipfsClient = require('ipfs-http-client')
 
 // Application constants
+const confDir = `${require('os').homedir()}/.distributed-press`;
+const confFile = `${confDir}/config.json`;
+
+// Application configurations
+let dataDir = `${confDir}/data`;
+let conf;
+try {
+  // Read application configurations
+  if (!fs.existsSync(confFile)) {
+    console.log(`Run backend module to set up application configuration before starting pinning service`);
+    process.exit(1);
+  }
+  const file = fs.readFileSync(confFile);
+  conf = JSON.parse(file);
+
+  // Read data directory from application configurations
+  if (conf['dataDirectory'] && conf['dataDirectory'].trim().length > 0) {
+    dataDir = conf['dataDirectory'];
+  }
+  if (!fs.existsSync(dataDir)) {
+    console.log(`Data directory not found at ${dataDir}`);
+    process.exit(1);
+  }
+
+  console.log(`Pinning service started with configuration at ${confFile}`);
+  console.log(`Data directory located at ${dataDir}`);
+} catch (error) {
+  console.log(error);
+  process.exit(1);
+}
+
+// Pinning service constants
 const txtHypercoreWww = '@';
 const txtHypercoreApi = 'api';
 const txtIpfsWww = '_dnslink';
 const txtIpfsApi = '_dnslink.api';
-
-// Application configurations
-const confFile = fs.readFileSync(`../data/config.json`);
-const conf = JSON.parse(confFile);
 
 // Runtime settings
 const period = conf['dev']['pinningPeriod'] ? conf['dev']['pinningPeriod'] : '0 */15 * * * *'
@@ -32,11 +60,11 @@ datStoreClient.login(conf['datStore']['username'], conf['datStore']['password'])
 const job = new cron.CronJob(period, function() {
   conf['activeProjects'].forEach((project, index) => {
     try {
-      let projFile = fs.readFileSync(`../data/${project}/config.json`);
+      let projFile = fs.readFileSync(`${dataDir}/${project}/config.json`);
       let proj = JSON.parse(projFile);
       let domain = proj['domain'];
-      let dirWww = `../data/${project}/www`;
-      let dirApi = `../data/${project}/api`;
+      let dirWww = `${dataDir}/${project}/www`;
+      let dirApi = `${dataDir}/${project}/api`;
 
       // Pin WWW site to Hypercore
       getDatSeed('dat-seed-www', project, domain, txtHypercoreWww)
@@ -106,7 +134,7 @@ const job = new cron.CronJob(period, function() {
 
 async function getDatSeed(datSeedName, project, domain, recordName) {
   // Read private Dat seed
-  let dirPrivate = `../data/${project}/private`
+  let dirPrivate = `${dataDir}/${project}/private`
   let seed;
   try {
     seed = fs.readFileSync(`${dirPrivate}/${datSeedName}`);
