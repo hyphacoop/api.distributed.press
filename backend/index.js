@@ -130,7 +130,7 @@ const job = new cron.CronJob(period, function() {
 
       Promise.all(fetchPromises).then(values => {
         // Write account balances to file
-        const balances = JSON.stringify({ 'result': values.filter(x => x), 'error': '', 'errorCode': 0 });
+        const balances = JSON.stringify({ 'result': values.filter(x => x), 'error': '', 'errorCode': 0, 'timestamp': new Date().toJSON() });
         const dir = `../data/${project}/api/${apiVersion}/monetization`;
         if (!fs.existsSync(dir)) {
           fs.mkdirSync(dir, { recursive: true });
