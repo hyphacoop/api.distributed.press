@@ -71,8 +71,8 @@ Website available at:
 
 | Protocol       | Method | URL |
 |:---------------|:-------|:----|
-| HTTP           | `GET`  | `https://<server.domain>/<project>/v0/monetization/balances.json` |
-| Hypercore      | `GET`  | `hyper://api.<project.domain>/v0/monetization/balances.json`    |
+| HTTP           | `GET`  | `https://api.<project.domain>/v0/monetization/balances.json` |
+| Hypercore      | `GET`  | `hyper://api.<project.domain>/v0/monetization/balances.json` |
 | IPFS / IPNS    | `GET`  | `ipns://api.<project.domain>/v0/monetization/balances.json` |
 | **HTTP proxy** |
 | Hypercore      | `GET`  | `https://hyper.<server.domain>/api.<project.domain>/v0/monetization/balances.json` |
@@ -80,13 +80,16 @@ Website available at:
 
 **Response:**
 
-- `result`: an array of monetization endpoints
-  - `name`: the name of the monetization endpoint defined in project config
-  - `type`: the type of the monetization endpoint, supported values are `oc` (Open Collective), `eth` (Ethereum), and `erc20` (ERC20 tokens)
-  - `balances`: a list of account balances associated with the monetization endpoint
+- `accounts`: an array of monetization accounts
+  - `name`: the name of the monetization account defined in project config
+  - `type`: the type of the monetization account, supported values are `oc` (Open Collective), `eth` (Ethereum), and `erc20` (ERC20 tokens)
+  - `balances`: a list of account balances associated with the monetization account
     - `balance`: the balance as a string
     - `decimal`: the decimal places of the `balance`
     - `currency`: the currency of the `balance`
+- `balance`: the total estimated balance across all accounts converted to the currency defined in project config using [Coinbase exchange rates](https://developers.coinbase.com/api/v2#exchange-rates)
+- `decimal`: the decimal places of the total estimated balance
+- `currency`: the currency defined in project config, see [supported currencies](https://api.coinbase.com/v2/currencies))
 - `error`: the error message; or empty if the request succeeded
 - `errorCode`: the error code as an integer; or `0` if the request succeeded
 
@@ -94,7 +97,7 @@ Website available at:
 
 | Protocol       | Method | URL |
 |:---------------|:-------|:----|
-| HTTP           | `GET`  | https://api.distributed.press/compost/v0/monetization/balances.json |
+| HTTP           | `GET`  | https://api.staging.compost.digital/v0/monetization/balances.json |
 | Hypercore      | `GET`  | hyper://api.staging.compost.digital/v0/monetization/balances.json |
 | IPFS / IPNS    | `GET`  | ipns://api.staging.compost.digital/v0/monetization/balances.json |
 | **HTTP proxy** |
@@ -105,13 +108,13 @@ Website available at:
 <summary>Result</summary>
 <pre>
 {
-  "result": [
+  "accounts": [
     {
       "name": "open-collective",
       "type": "oc",
       "balances": [
         {
-          "balance": "1827105",
+          "balance": "1827535",
           "decimal": 2,
           "currency": "CAD"
         }
@@ -145,8 +148,12 @@ Website available at:
       ]
     }
   ],
+  "balance": "1828939",
+  "decimal": 2,
+  "currency": "CAD",
   "error": "",
-  "errorCode": 0
+  "errorCode": 0,
+  "timestamp": "2021-01-08T05:23:25.457Z"
 }
 </pre>
 </details>

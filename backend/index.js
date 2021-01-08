@@ -54,7 +54,7 @@ const job = new cron.CronJob(period, function() {
 
       // Query monetization account balances
       fetchPromises = [];
-      proj['monetization'].forEach((item, index) => {
+      proj['monetization']['accounts'].forEach((item, index) => {
         switch (item['type']) {
           case 'oc':
             // Fetch Open Collective balance
@@ -161,18 +161,65 @@ const job = new cron.CronJob(period, function() {
       });
 
       Promise.all(fetchPromises).then(values => {
-        // Write account balances to file
-        const balances = JSON.stringify({ 'result': values.filter(x => x), 'error': '', 'errorCode': 0, 'timestamp': new Date().toJSON() });
-        const dir = `${dataDir}/${project}/api/${apiVersion}/monetization`;
-        if (!fs.existsSync(dir)) {
-          fs.mkdirSync(dir, { recursive: true });
-        }
-        fs.writeFile(`${dir}/balances.json`, balances, (err) => {
-          if (err) {
-            throw err;
-          }
-          console.log(`balances.json updated for ${project}`);
-        });
+        const projCurrency = proj['monetization']['currency'];
+        const url = `https://api.coinbase.com/v2/exchange-rates?currency=${projCurrency}`;
+        console.log(`GET ${url}`);
+        fetch(url)
+          .then(res => res.json())
+          .then(json => {
+            // Fetch exchange rates based on project currency
+            if (json['data'] && json['data']['currency'] === projCurrency) {
+              return json['data']['rates'];
+            }
+            return {};
+          })
+          .then(rates => {
+            let totalBalance = 0;
+            const accounts = values.filter(x => x); // Filter out results that are 'undefined'
+            accounts.forEach((a, ai) => {
+              a['balances'].forEach((b, bi) => {
+                // Convert each account balance to project currency
+                let balStr = b['balance'];
+                let decInt = b['decimal'];
+                let balFlt = parseFloat(`${balStr.slice(0, balStr.length - decInt)}.${balStr.slice(balStr.length - decInt, balStr.length)}`);
+                let exrFlt = parseFloat(rates[b['currency']]); // This loses some precision
+                if (balFlt && exrFlt) {
+                  // Add to total estimated balance
+                  totalBalance += balFlt / exrFlt;
+                }
+              });
+            });
+
+            // Crop total estimated balance to 2-decimal precision
+            let balance = totalBalance.toString().replace('.','');
+            let decIndex = totalBalance.toString().indexOf('.');
+            let decimal = 0;
+            if (decIndex > 0) {
+              decimal = 2;
+              balance = cropPrecision(balance, balance.length - (decIndex + decimal));
+            }
+            
+            // Write total estimated and account balances to file
+            const balances = JSON.stringify({
+              accounts: values.filter(x => x),
+              balance: balance,
+              decimal: 2,
+              currency: projCurrency,
+              error: '',
+              errorCode: 0,
+              timestamp: new Date().toJSON() });
+            const dir = `${dataDir}/${project}/api/${apiVersion}/monetization`;
+            if (!fs.existsSync(dir)) {
+              fs.mkdirSync(dir, { recursive: true });
+            }
+            fs.writeFile(`${dir}/balances.json`, balances, (err) => {
+              if (err) {
+                throw err;
+              }
+              console.log(`balances.json updated for ${project}`);
+            });
+            return balances;
+          });
       });
     } catch (error) {
       console.log(error);
