@@ -60,14 +60,15 @@ datStoreClient.login(conf['datStore']['username'], conf['datStore']['password'])
 const job = new cron.CronJob(period, function() {
   conf['activeProjects'].forEach((project, index) => {
     try {
-      let projFile = fs.readFileSync(`${dataDir}/${project}/config.json`);
-      let proj = JSON.parse(projFile);
-      let domain = proj['domain'];
-      let dirWww = `${dataDir}/${project}/www`;
-      let dirApi = `${dataDir}/${project}/api`;
+      const projName = projec['domain'];
+      const projFile = fs.readFileSync(`${dataDir}/${projName}/config.json`);
+      const proj = JSON.parse(projFile);
+      const domain = proj['domain'];
+      const dirWww = `${dataDir}/${projName}/www`;
+      const dirApi = `${dataDir}/${projName}/api`;
 
       // Pin WWW site to Hypercore
-      getDatSeed('dat-seed-www', project, domain, txtHypercoreWww)
+      getDatSeed('dat-seed-www', projName, domain, txtHypercoreWww)
         .then(seed => hyperPublisher.sync({
           seed,
           fsPath: dirWww,
@@ -76,7 +77,7 @@ const job = new cron.CronJob(period, function() {
         }))
         .then(({diff, url}) => {
           // Log any changes to hyperdrive and return url
-          console.log(`WWW site for ${project} pinned at ${url}. Changes:`);
+          console.log(`WWW site for ${projName} pinned at ${url}. Changes:`);
           console.log(diff);
           return url;
         })
@@ -88,7 +89,7 @@ const job = new cron.CronJob(period, function() {
       ipfs.add(globSource(dirWww, { pin: true, recursive: true, timeout: 10000 }))
         .then(file => file['cid'].toV1().toString())
         .then(cid => {
-          console.log(`WWW site for ${project} pinned at ipfs/${cid}`);
+          console.log(`WWW site for ${projName} pinned at ipfs/${cid}`);
 
           // Update DNS record
           return updateDnsRecordDigitalOcean(domain, 'TXT', txtIpfsWww, `dnslink=/ipfs/${cid}`, 300, conf['digitalOceanAccessToken']);
@@ -98,7 +99,7 @@ const job = new cron.CronJob(period, function() {
         });
 
       // Pin API responses to Hypercore
-      getDatSeed('dat-seed-api', project, domain, txtHypercoreApi)
+      getDatSeed('dat-seed-api', projName, domain, txtHypercoreApi)
         .then(seed => hyperPublisher.sync({
           seed,
           fsPath: dirApi,
@@ -106,7 +107,7 @@ const job = new cron.CronJob(period, function() {
         }))
         .then(({diff, url}) => {
           // Log any changes to hyperdrive and return url
-          console.log(`API responses for ${project} pinned at ${url}. Changes:`);
+          console.log(`API responses for ${projName} pinned at ${url}. Changes:`);
           console.log(diff);
           return url;
         })
@@ -118,7 +119,7 @@ const job = new cron.CronJob(period, function() {
       ipfs.add(globSource(dirApi, { pin: true, recursive: true, timeout: 10000 }))
         .then(file => file['cid'].toV1().toString())
         .then(cid => {
-          console.log(`API responses for ${project} pinned at ipfs/${cid}`);
+          console.log(`API responses for ${projName} pinned at ipfs/${cid}`);
 
           // Update DNS record
           return updateDnsRecordDigitalOcean(domain, 'TXT', txtIpfsApi, `dnslink=/ipfs/${cid}`, 300, conf['digitalOceanAccessToken']);
@@ -132,9 +133,9 @@ const job = new cron.CronJob(period, function() {
   });
 }, null, true);
 
-async function getDatSeed(datSeedName, project, domain, recordName) {
+async function getDatSeed(datSeedName, projName, domain, recordName) {
   // Read private Dat seed
-  let dirPrivate = `${dataDir}/${project}/private`
+  const dirPrivate = `${dataDir}/${projName}/private`
   let seed;
   try {
     seed = fs.readFileSync(`${dirPrivate}/${datSeedName}`);
@@ -152,17 +153,17 @@ async function getDatSeed(datSeedName, project, domain, recordName) {
       fs.mkdirSync(dirPrivate, { recursive: true });
     }
     fs.writeFileSync(`${dirPrivate}/${datSeedName}`, seed);
-    console.log(`Project ${datSeedName} updated for ${project}`);
+    console.log(`Project ${datSeedName} updated for ${projName}`);
 
     // Publish hyperdrive to dat-store with new seed
     await hyperPublisher.getURL({seed})
       .then(url => datStoreClient.add(url))
       .then(() => hyperPublisher.create({seed}))
       .then(({url}) => {
-          console.log(`New hyperdrive published for ${project}`);
+          console.log(`New hyperdrive published for ${projName}`);
 
           // Update DNS record
-          let hyperdriveKey = url.replace('hyper://', '');
+          const hyperdriveKey = url.replace('hyper://', '');
           return updateDnsRecordDigitalOcean(domain, 'TXT', recordName, `datkey=${hyperdriveKey}`, 300, conf['digitalOceanAccessToken']);
         });
   }
@@ -175,8 +176,8 @@ async function getDatSeed(datSeedName, project, domain, recordName) {
 
 function updateDnsRecordDigitalOcean(domain, recordType, recordName, recordData, recordTtl, doToken) {
   // List existing DNS records for domain
-  let url = `https://api.digitalocean.com/v2/domains/${domain}/records/`;
-  let headers = {
+  const url = `https://api.digitalocean.com/v2/domains/${domain}/records/`;
+  const headers = {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${doToken}`
   };
@@ -187,7 +188,7 @@ function updateDnsRecordDigitalOcean(domain, recordType, recordName, recordData,
     .then(txt => {
       // Delete existing records with matching record type and name
       txt.forEach((item, index) => {
-        let urlDelete = url + item['id'];
+        const urlDelete = url + item['id'];
         console.log(`DELETE ${urlDelete}`);
         fetch(urlDelete, { method: 'DELETE', headers: headers })
           .catch(function(error) {
@@ -196,7 +197,7 @@ function updateDnsRecordDigitalOcean(domain, recordType, recordName, recordData,
       });
 
       // Create new DNS record
-      data = JSON.stringify({
+      const data = JSON.stringify({
         type: recordType,
         name: recordName,
         data: recordData,

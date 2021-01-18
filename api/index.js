@@ -42,9 +42,21 @@ const actions = [
   ];
 
 // Set up APIs
-app.get(`/:project/${apiVersion}/:group/:action.json`, function(req, res) {
+app.get(`/${apiVersion}/:group/:action.json`, function(req, res) {
+  // Get project from request, first from API key if it exists in the header
+  let project;
+  if (req.header('Authorization')) {
+    const apiKey = req.header('Authorization').replace('Bearer ', '');
+    project = getProjectFromApiKey(apiKey);
+  } else if (req.query.project) { // Try to get it from the 'project' query parameter
+    project = req.query.project;
+  } else {
+    project = req.get('host'); // Get it from the 'project' query parameter
+  }
+
+  // Read API response
   try {
-    let resFile = fs.readFileSync(`${dataDir}/${req.params.project}/api/${apiVersion}/${req.params.group}/${req.params.action}.json`);
+    let resFile = fs.readFileSync(`${dataDir}/${project}/api/${apiVersion}/${req.params.group}/${req.params.action}.json`);
     res.json(JSON.parse(resFile))
   } catch (error) {
     // Check if action is supported
@@ -57,9 +69,9 @@ app.get(`/:project/${apiVersion}/:group/:action.json`, function(req, res) {
       return
     }
     // Check if project exists
-    if (!fs.existsSync(`${dataDir}/${req.params.project}/`)) {
+    if (!fs.existsSync(`${dataDir}/${project}/`)) {
       res.json({
-        error: `The project '${req.params.project}' is not available`,
+        error: `The project '${project}' is not available`,
         errorCode: 1002,
         timestamp: new Date().toJSON()
       });
@@ -77,3 +89,8 @@ app.get(`/:project/${apiVersion}/:group/:action.json`, function(req, res) {
 app.listen(port, function () {
   console.log(`API server running on port ${port}`);
 });
+
+// TODO
+function getProjectFromApiKey(apiKey) {
+  return 'project';
+}

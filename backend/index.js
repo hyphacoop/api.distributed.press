@@ -48,8 +48,9 @@ const period = conf['dev']['refreshPeriod'] ? conf['dev']['refreshPeriod'] : '0 
 const job = new cron.CronJob(period, function() {
   conf['activeProjects'].forEach((project, index) => {
     try {
-      let projFile = fs.readFileSync(`${dataDir}/${project}/config.json`);
-      let proj = JSON.parse(projFile);
+      const projName = project['domain'];
+      const projFile = fs.readFileSync(`${dataDir}/${projName}/config.json`);
+      const proj = JSON.parse(projFile);
       let url = '';
 
       // Query monetization account balances
@@ -58,7 +59,7 @@ const job = new cron.CronJob(period, function() {
         switch (item['type']) {
           case 'oc':
             // Fetch Open Collective balance
-            url = `https://opencollective.com/${item['account']}.json`;
+            url = `https://opencollective.com/${item['id']}.json`;
             console.log(`GET ${url}`);
             fetchPromises.push(fetch(url)
               .then(res => res.json())
@@ -81,7 +82,7 @@ const job = new cron.CronJob(period, function() {
             break;
           case 'eth':
             // Fetch Ethereum address ETH balance
-            url = `https://api.etherscan.io/api?module=account&action=balance&address=${item['account']}&tag=latest&apikey=${conf['etherscanApiKey']}`;
+            url = `https://api.etherscan.io/api?module=account&action=balance&address=${item['id']}&tag=latest&apikey=${conf['etherscanApiKey']}`;
             console.log(`GET ${url}`);
             fetchPromises.push(fetch(url)
               .then(res => res.json())
@@ -105,13 +106,13 @@ const job = new cron.CronJob(period, function() {
             break;
           case 'erc20':
             // Fetch Ethereum address ERC20 balances
-            url = `https://api.etherscan.io/api?module=account&action=tokentx&address=${item['account']}&startblock=0&endblock=999999999&sort=asc&apikey=${conf['etherscanApiKey']}`;
+            url = `https://api.etherscan.io/api?module=account&action=tokentx&address=${item['id']}&startblock=0&endblock=999999999&sort=asc&apikey=${conf['etherscanApiKey']}`;
             console.log(`GET ${url}`);
             fetchPromises.push(fetch(url)
               .then(res => res.json())
               .then(json => {
                 if (json['status'] !== '1') throw new Error(`Failed to fetch from remote ${url}`);
-                let tokenMap = new Map();
+                const tokenMap = new Map();
                 json['result'].forEach((tx, index) => {
                   if (tx['confirmations'] > 6) {
                     let value = 0;
@@ -126,13 +127,13 @@ const job = new cron.CronJob(period, function() {
                     }
 
                     // Make value negative if paid out from account
-                    if (equalsIgnoreCase(tx['from'], item['account'])) value = -value;
+                    if (equalsIgnoreCase(tx['from'], item['id'])) value = -value;
 
                     // Add transaction to map
                     if (tokenMap.has(tx['tokenSymbol'])) {
-                      let tokenBalance = tokenMap.get(tx['tokenSymbol']);
+                      const tokenBalance = tokenMap.get(tx['tokenSymbol']);
                       if (tokenBalance['tokenDecimal'] !== tokenDecimal) throw new Error(`The token ${tokenSymbol} has transactions with different tokenDecimal`);
-                      let cumulativeValue = tokenBalance['value'] + value;
+                      const cumulativeValue = tokenBalance['value'] + value;
                       tokenMap.set(tx['tokenSymbol'], { 'value': cumulativeValue, 'tokenDecimal': tokenDecimal });
                     } else {
                       tokenMap.set(tx['tokenSymbol'], { 'value': value, 'tokenDecimal': tokenDecimal });
@@ -141,7 +142,7 @@ const job = new cron.CronJob(period, function() {
                 });
 
                 // Format result from tokenMap
-                let result = {
+                const result = {
                   name: item['name'],
                   type: item['type'],
                   balances: []
@@ -179,10 +180,10 @@ const job = new cron.CronJob(period, function() {
             accounts.forEach((a, ai) => {
               a['balances'].forEach((b, bi) => {
                 // Convert each account balance to project currency
-                let balStr = b['balance'];
-                let decInt = b['decimal'];
-                let balFlt = parseFloat(`${balStr.slice(0, balStr.length - decInt)}.${balStr.slice(balStr.length - decInt, balStr.length)}`);
-                let exrFlt = parseFloat(rates[b['currency']]); // This loses some precision
+                const balStr = b['balance'];
+                const decInt = b['decimal'];
+                const balFlt = parseFloat(`${balStr.slice(0, balStr.length - decInt)}.${balStr.slice(balStr.length - decInt, balStr.length)}`);
+                const exrFlt = parseFloat(rates[b['currency']]); // This loses some precision
                 if (balFlt && exrFlt) {
                   // Add to total estimated balance
                   totalBalance += balFlt / exrFlt;
@@ -191,8 +192,8 @@ const job = new cron.CronJob(period, function() {
             });
 
             // Crop total estimated balance to 2-decimal precision
+            const decIndex = totalBalance.toString().indexOf('.');
             let balance = totalBalance.toString().replace('.','');
-            let decIndex = totalBalance.toString().indexOf('.');
             let decimal = 0;
             if (decIndex > 0) {
               decimal = 2;
@@ -208,7 +209,7 @@ const job = new cron.CronJob(period, function() {
               error: '',
               errorCode: 0,
               timestamp: new Date().toJSON() });
-            const dir = `${dataDir}/${project}/api/${apiVersion}/monetization`;
+            const dir = `${dataDir}/${projName}/api/${apiVersion}/monetization`;
             if (!fs.existsSync(dir)) {
               fs.mkdirSync(dir, { recursive: true });
             }
@@ -216,7 +217,7 @@ const job = new cron.CronJob(period, function() {
               if (err) {
                 throw err;
               }
-              console.log(`balances.json updated for ${project}`);
+              console.log(`balances.json updated for ${projName}`);
             });
             return balances;
           });
