@@ -119,7 +119,7 @@ POST request body:
 POST headers:
 - `Authorization: Bearer PROJECT_API_KEY`, where `PROJECT_API_KEY` is the project API key to authenticate with the Distributed Press server
 
-POST request body: a `.tar.gz` archive of the website to publish
+POST request body: a `tar.gz` archive of the website to publish
 
 **Response:**
 
@@ -138,7 +138,7 @@ HTTP response code, one of:
 POST headers:
 - `Authorization: Bearer STAGING_COMPOST_DIGITAL_API_KEY`
 
-POST request body: (see sources for compost.digital at [hyphacoop/compost.digital](https://github.com/hyphacoop/compost.digital/))
+POST request body: (see sources for `staging.compost.digital` at [hyphacoop/compost.digital](https://github.com/hyphacoop/compost.digital/))
 
 Published project website in this example is available at:
 

@@ -7,6 +7,7 @@ const ipfsClient = require('ipfs-http-client')
 // Application constants
 const confDir = `${require('os').homedir()}/.distributed-press`;
 const confFile = `${confDir}/config.json`;
+const projFile = `${confDir}/projects.json`;
 
 // Application configurations
 let dataDir = `${confDir}/data`;
@@ -58,79 +59,89 @@ datStoreClient.login(conf['datStore']['username'], conf['datStore']['password'])
 
 // Run this job every 15 minutes by default
 const job = new cron.CronJob(period, function() {
-  conf['activeProjects'].forEach((project, index) => {
-    try {
-      const projName = projec['domain'];
-      const projFile = fs.readFileSync(`${dataDir}/${projName}/config.json`);
-      const proj = JSON.parse(projFile);
-      const domain = proj['domain'];
-      const dirWww = `${dataDir}/${projName}/www`;
-      const dirApi = `${dataDir}/${projName}/api`;
+  try {
+    const file = fs.readFileSync(projFile);
+    const projects = JSON.parse(file);
+    projects['active'].forEach((project, index) => {
+      try {
+        const projName = project['domain'];
+        const projConfFile = `${dataDir}/${projName}/config.json`;
+        if (!fs.existsSync(projConfFile)) {
+          console.log(`Project directory not found at ${projConfFile}, processing of ${projName} skipped`);
+          return;
+        }
+        const proj = JSON.parse(fs.readFileSync(projConfFile));
+        const domain = proj['domain'];
+        const dirWww = `${dataDir}/${projName}/www`;
+        const dirApi = `${dataDir}/${projName}/api`;
 
-      // Pin WWW site to Hypercore
-      getDatSeed('dat-seed-www', projName, domain, txtHypercoreWww)
-        .then(seed => hyperPublisher.sync({
-          seed,
-          fsPath: dirWww,
-          drivePath: '/',
-          syncTime: 600000 // Allow up to 10 minutes for sync
-        }))
-        .then(({diff, url}) => {
-          // Log any changes to hyperdrive and return url
-          console.log(`WWW site for ${projName} pinned at ${url}. Changes:`);
-          console.log(diff);
-          return url;
-        })
-        .catch(function(error) {
-          console.log(error);
-        });
+        // Pin WWW site to Hypercore
+        getDatSeed('dat-seed-www', projName, domain, txtHypercoreWww)
+          .then(seed => hyperPublisher.sync({
+            seed,
+            fsPath: dirWww,
+            drivePath: '/',
+            syncTime: 600000 // Allow up to 10 minutes for sync
+          }))
+          .then(({diff, url}) => {
+            // Log any changes to hyperdrive and return url
+            console.log(`WWW site for ${projName} pinned at ${url}. Changes:`);
+            console.log(diff);
+            return url;
+          })
+          .catch(function(error) {
+            console.log(error);
+          });
 
-      // Pin WWW site to IPFS
-      ipfs.add(globSource(dirWww, { pin: true, recursive: true, timeout: 10000 }))
-        .then(file => file['cid'].toV1().toString())
-        .then(cid => {
-          console.log(`WWW site for ${projName} pinned at ipfs/${cid}`);
+        // Pin WWW site to IPFS
+        ipfs.add(globSource(dirWww, { pin: true, recursive: true, timeout: 10000 }))
+          .then(file => file['cid'].toV1().toString())
+          .then(cid => {
+            console.log(`WWW site for ${projName} pinned at ipfs/${cid}`);
 
-          // Update DNS record
-          return updateDnsRecordDigitalOcean(domain, 'TXT', txtIpfsWww, `dnslink=/ipfs/${cid}`, 300, conf['digitalOceanAccessToken']);
-        })
-        .catch(function(error) {
-          console.log(error);
-        });
+            // Update DNS record
+            return updateDnsRecordDigitalOcean(domain, 'TXT', txtIpfsWww, `dnslink=/ipfs/${cid}`, 300, conf['digitalOceanAccessToken']);
+          })
+          .catch(function(error) {
+            console.log(error);
+          });
 
-      // Pin API responses to Hypercore
-      getDatSeed('dat-seed-api', projName, domain, txtHypercoreApi)
-        .then(seed => hyperPublisher.sync({
-          seed,
-          fsPath: dirApi,
-          drivePath: '/'
-        }))
-        .then(({diff, url}) => {
-          // Log any changes to hyperdrive and return url
-          console.log(`API responses for ${projName} pinned at ${url}. Changes:`);
-          console.log(diff);
-          return url;
-        })
-        .catch(function(error) {
-          console.log(error);
-        });
+        // Pin API responses to Hypercore
+        getDatSeed('dat-seed-api', projName, domain, txtHypercoreApi)
+          .then(seed => hyperPublisher.sync({
+            seed,
+            fsPath: dirApi,
+            drivePath: '/'
+          }))
+          .then(({diff, url}) => {
+            // Log any changes to hyperdrive and return url
+            console.log(`API responses for ${projName} pinned at ${url}. Changes:`);
+            console.log(diff);
+            return url;
+          })
+          .catch(function(error) {
+            console.log(error);
+          });
 
-      // Pin API responses to IPFS
-      ipfs.add(globSource(dirApi, { pin: true, recursive: true, timeout: 10000 }))
-        .then(file => file['cid'].toV1().toString())
-        .then(cid => {
-          console.log(`API responses for ${projName} pinned at ipfs/${cid}`);
+        // Pin API responses to IPFS
+        ipfs.add(globSource(dirApi, { pin: true, recursive: true, timeout: 10000 }))
+          .then(file => file['cid'].toV1().toString())
+          .then(cid => {
+            console.log(`API responses for ${projName} pinned at ipfs/${cid}`);
 
-          // Update DNS record
-          return updateDnsRecordDigitalOcean(domain, 'TXT', txtIpfsApi, `dnslink=/ipfs/${cid}`, 300, conf['digitalOceanAccessToken']);
-        })
-        .catch(function(error) {
-          console.log(error);
-        });
-    } catch (error) {
-      console.log(error);
-    }
-  });
+            // Update DNS record
+            return updateDnsRecordDigitalOcean(domain, 'TXT', txtIpfsApi, `dnslink=/ipfs/${cid}`, 300, conf['digitalOceanAccessToken']);
+          })
+          .catch(function(error) {
+            console.log(error);
+          });
+      } catch (error) {
+        console.log(error);
+      }
+    });
+  } catch (error) {
+    console.log(error);
+  }
 }, null, true);
 
 async function getDatSeed(datSeedName, projName, domain, recordName) {
