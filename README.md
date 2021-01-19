@@ -67,7 +67,7 @@ POST request body:
 **Response:**
 
 HTTP response code, one of:
-- `202` Accepted: the request is accepted for asynchronous processing
+- `201` Created: the new configuration is enabled
 - `401` Unauthorized: the `PROJECT_API_KEY` is missing or invalid
 - `500` Internal Server Error: the request failed due to a server error
 - `503` Service Unavailable: the service is temporarily unavailable
@@ -119,12 +119,12 @@ POST request body:
 POST headers:
 - `Authorization: Bearer PROJECT_API_KEY`, where `PROJECT_API_KEY` is the project API key to authenticate with the Distributed Press server
 
-POST request body: a `tar.gz` archive of the website to publish
+POST request body: the website to publish, as a `tar.gz` archive created using `tar -czvf www.tar.gz -C www .`
 
 **Response:**
 
 HTTP response code, one of:
-- `202` Accepted: the request is accepted for asynchronous processing
+- `202` Accepted: the website archive is uploaded and will be published asynchronously
 - `401` Unauthorized: the `PROJECT_API_KEY` is missing or invalid
 - `500` Internal Server Error: the request failed due to a server error
 - `503` Service Unavailable: the service is temporarily unavailable

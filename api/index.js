@@ -2,6 +2,8 @@ const crypto = require('crypto');
 const express = require('express');
 const fs = require('fs');
 const multer  = require('multer');
+const tar = require('tar-fs');
+const gunzip = require('gunzip-maybe');
 
 // Application constants
 const apiVersion = 'v0';
@@ -85,15 +87,63 @@ app.post(`/${apiVersion}/publication/configure`, upload.single('file'), function
       timestamp: new Date().toJSON()
     });
   }
-  return res.status(202).json({
+  return res.status(201).json({
       error: '',
       errorCode: 0,
       timestamp: new Date().toJSON()
     });
 });
 
-app.post(`/${apiVersion}/publication/publish`, function (req, res) {
-  // TODO
+// curl -v http://localhost:3030/v0/publication/publish -H "Content-Type: multipart/form-data" -H "Accept: application/json" -H "Authorization: Bearer ${PROJECT_API_KEY}" -F "file=@www.tar.gz"
+app.post(`/${apiVersion}/publication/publish`, upload.single('file'), function (req, res) {
+  // Get project from request
+  let project;
+  if (req.header('Authorization')) {
+    const apiKey = req.header('Authorization').replace('Bearer ', '');
+    project = getProjectFromApiKey(apiKey);
+    if (project === undefined) {
+      return res.status(401).json({
+        error: "The 'Authorization' header does not contain a valid API key",
+        errorCode: 1005,
+        timestamp: new Date().toJSON()
+      });
+    }
+  }
+
+  // Publish www archive to project www directory
+  try {
+    let srcFile = `${uploadDir}/${req.file.filename}`;
+    let targetDir = `${projDir}/${project}/www`;
+    
+    // Delete existing www directory
+    fs.rmSync(targetDir, { recursive: true, force: true });
+    
+    // Untar uploaded www archive to project
+    fs.createReadStream(srcFile).on('error', (error) => console.log(error))
+      .pipe(gunzip()).on('error', (error) => console.log(error))
+      .pipe(tar.extract(targetDir)).on('error', (error) => console.log(error))
+      .on('finish', () => {
+        try {
+          fs.unlinkSync(srcFile)
+          console.log(`New website published for ${project}`);
+        } catch (error) {
+          console.log(error)
+        }
+      });
+    console.log(`New website archive uploaded for ${project}`);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      error: 'An unknown error occurred',
+      errorCode: 1000,
+      timestamp: new Date().toJSON()
+    });
+  }
+  return res.status(202).json({
+      error: '',
+      errorCode: 0,
+      timestamp: new Date().toJSON()
+    });
 });
 
 //
