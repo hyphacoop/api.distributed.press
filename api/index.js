@@ -51,7 +51,7 @@ let projMap = readProjectMap(projFile);
 // API server constants
 const app = express();
 const port = process.env.PORT || 3030;
-const actions = [
+const actionsGet = [
     'monetization/balances'
   ];
 
@@ -73,6 +73,25 @@ app.post(`/${apiVersion}/publication/configure`, upload.single('file'), function
         timestamp: new Date().toJSON()
       });
     }
+  }
+
+  // Verify that the config and matches the project domain associated with the API key
+  try {
+    let newConf = JSON.parse(fs.readFileSync(`${uploadDir}/${req.file.filename}`));
+    if (newConf === undefined || newConf['domain'] !== project) {
+      return res.status(400).json({
+        error: "Project configuration is missing a 'domain' value matching the project domain associated with the API key",
+        errorCode: 1006,
+        timestamp: new Date().toJSON()
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      error: 'An unknown error occurred',
+      errorCode: 1000,
+      timestamp: new Date().toJSON()
+    });
   }
 
   // Copy uploaded configuration file to project
@@ -176,7 +195,7 @@ app.get(`/${apiVersion}/:group/:action.json`, function(req, res) {
     return res.json(JSON.parse(resFile));
   } catch (error) {
     // Check if action is supported
-    if (!actions.includes(`${req.params.group}/${req.params.action}`)) {
+    if (!actionsGet.includes(`${req.params.group}/${req.params.action}`)) {
       return res.status(400).json({
         error: `The action '${req.params.group}/${req.params.action}' is not supported`,
         errorCode: 1001,

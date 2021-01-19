@@ -68,6 +68,7 @@ POST request body:
 
 HTTP response code, one of:
 - `201` Created: the new configuration is enabled
+- `400` Bad Request: the request contains missing or invalid data
 - `401` Unauthorized: the `PROJECT_API_KEY` is missing or invalid
 - `500` Internal Server Error: the request failed due to a server error
 - `503` Service Unavailable: the service is temporarily unavailable
@@ -125,6 +126,7 @@ POST request body: the website to publish, as a `tar.gz` archive created using `
 
 HTTP response code, one of:
 - `202` Accepted: the website archive is uploaded and will be published asynchronously
+- `400` Bad Request: the request contains missing or invalid data
 - `401` Unauthorized: the `PROJECT_API_KEY` is missing or invalid
 - `500` Internal Server Error: the request failed due to a server error
 - `503` Service Unavailable: the service is temporarily unavailable
