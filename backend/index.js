@@ -10,6 +10,7 @@ const projFile = `${confDir}/projects.json`;
 
 // Application configurations
 let dataDir = `${confDir}/data`;
+let projDir;
 let conf;
 try {
   // Initialize configuration and data directory if they do not exist
@@ -35,10 +36,17 @@ try {
   // Read data directory from application configurations
   if (conf['dataDirectory'] && conf['dataDirectory'].trim().length > 0) {
     dataDir = conf['dataDirectory'];
+    projDir = `${dataDir}/projects`;
   }
   if (!fs.existsSync(dataDir)) {
     console.log(`Data directory not found at ${dataDir}`);
     process.exit(1);
+  }
+
+  // Initialize empty projects directory if one does not exist
+  if (!fs.existsSync(projDir)) {
+    fs.mkdirSync(projDir, { recursive: true });
+    console.log(`Created empty projects directory at ${projDir}`);
   }
 
   console.log(`Backend server started with configuration at ${confFile}`);
@@ -59,7 +67,7 @@ const job = new cron.CronJob(period, function() {
     projects['active'].forEach((project, index) => {
       try {
         const projName = project['domain'];
-        const projConfFile = `${dataDir}/${projName}/config.json`;
+        const projConfFile = `${projDir}/${projName}/config.json`;
         if (!fs.existsSync(projConfFile)) {
           console.log(`Project directory not found at ${projConfFile}, processing of ${projName} skipped`);
           return;
@@ -223,7 +231,7 @@ const job = new cron.CronJob(period, function() {
                 error: '',
                 errorCode: 0,
                 timestamp: new Date().toJSON() });
-              const dir = `${dataDir}/${projName}/api/${apiVersion}/monetization`;
+              const dir = `${projDir}/${projName}/api/${apiVersion}/monetization`;
               if (!fs.existsSync(dir)) {
                 fs.mkdirSync(dir, { recursive: true });
               }

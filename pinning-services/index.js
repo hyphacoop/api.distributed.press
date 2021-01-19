@@ -11,6 +11,7 @@ const projFile = `${confDir}/projects.json`;
 
 // Application configurations
 let dataDir = `${confDir}/data`;
+let projDir;
 let conf;
 try {
   // Read application configurations
@@ -24,9 +25,14 @@ try {
   // Read data directory from application configurations
   if (conf['dataDirectory'] && conf['dataDirectory'].trim().length > 0) {
     dataDir = conf['dataDirectory'];
+    projDir = `${dataDir}/projects`;
   }
   if (!fs.existsSync(dataDir)) {
     console.log(`Data directory not found at ${dataDir}`);
+    process.exit(1);
+  }
+  if (!fs.existsSync(projDir)) {
+    console.log(`Projects directory not found at ${projDir}`);
     process.exit(1);
   }
 
@@ -65,15 +71,15 @@ const job = new cron.CronJob(period, function() {
     projects['active'].forEach((project, index) => {
       try {
         const projName = project['domain'];
-        const projConfFile = `${dataDir}/${projName}/config.json`;
+        const projConfFile = `${projDir}/${projName}/config.json`;
         if (!fs.existsSync(projConfFile)) {
           console.log(`Project directory not found at ${projConfFile}, processing of ${projName} skipped`);
           return;
         }
         const proj = JSON.parse(fs.readFileSync(projConfFile));
         const domain = proj['domain'];
-        const dirWww = `${dataDir}/${projName}/www`;
-        const dirApi = `${dataDir}/${projName}/api`;
+        const dirWww = `${projDir}/${projName}/www`;
+        const dirApi = `${projDir}/${projName}/api`;
 
         // Pin WWW site to Hypercore
         getDatSeed('dat-seed-www', projName, domain, txtHypercoreWww)
@@ -146,7 +152,7 @@ const job = new cron.CronJob(period, function() {
 
 async function getDatSeed(datSeedName, projName, domain, recordName) {
   // Read private Dat seed
-  const dirPrivate = `${dataDir}/${projName}/private`
+  const dirPrivate = `${projDir}/${projName}/private`
   let seed;
   try {
     seed = fs.readFileSync(`${dirPrivate}/${datSeedName}`);

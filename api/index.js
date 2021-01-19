@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const express = require('express');
 const fs = require('fs');
+const multer  = require('multer');
 
 // Application constants
 const apiVersion = 'v0';
@@ -10,6 +11,7 @@ const projFile = `${confDir}/projects.json`;
 
 // Application configurations
 let dataDir = `${confDir}/data`;
+let projDir;
 let conf;
 try {
   // Read application configurations
@@ -23,9 +25,14 @@ try {
   // Read data directory from application configurations
   if (conf['dataDirectory'] && conf['dataDirectory'].trim().length > 0) {
     dataDir = conf['dataDirectory'];
+    projDir = `${dataDir}/projects`;
   }
   if (!fs.existsSync(dataDir)) {
     console.log(`Data directory not found at ${dataDir}`);
+    process.exit(1);
+  }
+  if (!fs.existsSync(projDir)) {
+    console.log(`Projects directory not found at ${projDir}`);
     process.exit(1);
   }
 
@@ -35,6 +42,8 @@ try {
   console.log(error);
   process.exit(1);
 }
+const uploadDir = `${dataDir}/uploads`;
+const upload = multer({ dest: uploadDir });
 let projMap = readProjectMap(projFile);
 
 // API server constants
@@ -44,9 +53,13 @@ const actions = [
     'monetization/balances'
   ];
 
-// Set up public APIs
-app.get(`/${apiVersion}/:group/:action.json`, function(req, res) {
-  // Get project from request, first from API key if it exists in the header
+//
+// Publication APIs
+//
+
+// curl -v http://localhost:3030/v0/publication/configure -H "Content-Type: multipart/form-data" -H "Accept: application/json" -H "Authorization: Bearer ${PROJECT_API_KEY}" -F "file=@config.json"
+app.post(`/${apiVersion}/publication/configure`, upload.single('file'), function (req, res, next) {
+  // Get project from request
   let project;
   if (req.header('Authorization')) {
     const apiKey = req.header('Authorization').replace('Bearer ', '');
@@ -58,15 +71,58 @@ app.get(`/${apiVersion}/:group/:action.json`, function(req, res) {
         timestamp: new Date().toJSON()
       });
     }
-  } else if (req.query.project) { // Try to get project from the 'project' query parameter
+  }
+
+  // Copy uploaded configuration file to project
+  try {
+    fs.renameSync(`${uploadDir}/${req.file.filename}`, `${projDir}/${project}/config.json`);
+    console.log(`New configuration uploaded for ${project}`);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      error: 'An unknown error occurred',
+      errorCode: 1000,
+      timestamp: new Date().toJSON()
+    });
+  }
+  return res.status(202).json({
+      error: '',
+      errorCode: 0,
+      timestamp: new Date().toJSON()
+    });
+});
+
+app.post(`/${apiVersion}/publication/publish`, function (req, res) {
+  // TODO
+});
+
+//
+// Monetization APIs
+//
+
+// curl -v http://localhost:3030/v0/monetization/balances.json?project=staging.compost.digital
+app.get(`/${apiVersion}/:group/:action.json`, function(req, res) {
+  // Get project from request
+  let project;
+  if (req.header('Authorization')) { // First, from API key if it exists in the header
+    const apiKey = req.header('Authorization').replace('Bearer ', '');
+    project = getProjectFromApiKey(apiKey);
+    if (project === undefined) {
+      return res.status(401).json({
+        error: "The 'Authorization' header does not contain a valid API key",
+        errorCode: 1005,
+        timestamp: new Date().toJSON()
+      });
+    }
+  } else if (req.query.project) { // Then, try from the 'project' query parameter
     project = req.query.project;
   } else {
-    project = req.get('host'); // Get project from the host in the URL
+    project = req.get('host'); // Last, from the host in the URL
   }
 
   // Read API response
   try {
-    let resFile = fs.readFileSync(`${dataDir}/${project}/api/${apiVersion}/${req.params.group}/${req.params.action}.json`);
+    let resFile = fs.readFileSync(`${projDir}/${project}/api/${apiVersion}/${req.params.group}/${req.params.action}.json`);
     return res.json(JSON.parse(resFile));
   } catch (error) {
     // Check if action is supported
@@ -78,7 +134,7 @@ app.get(`/${apiVersion}/:group/:action.json`, function(req, res) {
       });
     }
     // Check if project exists
-    if (!fs.existsSync(`${dataDir}/${project}/`)) {
+    if (!fs.existsSync(`${projDir}/${project}`)) {
       return res.status(404).json({
         error: `The project '${project}' is not available`,
         errorCode: 1002,
@@ -94,7 +150,11 @@ app.get(`/${apiVersion}/:group/:action.json`, function(req, res) {
   }
 });
 
-// Set up internal APIs
+//
+// Internal APIs
+//
+
+// curl -v -X POST http://localhost:3030/v0/internal/addApiKey?project=staging.compost.digital
 app.post(`/${apiVersion}/internal/addApiKey`, function (req, res) {
   // Verify internal origin using host in the URL
   if (req.get('host') !== `localhost:${port}`) {
