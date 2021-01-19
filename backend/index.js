@@ -36,14 +36,14 @@ try {
   // Read data directory from application configurations
   if (conf['dataDirectory'] && conf['dataDirectory'].trim().length > 0) {
     dataDir = conf['dataDirectory'];
-    projDir = `${dataDir}/projects`;
   }
   if (!fs.existsSync(dataDir)) {
     console.log(`Data directory not found at ${dataDir}`);
     process.exit(1);
   }
 
-  // Initialize empty projects directory if one does not exist
+  // Set projects directory, initialize an empty directory if one does not exist
+  projDir = `${dataDir}/projects`;
   if (!fs.existsSync(projDir)) {
     fs.mkdirSync(projDir, { recursive: true });
     console.log(`Created empty projects directory at ${projDir}`);

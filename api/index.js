@@ -27,12 +27,12 @@ try {
   // Read data directory from application configurations
   if (conf['dataDirectory'] && conf['dataDirectory'].trim().length > 0) {
     dataDir = conf['dataDirectory'];
-    projDir = `${dataDir}/projects`;
   }
   if (!fs.existsSync(dataDir)) {
     console.log(`Data directory not found at ${dataDir}`);
     process.exit(1);
   }
+  projDir = `${dataDir}/projects`;
   if (!fs.existsSync(projDir)) {
     console.log(`Projects directory not found at ${projDir}`);
     process.exit(1);
