@@ -12,6 +12,74 @@ A project may use the Distributed Press API of this server to publish its websit
 The Distributed Press is in early development, and is currently used to publish the [COMPOST magazine](https://compost.digital).
 The official instance of the Distributed Press API is hosted at [api.distributed.press](https://api.distributed.press).
 
+## Guide
+
+This guide describes how to use the Distributed Press to publish your website content and the Distributed Press API for your project.
+After these steps, you will find your website at your domain name with these WWW and DWeb URLs:
+
+| Protocol    | URL                      | Example |
+|:------------|:-------------------------|:--------|
+| HTTP        |`https://<project.domain>`| [https://staging.compost.digital](https://staging.compost.digital) |
+| Hypercore   |`hyper://<project.domain>`| [hyper://staging.compost.digital](https://hyper.distributed.press/staging.compost.digital/) |
+| IPFS / IPNS |`ipns://<project.domain>` | [ipns://staging.compost.digital](https://ipfs.distributed.press/ipns/staging.compost.digital/) |
+
+Your project APIs will be served at:
+
+| Protocol    | URL                          | Example |
+|:------------|:-----------------------------|:--------|
+| HTTP        |`https://api.<project.domain>`| [https://api.staging.compost.digital/v0/monetization/balances.json](https://api.staging.compost.digital/v0/monetization/balances.json) |
+| Hypercore   |`hyper://api.<project.domain>`| [hyper://api.staging.compost.digital/v0/monetization/balances.json](https://hyper.distributed.press/api.staging.compost.digital/v0/monetization/balances.json) |
+| IPFS / IPNS |`ipns://api.<project.domain>` | [ipns://api.staging.compost.digital/v0/monetization/balances.json](https://ipfs.distributed.press/ipns/api.staging.compost.digital/v0/monetization/balances.json) |
+
+### Steps
+
+1. We use [Digital Ocean](https://digitalocean.com) to manage domain name records.
+    From your domain name registrar, point name servers to Digital Ocean's name servers:
+    ```
+    ns1.digitalocean.com
+    ns2.digitalocean.com
+    ns3.digitalocean.com
+    ```
+
+2. Add an API key, `PROJECT_API_KEY`, for your domain on the Distributed Press server.
+    During our current pre-release phase, this is done via an internal API.
+    Please file a GitHub issue to request an API key from our administrators.
+
+    If you are running your own instance, you can create one using this internal API:
+    ```
+    $ curl -v -X POST http://localhost:3030/v0/internal/addApiKey?project=<project.domain>
+    ```
+
+3. Configure your project using the [`configure`](./#configure) API:
+    ```
+    $ curl -v https://api.distributed.press/v0/publication/configure -H "Content-Type: multipart/form-data" -H "Accept: application/json" -H "Authorization: Bearer ${PROJECT_API_KEY}" -F "file=@config.json"
+    ```
+
+    If you only want to publish the website content, the `config.json` file is simply:
+    ```
+    {
+      "domain": "<project.domain>",
+    }
+    ```
+
+    See the [`configure` API spec](./#configure) if you want to enable project API features.
+
+4. Publish your website content using the [`publish`](./#publish) API:
+    ``` 
+    $ curl -v https://api.distributed.press/v0/publication/publish -H "Content-Type: multipart/form-data" -H "Accept: application/json" -H "Authorization: Bearer ${PROJECT_API_KEY}" -F "file=@www.tar.gz"
+    ```
+
+    The website to publish is a `tar.gz` archive created using `tar -czvf www.tar.gz -C www .`.
+
+## Project List
+
+This is the list of projects published using the Distributed Press.
+
+| Domain                  | Description |
+|:------------------------|:------------|
+| staging.compost.digital | Example website for Distributed Press |
+| compost.digital         | COMPOST magazine |
+
 ## Architecture
 
 ```
