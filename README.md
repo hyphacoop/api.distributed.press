@@ -50,7 +50,7 @@ Your project APIs will be served at:
     $ curl -v -X POST http://localhost:3030/v0/internal/addApiKey?project=<project.domain>
     ```
 
-3. Configure your project using the [`configure`](./#configure) API:
+3. Configure your project using the [`configure`](#configure) API:
     ```
     $ curl -v https://api.distributed.press/v0/publication/configure -H "Content-Type: multipart/form-data" -H "Accept: application/json" -H "Authorization: Bearer ${PROJECT_API_KEY}" -F "file=@config.json"
     ```
@@ -62,9 +62,9 @@ Your project APIs will be served at:
     }
     ```
 
-    See the [`configure` API spec](./#configure) if you want to enable project API features.
+    See the [`configure` API spec](#configure) if you want to enable project API features.
 
-4. Publish your website content using the [`publish`](./#publish) API:
+4. Publish your website content using the [`publish`](#publish) API:
     ``` 
     $ curl -v https://api.distributed.press/v0/publication/publish -H "Content-Type: multipart/form-data" -H "Accept: application/json" -H "Authorization: Bearer ${PROJECT_API_KEY}" -F "file=@www.tar.gz"
     ```
