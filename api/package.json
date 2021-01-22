@@ -26,6 +26,7 @@
   },
   "homepage": "https://distributed.press",
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^4.17.1",
     "fs": "0.0.1-security",
     "gunzip-maybe": "^1.4.2",
