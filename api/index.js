@@ -96,6 +96,7 @@ app.post(`/${apiVersion}/publication/configure`, upload.single('file'), function
 
   // Copy uploaded configuration file to project
   try {
+    fs.mkdirSync(`${projDir}/${project}`, { recursive: true });
     fs.renameSync(`${uploadDir}/${req.file.filename}`, `${projDir}/${project}/config.json`);
     console.log(`New configuration uploaded for ${project}`);
   } catch (error) {
