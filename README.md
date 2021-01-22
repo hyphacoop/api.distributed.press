@@ -52,7 +52,11 @@ Your project APIs will be served at:
 
 3. Configure your project using the [`configure`](#configure) API:
     ```
-    $ curl -v https://api.distributed.press/v0/publication/configure -H "Content-Type: multipart/form-data" -H "Accept: application/json" -H "Authorization: Bearer ${PROJECT_API_KEY}" -F "file=@config.json"
+    $ curl -v https://api.distributed.press/v0/publication/configure \
+        -H "Content-Type: multipart/form-data" \
+        -H "Accept: application/json" \
+        -H "Authorization: Bearer ${PROJECT_API_KEY}" \
+        -F "file=@config.json"
     ```
 
     If you only want to publish the website content, the `config.json` file is simply:
@@ -66,10 +70,14 @@ Your project APIs will be served at:
 
 4. Publish your website content using the [`publish`](#publish) API:
     ``` 
-    $ curl -v https://api.distributed.press/v0/publication/publish -H "Content-Type: multipart/form-data" -H "Accept: application/json" -H "Authorization: Bearer ${PROJECT_API_KEY}" -F "file=@www.tar.gz"
+    $ curl -v https://api.distributed.press/v0/publication/publish \
+        -H "Content-Type: multipart/form-data" \
+        -H "Accept: application/json" \
+        -H "Authorization: Bearer ${PROJECT_API_KEY}" \
+        -F "file=@www.tar.gz"
     ```
 
-    The website to publish is a `tar.gz` archive created using `tar -czvf www.tar.gz -C www .`.
+    The website to publish is a `tar.gz` archive created using `tar -czvf www.tar.gz -C www .` and it may take up to half an hour for all URLs to become available.
 
 ## Project List
 
