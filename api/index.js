@@ -130,6 +130,15 @@ app.post(`/${apiVersion}/publication/publish`, upload.single('file'), function (
     }
   }
 
+  // Check if project exists
+  if (!fs.existsSync(`${projDir}/${project}/config.json`)) {
+    return res.status(404).json({
+      error: `The project '${project}' is not available or it is missing a valid configuration`,
+      errorCode: 1002,
+      timestamp: new Date().toJSON()
+    });
+  }
+
   // Publish www archive to project www directory
   try {
     let srcFile = `${uploadDir}/${req.file.filename}`;
@@ -204,9 +213,9 @@ app.get(`/${apiVersion}/:group/:action.json`, function(req, res) {
       });
     }
     // Check if project exists
-    if (!fs.existsSync(`${projDir}/${project}`)) {
+    if (!fs.existsSync(`${projDir}/${project}/config.json`)) {
       return res.status(404).json({
-        error: `The project '${project}' is not available`,
+        error: `The project '${project}' is not available or it is missing a valid configuration`,
         errorCode: 1002,
         timestamp: new Date().toJSON()
       });
