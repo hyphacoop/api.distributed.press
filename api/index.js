@@ -1,9 +1,10 @@
+const cors = require('cors');
 const crypto = require('crypto');
 const express = require('express');
 const fs = require('fs');
+const gunzip = require('gunzip-maybe');
 const multer  = require('multer');
 const tar = require('tar-fs');
-const gunzip = require('gunzip-maybe');
 
 // Application constants
 const apiVersion = 'v0';
@@ -54,6 +55,9 @@ const port = process.env.PORT || 3030;
 const actionsGet = [
     'monetization/balances'
   ];
+
+// Enable CORS
+app.use(cors());
 
 //
 // Publication APIs
