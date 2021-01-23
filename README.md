@@ -62,7 +62,7 @@ Your project APIs will be served at:
     If you only want to publish the website content, the `config.json` file is simply:
     ```
     {
-      "domain": "<project.domain>",
+      "domain": "<project.domain>"
     }
     ```
 
@@ -86,7 +86,8 @@ This is the list of projects published using the Distributed Press.
 | Domain                  | Description |
 |:------------------------|:------------|
 | staging.compost.digital | Example website for Distributed Press |
-| compost.digital         | COMPOST magazine |
+| compost.digital         | Website of COMPOST magazine |
+| hypha.coop              | Website of Hypha Worker Co-operative |
 
 ## Architecture
 
