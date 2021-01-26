@@ -194,12 +194,13 @@ async function getDatSeed(datSeedName, projName, domain, recordName) {
 function updateDnsRecordDigitalOcean(domain, recordType, recordName, recordData, recordTtl, doToken) {
   // List existing DNS records for domain
   const url = `https://api.digitalocean.com/v2/domains/${domain}/records/`;
+  const urlGet = `https://api.digitalocean.com/v2/domains/${domain}/records/?per_page=500`;
   const headers = {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${doToken}`
   };
-  console.log(`GET ${url}`);
-  return fetch(url, { headers: headers })
+  console.log(`GET ${urlGet}`);
+  return fetch(urlGet, { headers: headers })
     .then(res => res.json())
     .then(json => json['domain_records'].filter(record => record['type'] === recordType && record['name'] === recordName))
     .then(txt => {
