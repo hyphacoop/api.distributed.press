@@ -82,65 +82,72 @@ const job = new cron.CronJob(period, function() {
         const dirApi = `${projDir}/${projName}/api`;
 
         // Pin WWW site to Hypercore
-        getDatSeed('dat-seed-www', projName, domain, txtHypercoreWww)
-          .then(seed => hyperPublisher.sync({
-            seed,
-            fsPath: dirWww,
-            drivePath: '/',
-            syncTime: 600000 // Allow up to 10 minutes for sync
-          }))
-          .then(({diff, url}) => {
-            // Log any changes to hyperdrive and return url
-            console.log(`WWW site for ${projName} pinned at ${url}. Changes:`);
-            console.log(diff);
-            return url;
-          })
-          .catch(function(error) {
-            console.log(error);
-          });
+        if (fs.existsSync(dirWww)) {
+          getDatSeed('dat-seed-www', projName, domain, txtHypercoreWww)
+            .then(seed => hyperPublisher.sync({
+              seed,
+              fsPath: dirWww,
+              drivePath: '/',
+              syncTime: 600000 // Allow up to 10 minutes for sync
+            }))
+            .then(({diff, url}) => {
+              // Log any changes to hyperdrive and return url
+              console.log(`WWW site for ${projName} pinned at ${url}. Changes:`);
+              console.log(diff);
+              return url;
+            })
+            .catch(function(error) {
+              console.log(error);
+            });
+        }
 
         // Pin WWW site to IPFS
-        ipfs.add(globSource(dirWww, { pin: true, recursive: true, timeout: 10000 }))
-          .then(file => file['cid'].toV1().toString())
-          .then(cid => {
-            console.log(`WWW site for ${projName} pinned at ipfs/${cid}`);
+        if (fs.existsSync(dirWww)) {
+          ipfs.add(globSource(dirWww, { recursive: true, followSymlinks: false }), { cidVersion: 1, pin: true, timeout: 60000 })
+            .then(cid => {
+              console.log(`WWW site for ${projName} pinned at ipfs/${cid}`);
 
-            // Update DNS record
-            return updateDnsRecordDigitalOcean(domain, 'TXT', txtIpfsWww, `dnslink=/ipfs/${cid}`, 300, conf['digitalOceanAccessToken']);
-          })
-          .catch(function(error) {
-            console.log(error);
-          });
+              // Update DNS record
+              return updateDnsRecordDigitalOcean(domain, 'TXT', txtIpfsWww, `dnslink=/ipfs/${cid}`, 300, conf['digitalOceanAccessToken']);
+            })
+            .catch(function(error) {
+              console.log(error);
+            });
+        }
 
         // Pin API responses to Hypercore
-        getDatSeed('dat-seed-api', projName, domain, txtHypercoreApi)
-          .then(seed => hyperPublisher.sync({
-            seed,
-            fsPath: dirApi,
-            drivePath: '/'
-          }))
-          .then(({diff, url}) => {
-            // Log any changes to hyperdrive and return url
-            console.log(`API responses for ${projName} pinned at ${url}. Changes:`);
-            console.log(diff);
-            return url;
-          })
-          .catch(function(error) {
-            console.log(error);
-          });
+        if (fs.existsSync(dirApi)) {
+          getDatSeed('dat-seed-api', projName, domain, txtHypercoreApi)
+            .then(seed => hyperPublisher.sync({
+              seed,
+              fsPath: dirApi,
+              drivePath: '/'
+            }))
+            .then(({diff, url}) => {
+              // Log any changes to hyperdrive and return url
+              console.log(`API responses for ${projName} pinned at ${url}. Changes:`);
+              console.log(diff);
+              return url;
+            })
+            .catch(function(error) {
+              console.log(error);
+            });
+        }
 
         // Pin API responses to IPFS
-        ipfs.add(globSource(dirApi, { pin: true, recursive: true, timeout: 10000 }))
-          .then(file => file['cid'].toV1().toString())
-          .then(cid => {
-            console.log(`API responses for ${projName} pinned at ipfs/${cid}`);
+        if (fs.existsSync(dirApi)) {
+          ipfs.add(globSource(dirApi, { recursive: true, followSymlinks: false }), { cidVersion: 1, pin: true, timeout: 60000 })
+            .then(file => file['cid'])
+            .then(cid => {
+              console.log(`API responses for ${projName} pinned at ipfs/${cid}`);
 
-            // Update DNS record
-            return updateDnsRecordDigitalOcean(domain, 'TXT', txtIpfsApi, `dnslink=/ipfs/${cid}`, 300, conf['digitalOceanAccessToken']);
-          })
-          .catch(function(error) {
-            console.log(error);
-          });
+              // Update DNS record
+              return updateDnsRecordDigitalOcean(domain, 'TXT', txtIpfsApi, `dnslink=/ipfs/${cid}`, 300, conf['digitalOceanAccessToken']);
+            })
+            .catch(function(error) {
+              console.log(error);
+            });
+        }
       } catch (error) {
         console.log(error);
       }
