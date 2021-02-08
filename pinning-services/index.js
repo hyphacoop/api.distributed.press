@@ -104,6 +104,7 @@ const job = new cron.CronJob(period, function() {
         // Pin WWW site to IPFS
         if (fs.existsSync(dirWww)) {
           ipfs.add(globSource(dirWww, { recursive: true, followSymlinks: false }), { cidVersion: 1, pin: true, timeout: 60000 })
+            .then(file => file['cid'])
             .then(cid => {
               console.log(`WWW site for ${projName} pinned at ipfs/${cid}`);
 
