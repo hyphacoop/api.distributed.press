@@ -130,7 +130,7 @@ const job = new cron.CronJob(period, function() {
               .catch(function(error) {
                 console.log(error);
               });
-          };
+          }
         } else {
           updateDnsRecordDigitalOcean(domain, 'TXT', txtHypercoreWww, "", 300, conf['digitalOceanAccessToken']);
         }
