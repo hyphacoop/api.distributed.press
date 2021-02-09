@@ -329,7 +329,7 @@ function updateDnsRecordDigitalOcean(domain, recordType, recordName, recordData,
         });
       }
 
-      // Create new DNS record is we are updating
+      // Create new DNS record if we are updating
       if (isUpdate) {
 
         const data = JSON.stringify({
