@@ -248,7 +248,20 @@ async function getDatSeed(datSeedName, projName, domain, recordName) {
     return seed;
   }
 }
-
+function addDomainAccountDigitalOcean(domain, doToken) {
+  const url = `https://api.digitalocean.com/v2/domains`;
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${doToken}`
+  };
+  const data = JSON.stringify({
+    name: domain
+  });
+  console.log(`POST ${url} with data ${data}`);
+  return fetch(url, { method: 'POST', headers: headers, body: data })
+    .then(res => res.json())
+    .then(json => json['domain'] != undefined);
+}
 function updateDnsRecordDigitalOcean(domain, recordType, recordName, recordData, recordTtl, doToken) {
   // List existing DNS records for domain
   const url = `https://api.digitalocean.com/v2/domains/${domain}/records/`;
@@ -260,7 +273,20 @@ function updateDnsRecordDigitalOcean(domain, recordType, recordName, recordData,
   console.log(`GET ${urlGet}`);
   return fetch(urlGet, { headers: headers })
     .then(res => res.json())
-    .then(json => json['domain_records'].filter(record => record['type'] === recordType && record['name'] === recordName))
+    .then(json => {
+      if (json['id'] && json['id'] == 'not_found') {
+        return addDomainAccountDigitalOcean(domain, doToken)
+          .then(res => {
+            if (res) {
+              return [];
+            } else {
+              throw `Could not create domain ${domain}`;
+            }
+          });
+      } else {
+        return json['domain_records'].filter(record => record['type'] === recordType && record['name'] === recordName);
+      }
+    })
     .then(txt => {
       let isDelete = false;
       let isUpdate = false;
