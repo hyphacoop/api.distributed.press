@@ -129,7 +129,7 @@ const job = new cron.CronJob(period, function() {
               })
               .catch(function(error) {
                 console.log(error);
-              })
+              });
           };
         } else {
           updateDnsRecordDigitalOcean(domain, 'TXT', txtHypercoreWww, "", 300, conf['digitalOceanAccessToken']);
@@ -248,6 +248,7 @@ async function getDatSeed(datSeedName, projName, domain, recordName) {
     return seed;
   }
 }
+
 function addDomainAccountDigitalOcean(domain, doToken) {
   const url = `https://api.digitalocean.com/v2/domains`;
   const headers = {
@@ -262,6 +263,7 @@ function addDomainAccountDigitalOcean(domain, doToken) {
     .then(res => res.json())
     .then(json => json['domain'] != undefined);
 }
+
 function updateDnsRecordDigitalOcean(domain, recordType, recordName, recordData, recordTtl, doToken) {
   // List existing DNS records for domain
   const url = `https://api.digitalocean.com/v2/domains/${domain}/records/`;
