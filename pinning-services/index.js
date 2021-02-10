@@ -83,7 +83,7 @@ const job = new cron.CronJob(period, function() {
         const dirWww = `${projDir}/${projName}/www`;
         const dirApi = `${projDir}/${projName}/api`;
 
-        //Read publication settings from project configuration
+        // Read publication settings from project configuration
         let protoHttp = true;
         let protoHttpDnsUpdate = true;
         let protoIpfs = true;
