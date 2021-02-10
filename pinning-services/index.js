@@ -261,7 +261,7 @@ function addDomainAccountDigitalOcean(domain, doToken) {
   console.log(`POST ${url} with data ${data}`);
   return fetch(url, { method: 'POST', headers: headers, body: data })
     .then(res => res.json())
-    .then(json => json['domain'] != undefined);
+    .then(json => json['domain'] !== undefined);
 }
 
 // Updates a DNS record. Passing '' as recordData deletes the record
