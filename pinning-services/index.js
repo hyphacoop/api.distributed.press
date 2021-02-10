@@ -1,8 +1,8 @@
 const cron = require('cron');
 const fetch = require('node-fetch');
 const fs = require('fs');
-const httpPublisherIpv4Address = "198.50.215.6";
-const httpPublisherIpv6Address = "2607:5300:203:4014:5074:f2ff:feb1:a87f";
+const httpPublisherIpv4Address = '198.50.215.6';
+const httpPublisherIpv6Address = '2607:5300:203:4014:5074:f2ff:feb1:a87f';
 const hyperPublisher = require('hyperdrive-publisher')
 const ipfsClient = require('ipfs-http-client')
 
@@ -94,15 +94,15 @@ const job = new cron.CronJob(period, function() {
             // Check for known protocols and set flags
             Object.keys(proj['publication']['protocol']).forEach((item) => {
               switch (item) {
-                case "http":
-                  protoHttp = (proj['publication']['protocol'][item]["enable"] === true) ? true : false;
-                  protoHttpDnsUpdate = (proj['publication']['protocol'][item]["dnsupdate"] === true) ? true : false;
+                case 'http':
+                  protoHttp = (proj['publication']['protocol'][item]['enable'] === true) ? true : false;
+                  protoHttpDnsUpdate = (proj['publication']['protocol'][item]['dnsupdate'] === true) ? true : false;
                   break;
-                case "ipfs":
-                  protoIpfs = (proj['publication']['protocol'][item]["enable"] === true) ? true : false;
+                case 'ipfs':
+                  protoIpfs = (proj['publication']['protocol'][item]['enable'] === true) ? true : false;
                   break;
-                case "hypercore":
-                  protoHypercore = (proj['publication']['protocol'][item]["enable"] === true) ? true : false;
+                case 'hypercore':
+                  protoHypercore = (proj['publication']['protocol'][item]['enable'] === true) ? true : false;
                   break;
                 default:
                   console.log(`WARNING: Unknown protocol in publication project JSON - ${item}`);
@@ -132,7 +132,7 @@ const job = new cron.CronJob(period, function() {
               });
           }
         } else {
-          updateDnsRecordDigitalOcean(domain, 'TXT', txtHypercoreWww, "", 300, conf['digitalOceanAccessToken']);
+          updateDnsRecordDigitalOcean(domain, 'TXT', txtHypercoreWww, '', 300, conf['digitalOceanAccessToken']);
         }
 
         // Pin WWW site to IPFS
@@ -151,7 +151,7 @@ const job = new cron.CronJob(period, function() {
               });
           }
         } else {
-          updateDnsRecordDigitalOcean(domain, 'TXT', txtIpfsWww, "", 300, conf['digitalOceanAccessToken']);
+          updateDnsRecordDigitalOcean(domain, 'TXT', txtIpfsWww, '', 300, conf['digitalOceanAccessToken']);
         }
 
         // Pin API responses to Hypercore
@@ -191,13 +191,13 @@ const job = new cron.CronJob(period, function() {
               });
           }
         } else {
-          updateDnsRecordDigitalOcean(domain, 'TXT', txtIpfsApi, "", 300, conf['digitalOceanAccessToken']);
+          updateDnsRecordDigitalOcean(domain, 'TXT', txtIpfsApi, '', 300, conf['digitalOceanAccessToken']);
         }
 
         // Update HTTP A and AAAA record
         if (protoHttpDnsUpdate) {
-          updateDnsRecordDigitalOcean(domain, 'AAAA', "@", protoHttp ? `${httpPublisherIpv6Address}` : "", 300, conf['digitalOceanAccessToken']);
-          updateDnsRecordDigitalOcean(domain, 'A', "@", protoHttp ? `${httpPublisherIpv4Address}` : "", 300, conf['digitalOceanAccessToken']);
+          updateDnsRecordDigitalOcean(domain, 'AAAA', '@', protoHttp ? `${httpPublisherIpv6Address}` : '', 300, conf['digitalOceanAccessToken']);
+          updateDnsRecordDigitalOcean(domain, 'A', '@', protoHttp ? `${httpPublisherIpv4Address}` : '', 300, conf['digitalOceanAccessToken']);
         }
       } catch (error) {
         console.log(error);
@@ -276,7 +276,7 @@ function updateDnsRecordDigitalOcean(domain, recordType, recordName, recordData,
   return fetch(urlGet, { headers: headers })
     .then(res => res.json())
     .then(json => {
-      if (json['id'] && json['id'] == 'not_found') {
+      if (json['id'] && json['id'] === 'not_found') {
         return addDomainAccountDigitalOcean(domain, doToken)
           .then(res => {
             if (res) {
@@ -299,23 +299,23 @@ function updateDnsRecordDigitalOcean(domain, recordType, recordName, recordData,
         isUpdate = true
 
       // If there is a record, and recordData is empty an string, delete only
-      if (txt.length == 1 && recordData == "") {
+      if (txt.length === 1 && recordData === '') {
         isDelete = true;
         isUpdate = false
       }
 
       // If there is a record, and the data in that record differs from recordData, update
-      if (txt.length == 1 && txt[0]['data'] != recordData)
+      if (txt.length === 1 && txt[0]['data'] != recordData)
         isUpdate = true;
 
       // If there is no record, and the recordData is an empty string, don't do anything
-      if (txt.length == 0 && recordData == "") {
+      if (txt.length === 0 && recordData === '') {
         isUpdate = false;
         isDelete = false;
       }
 
       // If there is an update, there needs to be a delete first
-      if (isUpdate == true) isDelete = true;
+      if (isUpdate === true) isDelete = true;
 
       // Delete existing records with matching record type and name
       if (isDelete) {
