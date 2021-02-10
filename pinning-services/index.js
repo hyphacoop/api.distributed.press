@@ -95,7 +95,7 @@ const job = new cron.CronJob(period, function() {
             Object.keys(proj['publication']['protocol']).forEach((item) => {
               switch (item) {
                 case 'http':
-                  protoHttp = (proj['publication']['protocol'][item]['enable'] === true) ? true : false;
+                  protoHttp = proj['publication']['protocol'][item]['enable'] === true;
                   protoHttpDnsUpdate = (proj['publication']['protocol'][item]['dnsupdate'] === true) ? true : false;
                   break;
                 case 'ipfs':
