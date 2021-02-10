@@ -316,7 +316,7 @@ function updateDnsRecordDigitalOcean(domain, recordType, recordName, recordData,
       }
 
       // If there is an update, there needs to be a delete first
-      if (isUpdate === true) isDelete = true;
+      if (isUpdate) isDelete = true;
 
       // Delete existing records with matching record type and name
       if (isDelete) {
