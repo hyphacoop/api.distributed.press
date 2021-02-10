@@ -264,6 +264,7 @@ function addDomainAccountDigitalOcean(domain, doToken) {
     .then(json => json['domain'] != undefined);
 }
 
+// Updates a DNS record. Passing '' as recordData deletes the record
 function updateDnsRecordDigitalOcean(domain, recordType, recordName, recordData, recordTtl, doToken) {
   // List existing DNS records for domain
   const url = `https://api.digitalocean.com/v2/domains/${domain}/records/`;
