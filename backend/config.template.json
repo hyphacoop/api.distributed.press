@@ -2,6 +2,8 @@
   "dataDirectory": "",
   "digitalOceanAccessToken": "DO_ACCESS_TOKEN",
   "etherscanApiKey": "ETHERSCAN_API_KEY",
+  "httpIpv4Address": "",
+  "httpIpv6Address": "",
   "datStore": {
     "server": "http://127.0.0.1:3472",
     "username": "DAT_STORE_USERNAME",

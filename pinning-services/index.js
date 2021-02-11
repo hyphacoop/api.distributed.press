@@ -1,8 +1,6 @@
 const cron = require('cron');
 const fetch = require('node-fetch');
 const fs = require('fs');
-const httpPublisherIpv4Address = '198.50.215.6';
-const httpPublisherIpv6Address = '2607:5300:203:4014:5074:f2ff:feb1:a87f';
 const hyperPublisher = require('hyperdrive-publisher')
 const ipfsClient = require('ipfs-http-client')
 
@@ -23,6 +21,19 @@ try {
   }
   const file = fs.readFileSync(confFile);
   conf = JSON.parse(file);
+
+  // Read the IPv4 and IPv6 addresses that will be used in the HTTP publisher
+  const httpPublisherIpv4Address = conf['httpIpv4Address'];
+  if (!httpPublisherIpv4Address || !httpPublisherIpv4Address.trim().length) {
+    console.log(`Missing httpIpv4Address configuration entry`);
+    process.exit(1);
+  }
+
+  const httpPublisherIpv6Address = conf['httpIpv6Address'];
+  if (!httpPublisherIpv6Address || !httpPublisherIpv6Address.trim().length) {
+    console.log(`Missing httpIpv6Address configuration entry`);
+    process.exit(1);
+  }
 
   // Read data directory from application configurations
   if (conf['dataDirectory'] && conf['dataDirectory'].trim().length > 0) {
@@ -85,30 +96,32 @@ const job = new cron.CronJob(period, function() {
 
         // Read publication settings from project configuration
         let protoHttp = true;
-        let protoHttpDnsUpdate = true;
+        let protoHttpPurgeIfDisabled = true;
         let protoIpfs = true;
+        let protoIpfsPurgeIfDisabled = true;
         let protoHypercore = true;
-        if (proj['publication']) {
-          if (proj['publication']['protocol']) {
+        let protoHypercorePurgeIfDisabled = true;
+        if (proj['publication'] && proj['publication']['protocol']) {
 
-            // Check for known protocols and set flags
-            Object.keys(proj['publication']['protocol']).forEach((item) => {
-              switch (item) {
-                case 'http':
-                  protoHttp = proj['publication']['protocol'][item]['enable'] === true;
-                  protoHttpDnsUpdate = (proj['publication']['protocol'][item]['dnsupdate'] === true) ? true : false;
-                  break;
-                case 'ipfs':
-                  protoIpfs = (proj['publication']['protocol'][item]['enable'] === true) ? true : false;
-                  break;
-                case 'hypercore':
-                  protoHypercore = (proj['publication']['protocol'][item]['enable'] === true) ? true : false;
-                  break;
-                default:
-                  console.log(`WARNING: Unknown protocol in publication project JSON - ${item}`);
-              }
-            });
-          }
+          // Check for known protocols and set flags
+          Object.keys(proj['publication']['protocol']).forEach((item) => {
+            switch (item) {
+              case 'http':
+                protoHttp = proj['publication']['protocol'][item]['enabled'] === true;
+                protoHttpPurgeIfDisabled = proj['publication']['protocol'][item]['purgeIfDisabled'] === true
+                break;
+              case 'ipfs':
+                protoIpfs = proj['publication']['protocol'][item]['enabled'] === true;
+                protoIpfsPurgeIfDisabled = proj['publication']['protocol'][item]['purgeIfDisabled'] === true
+                break;
+              case 'hypercore':
+                protoHypercore = proj['publication']['protocol'][item]['enabled'] === true;
+                protoHypercorePurgeIfDisabled = proj['publication']['protocol'][item]['purgeIfDisabled'] === true
+                break;
+              default:
+                console.log(`WARNING: Unknown protocol in publication project JSON - ${item}`);
+            }
+          });
         }
 
         // Pin WWW site to Hypercore
@@ -132,7 +145,8 @@ const job = new cron.CronJob(period, function() {
               });
           }
         } else {
-          updateDnsRecordDigitalOcean(domain, 'TXT', txtHypercoreWww, '', 300, conf['digitalOceanAccessToken']);
+          if (protoHypercorePurgeIfDisabled)
+            updateDnsRecordDigitalOcean(domain, 'TXT', txtHypercoreWww, '', 300, conf['digitalOceanAccessToken']);
         }
 
         // Pin WWW site to IPFS
@@ -151,7 +165,8 @@ const job = new cron.CronJob(period, function() {
               });
           }
         } else {
-          updateDnsRecordDigitalOcean(domain, 'TXT', txtIpfsWww, '', 300, conf['digitalOceanAccessToken']);
+          if (protoIpfsPurgeIfDisabled)
+            updateDnsRecordDigitalOcean(domain, 'TXT', txtIpfsWww, '', 300, conf['digitalOceanAccessToken']);
         }
 
         // Pin API responses to Hypercore
@@ -191,11 +206,12 @@ const job = new cron.CronJob(period, function() {
               });
           }
         } else {
-          updateDnsRecordDigitalOcean(domain, 'TXT', txtIpfsApi, '', 300, conf['digitalOceanAccessToken']);
+          if (protoIpfsPurgeIfDisabled)
+            updateDnsRecordDigitalOcean(domain, 'TXT', txtIpfsApi, '', 300, conf['digitalOceanAccessToken']);
         }
 
         // Update HTTP A and AAAA record
-        if (protoHttpDnsUpdate) {
+        if (protoHttp || protoHttpPurgeIfDisabled) {
           updateDnsRecordDigitalOcean(domain, 'AAAA', '@', protoHttp ? `${httpPublisherIpv6Address}` : '', 300, conf['digitalOceanAccessToken']);
           updateDnsRecordDigitalOcean(domain, 'A', '@', protoHttp ? `${httpPublisherIpv4Address}` : '', 300, conf['digitalOceanAccessToken']);
         }
@@ -291,35 +307,35 @@ function updateDnsRecordDigitalOcean(domain, recordType, recordName, recordData,
       }
     })
     .then(txt => {
-      let isDelete = false;
-      let isUpdate = false;
+      let isDeleted = false;
+      let isUpdated = false;
 
       // If there is anything other then one entry found, 
       // all entries should be removed then one entry added
       if (txt.length != 1)
-        isUpdate = true
+        isUpdated = true
 
       // If there is a record, and recordData is empty an string, delete only
       if (txt.length === 1 && recordData === '') {
-        isDelete = true;
-        isUpdate = false
+        isDeleted = true;
+        isUpdated = false
       }
 
       // If there is a record, and the data in that record differs from recordData, update
       if (txt.length === 1 && txt[0]['data'] != recordData)
-        isUpdate = true;
+        isUpdated = true;
 
       // If there is no record, and the recordData is an empty string, don't do anything
       if (txt.length === 0 && recordData === '') {
-        isUpdate = false;
-        isDelete = false;
+        isUpdated = false;
+        isDeleted = false;
       }
 
       // If there is an update, there needs to be a delete first
-      if (isUpdate) isDelete = true;
+      if (isUpdated) isDeleted = true;
 
       // Delete existing records with matching record type and name
-      if (isDelete) {
+      if (isDeleted) {
         txt.forEach((item, index) => {
           const urlDelete = url + item['id'];
           console.log(`DELETE ${urlDelete}`);
@@ -331,8 +347,7 @@ function updateDnsRecordDigitalOcean(domain, recordType, recordName, recordData,
       }
 
       // Create new DNS record if we are updating
-      if (isUpdate) {
-
+      if (isUpdated) {
         const data = JSON.stringify({
           type: recordType,
           name: recordName,
@@ -341,8 +356,6 @@ function updateDnsRecordDigitalOcean(domain, recordType, recordName, recordData,
         });
         console.log(`POST ${url} with data ${data}`);
         return fetch(url, { method: 'POST', headers: headers, body: data });
-      } else {
-        return;
       }
     });
 }
