@@ -28,7 +28,6 @@ try {
     console.log(`Missing httpIpv4Address configuration entry`);
     process.exit(1);
   }
-
   const httpPublisherIpv6Address = conf['httpIpv6Address'];
   if (!httpPublisherIpv6Address || !httpPublisherIpv6Address.trim().length) {
     console.log(`Missing httpIpv6Address configuration entry`);
