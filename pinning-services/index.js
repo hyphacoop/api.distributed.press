@@ -210,9 +210,12 @@ const job = new cron.CronJob(period, function() {
         }
 
         // Update HTTP A and AAAA record
-        if (protoHttp || protoHttpPurgeIfDisabled) {
-          updateDnsRecordDigitalOcean(domain, 'AAAA', '@', protoHttp ? `${httpPublisherIpv6Address}` : '', 300, conf['digitalOceanAccessToken']);
-          updateDnsRecordDigitalOcean(domain, 'A', '@', protoHttp ? `${httpPublisherIpv4Address}` : '', 300, conf['digitalOceanAccessToken']);
+        if (protoHttp) {
+          updateDnsRecordDigitalOcean(domain, 'AAAA', '@', httpPublisherIpv6Address, 300, conf['digitalOceanAccessToken']);
+          updateDnsRecordDigitalOcean(domain, 'A', '@', httpPublisherIpv4Address, 300, conf['digitalOceanAccessToken']);
+        } else if (protoHttpPurgeIfDisabled) {
+          updateDnsRecordDigitalOcean(domain, 'AAAA', '@', '', 300, conf['digitalOceanAccessToken']);
+          updateDnsRecordDigitalOcean(domain, 'A', '@', '', 300, conf['digitalOceanAccessToken']);
         }
       } catch (error) {
         console.log(error);
