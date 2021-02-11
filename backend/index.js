@@ -77,7 +77,7 @@ const job = new cron.CronJob(period, function() {
 
         // Query monetization account balances
         fetchPromises = [];
-        proj['monetization']['accounts'].forEach((item, index) => {
+        if (proj['monetization'] && proj['monetization']['accounts']) proj['monetization']['accounts'].forEach((item, index) => {
           switch (item['type']) {
             case 'oc':
               // Fetch Open Collective balance
@@ -183,7 +183,7 @@ const job = new cron.CronJob(period, function() {
           };
         });
 
-        Promise.all(fetchPromises).then(values => {
+        if (proj['monetization'] && proj['monetization']['currency']) Promise.all(fetchPromises).then(values => {
           const projCurrency = proj['monetization']['currency'];
           const url = `https://api.coinbase.com/v2/exchange-rates?currency=${projCurrency}`;
           console.log(`GET ${url}`);
