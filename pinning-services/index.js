@@ -315,7 +315,7 @@ function updateDnsRecordDigitalOcean(domain, recordType, recordName, recordData,
       if (txt.length != 1)
         isUpdated = true
 
-      // If there is a record, and recordData is empty an string, delete only
+      // If there is a record, and recordData is an empty string, delete the record
       if (txt.length === 1 && recordData === '') {
         isDeleted = true;
         isUpdated = false
