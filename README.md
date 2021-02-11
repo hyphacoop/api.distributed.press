@@ -77,7 +77,7 @@ Your project APIs will be served at:
         -F "file=@www.tar.gz"
     ```
 
-    The website to publish is a `tar.gz` archive created using `tar -czv --dereference --no-same-permissions -f www.tar.gz -C www .` and it may take up to half an hour for all URLs to become available.
+    The website to publish is a `tar.gz` archive created using `tar -czhv -f www.tar.gz -C www .` and it may take up to half an hour for all URLs to become available.
 
 ## Project List
 
