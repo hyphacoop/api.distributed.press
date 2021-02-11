@@ -107,16 +107,16 @@ const job = new cron.CronJob(period, function() {
           Object.keys(proj['publication']['protocol']).forEach((item) => {
             switch (item) {
               case 'http':
-                protoHttp = proj['publication']['protocol'][item]['enabled'] === true;
-                protoHttpPurgeIfDisabled = proj['publication']['protocol'][item]['purgeIfDisabled'] === true
+                protoHttp = proj['publication']['protocol'][item]['enabled'] !== false;
+                protoHttpPurgeIfDisabled = proj['publication']['protocol'][item]['purgeIfDisabled'] !== false;
                 break;
               case 'ipfs':
-                protoIpfs = proj['publication']['protocol'][item]['enabled'] === true;
-                protoIpfsPurgeIfDisabled = proj['publication']['protocol'][item]['purgeIfDisabled'] === true
+                protoIpfs = proj['publication']['protocol'][item]['enabled'] !== false;
+                protoIpfsPurgeIfDisabled = proj['publication']['protocol'][item]['purgeIfDisabled'] !== false;
                 break;
               case 'hypercore':
-                protoHypercore = proj['publication']['protocol'][item]['enabled'] === true;
-                protoHypercorePurgeIfDisabled = proj['publication']['protocol'][item]['purgeIfDisabled'] === true
+                protoHypercore = proj['publication']['protocol'][item]['enabled'] !== false;
+                protoHypercorePurgeIfDisabled = proj['publication']['protocol'][item]['purgeIfDisabled'] !== false;
                 break;
               default:
                 console.log(`WARNING: Unknown protocol in publication project JSON - ${item}`);
