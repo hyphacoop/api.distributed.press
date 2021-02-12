@@ -9,6 +9,10 @@ const confDir = `${require('os').homedir()}/.distributed-press`;
 const confFile = `${confDir}/config.json`;
 const projFile = `${confDir}/projects.json`;
 
+// Application variables
+let httpPublisherIpv6Address = "";
+let httpPublisherIpv4Address = "";
+
 // Application configurations
 let dataDir = `${confDir}/data`;
 let projDir;
@@ -23,12 +27,12 @@ try {
   conf = JSON.parse(file);
 
   // Read the IPv4 and IPv6 addresses that will be used in the HTTP publisher
-  const httpPublisherIpv4Address = conf['httpIpv4Address'];
+  httpPublisherIpv4Address = conf['httpIpv4Address'];
   if (!httpPublisherIpv4Address || !httpPublisherIpv4Address.trim().length) {
     console.log(`Missing httpIpv4Address configuration entry`);
     process.exit(1);
   }
-  const httpPublisherIpv6Address = conf['httpIpv6Address'];
+  httpPublisherIpv6Address = conf['httpIpv6Address'];
 
   // Read data directory from application configurations
   if (conf['dataDirectory'] && conf['dataDirectory'].trim().length > 0) {
