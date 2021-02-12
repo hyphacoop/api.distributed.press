@@ -29,10 +29,6 @@ try {
     process.exit(1);
   }
   const httpPublisherIpv6Address = conf['httpIpv6Address'];
-  if (!httpPublisherIpv6Address || !httpPublisherIpv6Address.trim().length) {
-    console.log(`Missing httpIpv6Address configuration entry`);
-    process.exit(1);
-  }
 
   // Read data directory from application configurations
   if (conf['dataDirectory'] && conf['dataDirectory'].trim().length > 0) {
@@ -211,7 +207,8 @@ const job = new cron.CronJob(period, function() {
 
         // Update HTTP A and AAAA record
         if (protoHttp) {
-          updateDnsRecordDigitalOcean(domain, 'AAAA', '@', httpPublisherIpv6Address, 300, conf['digitalOceanAccessToken']);
+          if (httpPublisherIpv6Address && httpPublisherIpv6Address.trim().length)
+            updateDnsRecordDigitalOcean(domain, 'AAAA', '@', httpPublisherIpv6Address, 300, conf['digitalOceanAccessToken']);
           updateDnsRecordDigitalOcean(domain, 'A', '@', httpPublisherIpv4Address, 300, conf['digitalOceanAccessToken']);
         } else if (protoHttpPurgeIfDisabled) {
           updateDnsRecordDigitalOcean(domain, 'AAAA', '@', '', 300, conf['digitalOceanAccessToken']);
