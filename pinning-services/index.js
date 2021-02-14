@@ -28,11 +28,13 @@ try {
 
   // Read the IPv4 and IPv6 addresses that will be used in the HTTP publisher
   httpPublisherIpv4Address = conf['httpIpv4Address'];
-  if (!httpPublisherIpv4Address || !httpPublisherIpv4Address.trim().length) {
+  if (httpPublisherIpv4Address) httpPublisherIpv4Address = httpPublisherIpv4Address.trim();
+  if (!httpPublisherIpv4Address || !httpPublisherIpv4Address.length) {
     console.log(`Missing httpIpv4Address configuration entry`);
     process.exit(1);
   }
   httpPublisherIpv6Address = conf['httpIpv6Address'];
+  if (httpPublisherIpv6Address) httpPublisherIpv6Address = httpPublisherIpv6Address.trim();
 
   // Read data directory from application configurations
   if (conf['dataDirectory'] && conf['dataDirectory'].trim().length > 0) {
@@ -204,15 +206,15 @@ const job = new cron.CronJob(period, function() {
                 console.log(error);
               });
           }
-        } else {
-          if (protoIpfsPurgeIfDisabled)
-            updateDnsRecordDigitalOcean(domain, 'TXT', txtIpfsApi, '', 300, conf['digitalOceanAccessToken']);
+        } else if (protoIpfsPurgeIfDisabled) {
+          updateDnsRecordDigitalOcean(domain, 'TXT', txtIpfsApi, '', 300, conf['digitalOceanAccessToken']);
         }
 
         // Update HTTP A and AAAA record
         if (protoHttp) {
-          if (httpPublisherIpv6Address && httpPublisherIpv6Address.trim().length)
+          if (httpPublisherIpv6Address && httpPublisherIpv6Address.length > 0) {
             updateDnsRecordDigitalOcean(domain, 'AAAA', '@', httpPublisherIpv6Address, 300, conf['digitalOceanAccessToken']);
+          }
           updateDnsRecordDigitalOcean(domain, 'A', '@', httpPublisherIpv4Address, 300, conf['digitalOceanAccessToken']);
         } else if (protoHttpPurgeIfDisabled) {
           updateDnsRecordDigitalOcean(domain, 'AAAA', '@', '', 300, conf['digitalOceanAccessToken']);
