@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const express = require('express');
 const fs = require('fs');
 const gunzip = require('gunzip-maybe');
-const multer  = require('multer');
+const multer = require('multer');
 const tar = require('tar-fs');
 
 // Application constants
@@ -53,8 +53,8 @@ let projMap = readProjectMap(projFile);
 const app = express();
 const port = process.env.PORT || 3030;
 const actionsGet = [
-    'monetization/balances'
-  ];
+  'monetization/balances'
+];
 
 // Enable CORS
 app.use(cors());
@@ -64,7 +64,7 @@ app.use(cors());
 //
 
 // curl -v http://localhost:3030/v0/publication/configure -H "Content-Type: multipart/form-data" -H "Accept: application/json" -H "Authorization: Bearer ${PROJECT_API_KEY}" -F "file=@config.json"
-app.post(`/${apiVersion}/publication/configure`, upload.single('file'), function (req, res, next) {
+app.post(`/${apiVersion}/publication/configure`, upload.single('file'), function(req, res, next) {
   // Get project from request
   let project;
   if (req.header('Authorization')) {
@@ -112,14 +112,14 @@ app.post(`/${apiVersion}/publication/configure`, upload.single('file'), function
     });
   }
   return res.status(201).json({
-      error: '',
-      errorCode: 0,
-      timestamp: new Date().toJSON()
-    });
+    error: '',
+    errorCode: 0,
+    timestamp: new Date().toJSON()
+  });
 });
 
 // curl -v http://localhost:3030/v0/publication/publish -H "Content-Type: multipart/form-data" -H "Accept: application/json" -H "Authorization: Bearer ${PROJECT_API_KEY}" -F "file=@www.tar.gz"
-app.post(`/${apiVersion}/publication/publish`, upload.single('file'), function (req, res) {
+app.post(`/${apiVersion}/publication/publish`, upload.single('file'), function(req, res) {
   // Get project from request
   let project;
   if (req.header('Authorization')) {
@@ -147,14 +147,18 @@ app.post(`/${apiVersion}/publication/publish`, upload.single('file'), function (
   try {
     let srcFile = `${uploadDir}/${req.file.filename}`;
     let targetDir = `${projDir}/${project}/www`;
-    
+
     // Delete existing www directory
     fs.rmSync(targetDir, { recursive: true, force: true });
-    
+
     // Untar uploaded www archive to project
     fs.createReadStream(srcFile).on('error', (error) => console.log(error))
       .pipe(gunzip()).on('error', (error) => console.log(error))
-      .pipe(tar.extract(targetDir)).on('error', (error) => console.log(error))
+      .pipe(tar.extract(targetDir, {
+        dereference: true,
+        readable: true,
+        writable: false
+      })).on('error', (error) => console.log(error))
       .on('finish', () => {
         try {
           fs.unlinkSync(srcFile)
@@ -173,10 +177,10 @@ app.post(`/${apiVersion}/publication/publish`, upload.single('file'), function (
     });
   }
   return res.status(202).json({
-      error: '',
-      errorCode: 0,
-      timestamp: new Date().toJSON()
-    });
+    error: '',
+    errorCode: 0,
+    timestamp: new Date().toJSON()
+  });
 });
 
 //
@@ -238,14 +242,14 @@ app.get(`/${apiVersion}/:group/:action.json`, function(req, res) {
 //
 
 // curl -v -X POST http://localhost:3030/v0/internal/addApiKey?project=staging.compost.digital
-app.post(`/${apiVersion}/internal/addApiKey`, function (req, res) {
+app.post(`/${apiVersion}/internal/addApiKey`, function(req, res) {
   // Verify internal origin using host in the URL
   if (req.get('host') !== `localhost:${port}`) {
     return res.status(401).json({
       error: `Internal API must be called from localhost`,
       errorCode: 1004,
       timestamp: new Date().toJSON()
-    });    
+    });
   }
 
   // Validate 'project' query parameter
@@ -277,7 +281,7 @@ app.post(`/${apiVersion}/internal/addApiKey`, function (req, res) {
 });
 
 // Start listening
-app.listen(port, function () {
+app.listen(port, function() {
   console.log(`API server running on port ${port}`);
 });
 
@@ -307,7 +311,7 @@ function addNewApiKey(project) {
 
     // Refresh project map
     projMap = readProjectMap(projFile);
-    
+
     // Return new API key
     return apiKey;
   } catch (error) {
