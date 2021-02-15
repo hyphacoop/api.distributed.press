@@ -145,9 +145,8 @@ const job = new cron.CronJob(period, function() {
                 console.log(error);
               });
           }
-        } else {
-          if (protoHypercorePurgeIfDisabled)
-            updateDnsRecordDigitalOcean(domain, 'TXT', txtHypercoreWww, '', 300, conf['digitalOceanAccessToken']);
+        } else if (protoHypercorePurgeIfDisabled) {
+          updateDnsRecordDigitalOcean(domain, 'TXT', txtHypercoreWww, '', 300, conf['digitalOceanAccessToken']);
         }
 
         // Pin WWW site to IPFS
@@ -165,9 +164,8 @@ const job = new cron.CronJob(period, function() {
                 console.log(error);
               });
           }
-        } else {
-          if (protoIpfsPurgeIfDisabled)
-            updateDnsRecordDigitalOcean(domain, 'TXT', txtIpfsWww, '', 300, conf['digitalOceanAccessToken']);
+        } else if (protoIpfsPurgeIfDisabled) {
+          updateDnsRecordDigitalOcean(domain, 'TXT', txtIpfsWww, '', 300, conf['digitalOceanAccessToken']);
         }
 
         // Pin API responses to Hypercore
@@ -189,6 +187,8 @@ const job = new cron.CronJob(period, function() {
                 console.log(error);
               });
           }
+        } else if (protoHypercorePurgeIfDisabled) {
+          updateDnsRecordDigitalOcean(domain, 'TXT', txtHypercoreApi, '', 300, conf['digitalOceanAccessToken']);
         }
 
         // Pin API responses to IPFS
@@ -212,7 +212,7 @@ const job = new cron.CronJob(period, function() {
 
         // Update HTTP A and AAAA record
         if (protoHttp) {
-          if (httpPublisherIpv6Address && httpPublisherIpv6Address.length > 0) {
+          if (httpPublisherIpv6Address) {
             updateDnsRecordDigitalOcean(domain, 'AAAA', '@', httpPublisherIpv6Address, 300, conf['digitalOceanAccessToken']);
           }
           updateDnsRecordDigitalOcean(domain, 'A', '@', httpPublisherIpv4Address, 300, conf['digitalOceanAccessToken']);
