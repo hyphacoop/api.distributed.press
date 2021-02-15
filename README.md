@@ -77,7 +77,7 @@ Your project APIs will be served at:
         -F "file=@www.tar.gz"
     ```
 
-    The website to publish is a `tar.gz` archive created using `tar -czvf www.tar.gz -C www .` and it may take up to half an hour for all URLs to become available.
+    The website to publish is a `tar.gz` archive created using `tar -czhv -f www.tar.gz -C www .` and it may take up to half an hour for all URLs to become available.
 
 ## Project List
 
@@ -88,6 +88,14 @@ This is the list of projects published using the Distributed Press.
 | staging.compost.digital | Example website for Distributed Press |
 | compost.digital         | Website of COMPOST magazine |
 | hypha.coop              | Website of Hypha Worker Co-operative |
+| sutty.ml                | Experimental website mirror of [Sutty](https://sutty.nl/en/) |
+
+## Related Projects
+
+- [distributed-press-api-client](https://rubygems.org/gems/distributed-press-api-client/) is a Ruby gem for Distributed Press API, developed by [Sutty](https://sutty.nl/en/).
+It contains a Jekyll plugin for site publication.
+
+---
 
 ## Architecture
 
