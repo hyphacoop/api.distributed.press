@@ -29,7 +29,7 @@ try {
   // Read the IPv4 and IPv6 addresses that will be used in the HTTP publisher
   httpPublisherIpv4Address = conf['httpIpv4Address'];
   if (httpPublisherIpv4Address) httpPublisherIpv4Address = httpPublisherIpv4Address.trim();
-  if (!httpPublisherIpv4Address || !httpPublisherIpv4Address.length) {
+  if (!httpPublisherIpv4Address) {
     console.log(`Missing httpIpv4Address configuration entry`);
     process.exit(1);
   }
