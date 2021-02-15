@@ -134,6 +134,17 @@ POST headers:
 
 POST request body:
 - `domain`: the project domain (this must be the domain associated with the project API key)
+- `publication`: configuration for publication
+  - `protocol`: configurations for specific publication protocols
+    - `http`: configuration specific to the `HTTP` protocol
+      - `enabled`: boolean, if protocol will be used, default value is `true`
+      - `purgeIfDisabled`: boolean, remove records associated with this protocol when protocol is disabled, default value is `true`
+    - `ipfs`: configuration specific to the `IPFS` protocol
+      - `enabled`: boolean if protocol will be used, default value is `true`
+      - `purgeIfDisabled`: boolean, remove records associated with this protocol when protocol is disabled, default value is `true`
+    - `hypercore`: configuration specific to the `Hypercore` protocol
+      - `enabled`: boolean if protocol will be used, default value is `true`
+      - `purgeIfDisabled`: boolean, remove records associated with this protocol when protocol is disabled, default value is `true`
 - `monetization`: configurations for the Monetization API
   - `accounts`: an array of monetization accounts for the project
     - `name`: the name of the monetization account

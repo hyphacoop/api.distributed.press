@@ -9,6 +9,10 @@ const confDir = `${require('os').homedir()}/.distributed-press`;
 const confFile = `${confDir}/config.json`;
 const projFile = `${confDir}/projects.json`;
 
+// Application variables
+let httpPublisherIpv6Address = "";
+let httpPublisherIpv4Address = "";
+
 // Application configurations
 let dataDir = `${confDir}/data`;
 let projDir;
@@ -21,6 +25,16 @@ try {
   }
   const file = fs.readFileSync(confFile);
   conf = JSON.parse(file);
+
+  // Read the IPv4 and IPv6 addresses that will be used in the HTTP publisher
+  httpPublisherIpv4Address = conf['httpIpv4Address'];
+  if (httpPublisherIpv4Address) httpPublisherIpv4Address = httpPublisherIpv4Address.trim();
+  if (!httpPublisherIpv4Address) {
+    console.log(`Missing httpIpv4Address configuration entry`);
+    process.exit(1);
+  }
+  httpPublisherIpv6Address = conf['httpIpv6Address'];
+  if (httpPublisherIpv6Address) httpPublisherIpv6Address = httpPublisherIpv6Address.trim();
 
   // Read data directory from application configurations
   if (conf['dataDirectory'] && conf['dataDirectory'].trim().length > 0) {
@@ -81,73 +95,130 @@ const job = new cron.CronJob(period, function() {
         const dirWww = `${projDir}/${projName}/www`;
         const dirApi = `${projDir}/${projName}/api`;
 
+        // Read publication settings from project configuration
+        let protoHttp = true;
+        let protoHttpPurgeIfDisabled = true;
+        let protoIpfs = true;
+        let protoIpfsPurgeIfDisabled = true;
+        let protoHypercore = true;
+        let protoHypercorePurgeIfDisabled = true;
+        if (proj['publication'] && proj['publication']['protocol']) {
+
+          // Check for known protocols and set flags
+          Object.keys(proj['publication']['protocol']).forEach((item) => {
+            switch (item) {
+              case 'http':
+                protoHttp = proj['publication']['protocol'][item]['enabled'] !== false;
+                protoHttpPurgeIfDisabled = proj['publication']['protocol'][item]['purgeIfDisabled'] !== false;
+                break;
+              case 'ipfs':
+                protoIpfs = proj['publication']['protocol'][item]['enabled'] !== false;
+                protoIpfsPurgeIfDisabled = proj['publication']['protocol'][item]['purgeIfDisabled'] !== false;
+                break;
+              case 'hypercore':
+                protoHypercore = proj['publication']['protocol'][item]['enabled'] !== false;
+                protoHypercorePurgeIfDisabled = proj['publication']['protocol'][item]['purgeIfDisabled'] !== false;
+                break;
+              default:
+                console.log(`WARNING: Unknown protocol in publication project JSON - ${item}`);
+            }
+          });
+        }
+
         // Pin WWW site to Hypercore
-        if (fs.existsSync(dirWww)) {
-          getDatSeed('dat-seed-www', projName, domain, txtHypercoreWww)
-            .then(seed => hyperPublisher.sync({
-              seed,
-              fsPath: dirWww,
-              drivePath: '/',
-              syncTime: 600000 // Allow up to 10 minutes for sync
-            }))
-            .then(({diff, url}) => {
-              // Log any changes to hyperdrive and return url
-              console.log(`WWW site for ${projName} pinned at ${url}. Changes:`);
-              console.log(diff);
-              return url;
-            })
-            .catch(function(error) {
-              console.log(error);
-            });
+        if (protoHypercore) {
+          if (fs.existsSync(dirWww)) {
+            getDatSeed('dat-seed-www', projName, domain, txtHypercoreWww)
+              .then(seed => hyperPublisher.sync({
+                seed,
+                fsPath: dirWww,
+                drivePath: '/',
+                syncTime: 600000 // Allow up to 10 minutes for sync
+              }))
+              .then(({ diff, url }) => {
+                // Log any changes to hyperdrive and return url
+                console.log(`WWW site for ${projName} pinned at ${url}. Changes:`);
+                console.log(diff);
+                return url;
+              })
+              .catch(function(error) {
+                console.log(error);
+              });
+          }
+        } else {
+          if (protoHypercorePurgeIfDisabled)
+            updateDnsRecordDigitalOcean(domain, 'TXT', txtHypercoreWww, '', 300, conf['digitalOceanAccessToken']);
         }
 
         // Pin WWW site to IPFS
-        if (fs.existsSync(dirWww)) {
-          ipfs.add(globSource(dirWww, { recursive: true, followSymlinks: false }), { cidVersion: 1, pin: true, timeout: 60000 })
-            .then(file => file['cid'])
-            .then(cid => {
-              console.log(`WWW site for ${projName} pinned at ipfs/${cid}`);
+        if (protoIpfs) {
+          if (fs.existsSync(dirWww)) {
+            ipfs.add(globSource(dirWww, { recursive: true, followSymlinks: false }), { cidVersion: 1, pin: true, timeout: 60000 })
+              .then(file => file['cid'])
+              .then(cid => {
+                console.log(`WWW site for ${projName} pinned at ipfs/${cid}`);
 
-              // Update DNS record
-              return updateDnsRecordDigitalOcean(domain, 'TXT', txtIpfsWww, `dnslink=/ipfs/${cid}`, 300, conf['digitalOceanAccessToken']);
-            })
-            .catch(function(error) {
-              console.log(error);
-            });
+                // Update DNS record
+                return updateDnsRecordDigitalOcean(domain, 'TXT', txtIpfsWww, `dnslink=/ipfs/${cid}`, 300, conf['digitalOceanAccessToken']);
+              })
+              .catch(function(error) {
+                console.log(error);
+              });
+          }
+        } else {
+          if (protoIpfsPurgeIfDisabled)
+            updateDnsRecordDigitalOcean(domain, 'TXT', txtIpfsWww, '', 300, conf['digitalOceanAccessToken']);
         }
 
         // Pin API responses to Hypercore
-        if (fs.existsSync(dirApi)) {
-          getDatSeed('dat-seed-api', projName, domain, txtHypercoreApi)
-            .then(seed => hyperPublisher.sync({
-              seed,
-              fsPath: dirApi,
-              drivePath: '/'
-            }))
-            .then(({diff, url}) => {
-              // Log any changes to hyperdrive and return url
-              console.log(`API responses for ${projName} pinned at ${url}. Changes:`);
-              console.log(diff);
-              return url;
-            })
-            .catch(function(error) {
-              console.log(error);
-            });
+        if (protoHypercore) {
+          if (fs.existsSync(dirApi)) {
+            getDatSeed('dat-seed-api', projName, domain, txtHypercoreApi)
+              .then(seed => hyperPublisher.sync({
+                seed,
+                fsPath: dirApi,
+                drivePath: '/'
+              }))
+              .then(({ diff, url }) => {
+                // Log any changes to hyperdrive and return url
+                console.log(`API responses for ${projName} pinned at ${url}. Changes:`);
+                console.log(diff);
+                return url;
+              })
+              .catch(function(error) {
+                console.log(error);
+              });
+          }
         }
 
         // Pin API responses to IPFS
-        if (fs.existsSync(dirApi)) {
-          ipfs.add(globSource(dirApi, { recursive: true, followSymlinks: false }), { cidVersion: 1, pin: true, timeout: 60000 })
-            .then(file => file['cid'])
-            .then(cid => {
-              console.log(`API responses for ${projName} pinned at ipfs/${cid}`);
+        if (protoIpfs) {
+          if (fs.existsSync(dirApi)) {
+            ipfs.add(globSource(dirApi, { recursive: true, followSymlinks: false }), { cidVersion: 1, pin: true, timeout: 60000 })
+              .then(file => file['cid'])
+              .then(cid => {
+                console.log(`API responses for ${projName} pinned at ipfs/${cid}`);
 
-              // Update DNS record
-              return updateDnsRecordDigitalOcean(domain, 'TXT', txtIpfsApi, `dnslink=/ipfs/${cid}`, 300, conf['digitalOceanAccessToken']);
-            })
-            .catch(function(error) {
-              console.log(error);
-            });
+                // Update DNS record
+                return updateDnsRecordDigitalOcean(domain, 'TXT', txtIpfsApi, `dnslink=/ipfs/${cid}`, 300, conf['digitalOceanAccessToken']);
+              })
+              .catch(function(error) {
+                console.log(error);
+              });
+          }
+        } else if (protoIpfsPurgeIfDisabled) {
+          updateDnsRecordDigitalOcean(domain, 'TXT', txtIpfsApi, '', 300, conf['digitalOceanAccessToken']);
+        }
+
+        // Update HTTP A and AAAA record
+        if (protoHttp) {
+          if (httpPublisherIpv6Address && httpPublisherIpv6Address.length > 0) {
+            updateDnsRecordDigitalOcean(domain, 'AAAA', '@', httpPublisherIpv6Address, 300, conf['digitalOceanAccessToken']);
+          }
+          updateDnsRecordDigitalOcean(domain, 'A', '@', httpPublisherIpv4Address, 300, conf['digitalOceanAccessToken']);
+        } else if (protoHttpPurgeIfDisabled) {
+          updateDnsRecordDigitalOcean(domain, 'AAAA', '@', '', 300, conf['digitalOceanAccessToken']);
+          updateDnsRecordDigitalOcean(domain, 'A', '@', '', 300, conf['digitalOceanAccessToken']);
         }
       } catch (error) {
         console.log(error);
@@ -181,16 +252,16 @@ async function getDatSeed(datSeedName, projName, domain, recordName) {
     console.log(`Project ${datSeedName} updated for ${projName}`);
 
     // Publish hyperdrive to dat-store with new seed
-    await hyperPublisher.getURL({seed})
+    await hyperPublisher.getURL({ seed })
       .then(url => datStoreClient.add(url))
-      .then(() => hyperPublisher.create({seed}))
-      .then(({url}) => {
-          console.log(`New hyperdrive published for ${projName}`);
+      .then(() => hyperPublisher.create({ seed }))
+      .then(({ url }) => {
+        console.log(`New hyperdrive published for ${projName}`);
 
-          // Update DNS record
-          const hyperdriveKey = url.replace('hyper://', '');
-          return updateDnsRecordDigitalOcean(domain, 'TXT', recordName, `datkey=${hyperdriveKey}`, 300, conf['digitalOceanAccessToken']);
-        });
+        // Update DNS record
+        const hyperdriveKey = url.replace('hyper://', '');
+        return updateDnsRecordDigitalOcean(domain, 'TXT', recordName, `datkey=${hyperdriveKey}`, 300, conf['digitalOceanAccessToken']);
+      });
   }
   if (seed === undefined) {
     throw new Error(`Failed to get ${datSeedName}`);
@@ -199,6 +270,22 @@ async function getDatSeed(datSeedName, projName, domain, recordName) {
   }
 }
 
+function addDomainAccountDigitalOcean(domain, doToken) {
+  const url = `https://api.digitalocean.com/v2/domains`;
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${doToken}`
+  };
+  const data = JSON.stringify({
+    name: domain
+  });
+  console.log(`POST ${url} with data ${data}`);
+  return fetch(url, { method: 'POST', headers: headers, body: data })
+    .then(res => res.json())
+    .then(json => json['domain'] !== undefined);
+}
+
+// Updates a DNS record. Passing '' as recordData deletes the record
 function updateDnsRecordDigitalOcean(domain, recordType, recordName, recordData, recordTtl, doToken) {
   // List existing DNS records for domain
   const url = `https://api.digitalocean.com/v2/domains/${domain}/records/`;
@@ -210,26 +297,70 @@ function updateDnsRecordDigitalOcean(domain, recordType, recordName, recordData,
   console.log(`GET ${urlGet}`);
   return fetch(urlGet, { headers: headers })
     .then(res => res.json())
-    .then(json => json['domain_records'].filter(record => record['type'] === recordType && record['name'] === recordName))
-    .then(txt => {
-      // Delete existing records with matching record type and name
-      txt.forEach((item, index) => {
-        const urlDelete = url + item['id'];
-        console.log(`DELETE ${urlDelete}`);
-        fetch(urlDelete, { method: 'DELETE', headers: headers })
-          .catch(function(error) {
-            console.log(error);
+    .then(json => {
+      if (json['id'] && json['id'] === 'not_found') {
+        return addDomainAccountDigitalOcean(domain, doToken)
+          .then(res => {
+            if (res) {
+              return [];
+            } else {
+              throw `Could not create domain ${domain}`;
+            }
           });
-      });
+      } else {
+        return json['domain_records'].filter(record => record['type'] === recordType && record['name'] === recordName);
+      }
+    })
+    .then(txt => {
+      let isDeleted = false;
+      let isUpdated = false;
 
-      // Create new DNS record
-      const data = JSON.stringify({
-        type: recordType,
-        name: recordName,
-        data: recordData,
-        ttl:  recordTtl
-      });
-      console.log(`POST ${url} with data ${data}`);
-      return fetch(url, { method: 'POST', headers: headers, body: data });
+      // If there is anything other then one entry found, 
+      // all entries should be removed then one entry added
+      if (txt.length != 1)
+        isUpdated = true
+
+      // If there is a record, and recordData is an empty string, delete the record
+      if (txt.length === 1 && recordData === '') {
+        isDeleted = true;
+        isUpdated = false
+      }
+
+      // If there is a record, and the data in that record differs from recordData, update
+      if (txt.length === 1 && txt[0]['data'] != recordData)
+        isUpdated = true;
+
+      // If there is no record, and the recordData is an empty string, don't do anything
+      if (txt.length === 0 && recordData === '') {
+        isUpdated = false;
+        isDeleted = false;
+      }
+
+      // If there is an update, there needs to be a delete first
+      if (isUpdated) isDeleted = true;
+
+      // Delete existing records with matching record type and name
+      if (isDeleted) {
+        txt.forEach((item, index) => {
+          const urlDelete = url + item['id'];
+          console.log(`DELETE ${urlDelete}`);
+          fetch(urlDelete, { method: 'DELETE', headers: headers })
+            .catch(function(error) {
+              console.log(error);
+            });
+        });
+      }
+
+      // Create new DNS record if we are updating
+      if (isUpdated) {
+        const data = JSON.stringify({
+          type: recordType,
+          name: recordName,
+          data: recordData,
+          ttl: recordTtl
+        });
+        console.log(`POST ${url} with data ${data}`);
+        return fetch(url, { method: 'POST', headers: headers, body: data });
+      }
     });
 }
