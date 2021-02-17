@@ -92,8 +92,9 @@ This is the list of projects published using the Distributed Press.
 
 ## Related Projects
 
-- [distributed-press-api-client](https://rubygems.org/gems/distributed-press-api-client/) is a Ruby gem for Distributed Press API, developed by [Sutty](https://sutty.nl/en/).
-It contains a Jekyll plugin for site publication.
+- [distributed-press-api-client](https://rubygems.org/gems/distributed-press-api-client/) is a Ruby gem for Distributed Press API, developed by [Sutty](https://sutty.nl/en/). It contains a Jekyll plugin for site publication.
+- [jekyll-relative-urls](https://0xacab.org/sutty/jekyll/jekyll-relative-urls) is a Jekyll plugin for transportable sites (aka. relative URLs), developed by [Sutty](https://sutty.nl/en/).
+- [make-relative](https://github.com/garrying/make-relative/) is a Node.js app that makes links relative on a website, maintained by [garrying](https://github.com/garrying).
 
 ---
 
