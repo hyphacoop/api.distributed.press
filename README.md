@@ -1,4 +1,4 @@
-# Distributed Press API
+![logo-distributedpress](logo-distributedpress.png)
 
 If you are new to the Distributed Press project, please visit our [project website](https://distributed.press) and [project wiki](https://github.com/hyphacoop/distributed-press-organizing/wiki/) for background context.
 
