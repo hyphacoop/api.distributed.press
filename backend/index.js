@@ -204,7 +204,7 @@ const job = new cron.CronJob(period, function() {
                   // Convert each account balance to project currency
                   const balStr = b['balance'];
                   const decInt = b['decimal'];
-                  const balFlt = parseFloat(`${balStr.slice(0, balStr.length - decInt)}.${balStr.slice(balStr.length - decInt, balStr.length)}`);
+                  const balFlt = parseFloat(balStr / parseInt('1' + '0'.repeat(decInt)));
                   const exrFlt = parseFloat(rates[b['currency']]); // This loses some precision
                   if (balFlt && exrFlt) {
                     // Add to total estimated balance
