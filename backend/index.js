@@ -200,6 +200,7 @@ const job = new cron.CronJob(period, function() {
               let totalBalance = 0;
               const accounts = values.filter(x => x); // Filter out results that are 'undefined'
               accounts.forEach((a, ai) => {
+                a['balances'].forEach((b, bi) => {
                   // Convert each account balance to project currency
                   // Uses string manipulation instead of math to avoid overflow with large values
                   const balStr = b['balance'];
@@ -219,13 +220,13 @@ const job = new cron.CronJob(period, function() {
 
               // Crop total estimated balance to 2-decimal precision
               const decIndex = totalBalance.toString().indexOf('.');
-              let balance = totalBalance.toString().replace('.','');
+              let balance = totalBalance.toString().replace('.', '');
               let decimal = 0;
               if (decIndex > 0) {
                 decimal = 2;
                 balance = cropPrecision(balance, balance.length - (decIndex + decimal));
               }
-              
+
               // Write total estimated and account balances to file
               const balances = JSON.stringify({
                 accounts: values.filter(x => x),
@@ -234,7 +235,8 @@ const job = new cron.CronJob(period, function() {
                 currency: projCurrency,
                 error: '',
                 errorCode: 0,
-                timestamp: new Date().toJSON() });
+                timestamp: new Date().toJSON()
+              });
               const dir = `${projDir}/${projName}/api/${apiVersion}/monetization`;
               if (!fs.existsSync(dir)) {
                 fs.mkdirSync(dir, { recursive: true });
@@ -272,5 +274,3 @@ function equalsIgnoreCase(str, otherStr) {
   }
   return otherStr === undefined;
 }
-
-
