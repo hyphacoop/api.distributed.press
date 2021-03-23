@@ -208,7 +208,7 @@ const job = new cron.CronJob(period, function() {
                   balDecimal = balStr.slice(-1 * decInt); // Get last 'decInt' characters in string as decimal value
                   const balWhole = balStr.slice(0, balStr.length - balDecimal.length);  // Get remainder of numbers in string as whole value
                   balDecimal = `0`.repeat(decInt) + balDecimal; // Pad decimal string with 0s to allow for shorter strings
-                  balDecimal = balDecimal.slice(decInt); // Get last 'decInt' characters in string again, this time with leading 0s
+                  balDecimal = balDecimal.slice(-1 * decInt); // Get last 'decInt' characters in string again, this time with leading 0s
                   balFlt = parseFloat(balWhole + '.' + balDecimal);
                   const exrFlt = parseFloat(rates[b['currency']]); // This loses some precision
                   if (balFlt && exrFlt) {
