@@ -200,11 +200,15 @@ const job = new cron.CronJob(period, function() {
               let totalBalance = 0;
               const accounts = values.filter(x => x); // Filter out results that are 'undefined'
               accounts.forEach((a, ai) => {
-                a['balances'].forEach((b, bi) => {
                   // Convert each account balance to project currency
+                  // Uses string manipulation instead of math to avoid overflow with large values
                   const balStr = b['balance'];
                   const decInt = b['decimal'];
-                  const balFlt = parseFloat(balStr / parseInt('1' + '0'.repeat(decInt)));
+                  balDecimal = balStr.slice(-1 * decInt); // Get last 'decInt' characters in string as decimal value
+                  const balWhole = balStr.slice(0, balStr.length - balDecimal.length);  // Get remainder of numbers in string as whole value
+                  balDecimal = `0`.repeat(decInt) + balDecimal; // Pad decimal string with 0s to allow for shorter strings
+                  balDecimal = balDecimal.slice(decInt); // Get last 'decInt' characters in string again, this time with leading 0s
+                  balFlt = parseFloat(balWhole + '.' + balDecimal);
                   const exrFlt = parseFloat(rates[b['currency']]); // This loses some precision
                   if (balFlt && exrFlt) {
                     // Add to total estimated balance
