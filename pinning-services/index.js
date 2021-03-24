@@ -342,12 +342,16 @@ function updateDnsRecordDigitalOcean(domain, recordType, recordName, recordData,
       // Delete existing records with matching record type and name
       if (isDeleted) {
         txt.forEach((item, index) => {
-          const urlDelete = url + item['id'];
-          console.log(`DELETE ${urlDelete}`);
-          fetch(urlDelete, { method: 'DELETE', headers: headers })
-            .catch(function(error) {
-              console.log(error);
-            });
+          let isSkipDelete = 0;
+          if (item['type'] == 'TXT' && (item['data'].indexOf('datkey') || item['data'].indexOf('dnslink'))) isSkipDelete = 1;
+          if (!isSkipDelete) {
+            const urlDelete = url + item['id'];
+            console.log(`DELETE ${urlDelete}`);
+            fetch(urlDelete, { method: 'DELETE', headers: headers })
+              .catch(function(error) {
+                console.log(error);
+              });
+          }
         });
       }
 
