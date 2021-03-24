@@ -343,8 +343,8 @@ function updateDnsRecordDigitalOcean(domain, recordType, recordName, recordData,
       if (isDeleted) {
         txt.forEach((item, index) => {
           let isSkipDelete = 0;
-          if (item['type'] == 'TXT') isSkipDelete = 1;
-          if (item['type'] == 'TXT' && (item['data'].indexOf('datkey') || item['data'].indexOf('dnslink'))) isSkipDelete = 0;
+          if (item['type'] == 'TXT') isSkipDelete = 0;
+          if (item['type'] == 'TXT' && (item['data'].indexOf('datkey') == -1 && item['data'].indexOf('dnslink') == -1)) isSkipDelete = 1;
           if (!isSkipDelete) {
             const urlDelete = url + item['id'];
             console.log(`DELETE ${urlDelete}`);
