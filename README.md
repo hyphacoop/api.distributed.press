@@ -91,6 +91,26 @@ This is the list of projects published using the Distributed Press.
 | hypha.coop              | Website of Hypha Worker Co-operative |
 | sutty.ml                | Experimental website mirror of [Sutty](https://sutty.nl/en/) |
 
+## Support New Protocol
+
+Distributed Press currently supports HTTP, Hypercore, IPFS / IPNS.
+Our goal is to support more protocols while keeping a consistent user interface and experience.
+Here are some considerations:
+
+1. A Distributed Press server seeds its own content. For example, Distributed Press runs its own IPFS node, instead of pinning to a remote service operated by someone else. In the future we want to automatically "pin" (i.e. seed) to remote services like [Infura](https://infura.io) for redundancy, but that is _in addition to_ our own seeding. This means new protocol additions need its node code added to our [Distributed Press ansible](https://github.com/hyphacoop/ansibles/tree/master/distributed-press).
+
+2. The protocol must support a URL scheme with a domain name system accessible by using some sort of browser, and URLs matching `scheme://<project.domain>` and `scheme://api.<project.domain>` can be created via this domain name system to load the project's website and API respectively.
+
+3. API results get published every 15 minutes. The protocol must support reasonable rapid and "zero-cost" publishing. For example, we probably cannot publish new content to a blockchain every 15 minutes, as it would become cost prohibitive. At the moment we use traditional DNS via Digital Ocean APIs.
+
+4. The protocol must support a HTTP gateway, that also supports the same DNS scheme. For example, `hyper://one.compost.digital` is available at `https://hyper.distributed.press/one.compost.digital/` via a Hypercore HTTP gateway embedded in the Distributed Press server.
+
+These are the basic requirements for adding a protocol to Distributed Press at the time.
+If you would like to suggest a new protocol addition, please file an issue with the [Support new protocol](https://github.com/hyphacoop/api.distributed.press/issues/new?assignees=&labels=&template=support_new_protocol.md&title=Support+new+protocol%3A+) template.
+
+The timeline for us to explore new protocol addition is 2021 Q3/Q4.
+Please feel free to email us at `hello [at] distributed.press` if you have any questions.
+
 ## Related Projects
 
 - [distributed-press-api-client](https://rubygems.org/gems/distributed-press-api-client/) is a Ruby gem for Distributed Press API, developed by [Sutty](https://sutty.nl/en/). It contains a Jekyll plugin for site publication.
