@@ -1,7 +1,7 @@
 ---
 name: Support new protocol
 about: Suggest a new protocol for Distributed Press to support publishing content to
-title: "Suggest new protocol: "
+title: "Support new protocol: "
 ---
 
 _Please review [Support New Protocol](https://github.com/hyphacoop/api.distributed.press#support-new-protocol) and address how the considerations can be fulfilled by the suggested protocol. In cases where they cannot be fulfilled, please explain why and offer alternatives._
