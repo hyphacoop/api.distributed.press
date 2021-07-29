@@ -202,9 +202,14 @@ const job = new cron.CronJob(period, function() {
               accounts.forEach((a, ai) => {
                 a['balances'].forEach((b, bi) => {
                   // Convert each account balance to project currency
+                  // Uses string manipulation instead of math to avoid overflow with large values
                   const balStr = b['balance'];
                   const decInt = b['decimal'];
-                  const balFlt = parseFloat(`${balStr.slice(0, balStr.length - decInt)}.${balStr.slice(balStr.length - decInt, balStr.length)}`);
+                  balDecimal = balStr.slice(-1 * decInt); // Get last 'decInt' characters in string as decimal value
+                  const balWhole = balStr.slice(0, balStr.length - balDecimal.length);  // Get remainder of numbers in string as whole value
+                  balDecimal = `0`.repeat(decInt) + balDecimal; // Pad decimal string with 0s to allow for shorter strings
+                  balDecimal = balDecimal.slice(-1 * decInt); // Get last 'decInt' characters in string again, this time with leading 0s
+                  balFlt = parseFloat(balWhole + '.' + balDecimal);
                   const exrFlt = parseFloat(rates[b['currency']]); // This loses some precision
                   if (balFlt && exrFlt) {
                     // Add to total estimated balance
@@ -215,13 +220,13 @@ const job = new cron.CronJob(period, function() {
 
               // Crop total estimated balance to 2-decimal precision
               const decIndex = totalBalance.toString().indexOf('.');
-              let balance = totalBalance.toString().replace('.','');
+              let balance = totalBalance.toString().replace('.', '');
               let decimal = 0;
               if (decIndex > 0) {
                 decimal = 2;
                 balance = cropPrecision(balance, balance.length - (decIndex + decimal));
               }
-              
+
               // Write total estimated and account balances to file
               const balances = JSON.stringify({
                 accounts: values.filter(x => x),
@@ -230,7 +235,8 @@ const job = new cron.CronJob(period, function() {
                 currency: projCurrency,
                 error: '',
                 errorCode: 0,
-                timestamp: new Date().toJSON() });
+                timestamp: new Date().toJSON()
+              });
               const dir = `${projDir}/${projName}/api/${apiVersion}/monetization`;
               if (!fs.existsSync(dir)) {
                 fs.mkdirSync(dir, { recursive: true });
@@ -268,5 +274,3 @@ function equalsIgnoreCase(str, otherStr) {
   }
   return otherStr === undefined;
 }
-
-
