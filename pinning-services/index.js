@@ -86,6 +86,7 @@ const job = new cron.CronJob(period, function() {
   }
 }, null, true);
 
+// Pin files to distributed networks
 function pinFiles() {
   const file = fs.readFileSync(projFile);
   const projects = JSON.parse(file);
@@ -133,7 +134,7 @@ function pinFiles() {
       }
 
       // Pin WWW site to Hypercore
-      if (protoHypercore && false) {
+      if (protoHypercore && false) { // Disable temporarily
         if (fs.existsSync(dirWww)) {
           getDatSeed('dat-seed-www', projName, domain, txtHypercoreWww)
             .then(seed => hyperPublisher.sync({
