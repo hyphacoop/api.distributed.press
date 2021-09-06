@@ -126,7 +126,7 @@ const job = new cron.CronJob(period, function() {
         }
 
         // Pin WWW site to Hypercore
-        if (protoHypercore) {
+        if (protoHypercore && false) {
           if (fs.existsSync(dirWww)) {
             getDatSeed('dat-seed-www', projName, domain, txtHypercoreWww)
               .then(seed => hyperPublisher.sync({
