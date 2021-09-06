@@ -311,44 +311,51 @@ function updateDnsRecordDigitalOcean(domain, recordType, recordName, recordData,
         return json['domain_records'].filter(record => record['type'] === recordType && record['name'] === recordName);
       }
     })
-    .then(txt => {
+    .then(records => {
       let isDeleted = false;
       let isUpdated = false;
 
       // If there is anything other then one entry found, 
       // all entries should be removed then one entry added
-      if (txt.length != 1)
+      if (records.length != 1) {
         isUpdated = true
+      }
 
       // If there is a record, and recordData is an empty string, delete the record
-      if (txt.length === 1 && recordData === '') {
+      if (records.length === 1 && recordData === '') {
         isDeleted = true;
         isUpdated = false
       }
 
       // If there is a record, and the data in that record differs from recordData, update
-      if (txt.length === 1 && txt[0]['data'] != recordData)
+      if (records.length === 1 && records[0]['data'] != recordData) {
         isUpdated = true;
+      }
 
       // If there is no record, and the recordData is an empty string, don't do anything
-      if (txt.length === 0 && recordData === '') {
+      if (records.length === 0 && recordData === '') {
         isUpdated = false;
         isDeleted = false;
       }
 
       // If there is an update, there needs to be a delete first
-      if (isUpdated) isDeleted = true;
+      if (isUpdated) {
+        isDeleted = true;
+      }
 
       // Delete existing records with matching record type and name
       if (isDeleted) {
-        txt.forEach((item, index) => {
-          if (item['type'] === 'TXT' && item['data'].indexOf('datkey=') === -1 && item['data'].indexOf('dnslink=') === -1) break;
-          const urlDelete = url + item['id'];
-          console.log(`DELETE ${urlDelete}`);
-          fetch(urlDelete, { method: 'DELETE', headers: headers })
-            .catch(function(error) {
-              console.log(error);
-          });
+        records.forEach((item, index) => {
+          if (item['type'] === 'TXT' && item['data'].indexOf('datkey=') === -1 && item['data'].indexOf('dnslink=') === -1) {
+            // Skip deletion if record type is TXT and data does not contain 'datkey=' or 'dnslink='
+          } else {
+            const urlDelete = url + item['id'];
+            console.log(`DELETE ${urlDelete}`);
+            fetch(urlDelete, { method: 'DELETE', headers: headers })
+              .catch(function(error) {
+                console.log(error);
+              });
+          }
         });
       }
 
