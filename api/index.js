@@ -296,7 +296,7 @@ function addNewApiKey(project) {
     const projects = JSON.parse(file);
     const index = projects['active'].findIndex((item) => item['domain'] === project);
     if (index === -1) {
-      // Add new project to project list
+      // Add new project to project list  
       projects['active'].push({
         domain: project,
         apiKeyHashes: [
@@ -308,6 +308,13 @@ function addNewApiKey(project) {
       projects['active'][index]['apiKeyHashes'].push(hash);
     }
     fs.writeFileSync(projFile, JSON.stringify(projects));
+    
+    // Create project directory and www folder. Required for pinning service.
+    const fileConfig = fs.readFileSync(confFile);
+    conf = JSON.parse(fileConfig);
+    dataDir = conf['dataDirectory'];
+    projDir = `${dataDir}/projects`;
+    fs.mkdirSync(`${projDir}/${project}/www`, { recursive: true });
 
     // Refresh project map
     projMap = readProjectMap(projFile);
