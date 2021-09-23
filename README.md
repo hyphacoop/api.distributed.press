@@ -87,6 +87,7 @@ This is the list of projects published using the Distributed Press.
 |:------------------------|:------------|
 | staging.compost.digital | Example website for Distributed Press |
 | one.compost.digital     | Website of COMPOST magazine Issue O1 |
+| two.compost.digital     | Website of COMPOST magazine Issue O2 |
 | compost.digital         | Website of COMPOST magazine |
 | hypha.coop              | Website of Hypha Worker Co-operative |
 | sutty.ml                | Experimental website mirror of [Sutty](https://sutty.nl/en/) |
