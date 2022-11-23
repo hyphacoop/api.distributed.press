@@ -1,7 +1,7 @@
 name: Lint
 on:
   push:
-    branches-ignore: [main, v1]
+    branches: [main, v1]
   pull_request:
     branches: [main, v1]
 jobs:
