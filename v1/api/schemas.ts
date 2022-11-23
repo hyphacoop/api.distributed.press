@@ -11,10 +11,10 @@ export const Links = Type.Object({
   hyperGateway: Type.String(),
   hyperRaw: Type.String(),
   ipns: Type.String(),
-  ipnsRaw: Type.String(), 
+  ipnsRaw: Type.String(),
   ipnsGateway: Type.String(),
   ipfs: Type.String(),
-  ipfsGateway: Type.String(),
+  ipfsGateway: Type.String()
 })
 
 export const Publication = Type.Object({
@@ -27,9 +27,8 @@ export const Site = Type.Object({
   dns: DNS,
   links: Links,
   publication: Type.Object({
-    http: Type.Optional(Publication),
-    hyper: Type.Optional(Publication),
-    ipfs: Type.Optional(Publication),
-  }),
+    http: Type.Partial(Publication),
+    hyper: Type.Partial(Publication),
+    ipfs: Type.Partial(Publication)
+  })
 })
-

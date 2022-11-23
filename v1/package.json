@@ -52,5 +52,10 @@
       },
       "compile": "tsc"
     }
+  },
+  "ts-standard": {
+    "ignore": [
+      "build"
+    ]
   }
 }
