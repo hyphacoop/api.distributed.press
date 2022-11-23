@@ -18,7 +18,7 @@ function apiBuilder (logging = false): FastifyTypebox {
     .register(multipart) // TODO: discuss whether we want to set a filesize limit
     .withTypeProvider<TypeBoxTypeProvider>()
 
-  server.get('/healthz', async () => {
+  server.get('/healthz', () => {
     return 'ok\n'
   })
 
@@ -26,8 +26,8 @@ function apiBuilder (logging = false): FastifyTypebox {
   return server
 }
 
-function v1Routes (server: FastifyTypebox): void {
-  void server.register(siteRoutes)
+async function v1Routes (server: FastifyTypebox): Promise<void> {
+  await server.register(siteRoutes)
 }
 
 export default apiBuilder
