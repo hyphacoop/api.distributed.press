@@ -30,6 +30,8 @@
   },
   "homepage": "https://distributed.press",
   "dependencies": {
+    "@fastify/multipart": "^7.3.0",
+    "@fastify/type-provider-typebox": "^2.3.0",
     "cors": "^2.8.5",
     "express": "^4.17.1",
     "fastify": "^4.10.2",

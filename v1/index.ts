@@ -1,7 +1,7 @@
-import makeServer from './api'
+import apiBuilder from './api'
 
 const PORT = Number(process.env.PORT) || 8080
-const server = makeServer(true)
+const server = apiBuilder(true)
 server.listen({ port: PORT }, (err, _address) => {
   if (err) {
     server.log.error(err)

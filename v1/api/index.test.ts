@@ -1,8 +1,8 @@
 import test from 'ava';
-import makeServer from './api';
+import apiBuilder from './';
 
 test('health check /healthz', async t => {
-  const server = makeServer()
+  const server = apiBuilder()
   const response = await server.inject({
     method: 'GET',
     url: '/healthz'
