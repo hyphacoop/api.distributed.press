@@ -8,6 +8,10 @@ jobs:
   build:
     name: Lint
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: v1
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
