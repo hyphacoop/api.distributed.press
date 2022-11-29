@@ -7,7 +7,7 @@ export const UpdateSite = Type.Pick(Site, ['publication'])
 
 // TODO, use a preValidation hook here to check for JWT, this should
 // call into the authorization module
-export async function siteRoutes (server: FastifyInstance): Promise<void> {
+export async function siteRoutes(server: FastifyInstance): Promise<void> {
   server.post<{
     Body: Static<typeof NewSite>
     Reply: Static<typeof Site>
@@ -16,11 +16,11 @@ export async function siteRoutes (server: FastifyInstance): Promise<void> {
       body: NewSite,
       response: {
         200: Site
-      }
+      },
+      description: "Create a new site"
     }
   }, async (_request, reply) => {
-    // TODO
-    // create site and return created site
+    // TODO: stub
     return await reply.status(200)
   })
 
@@ -40,6 +40,7 @@ export async function siteRoutes (server: FastifyInstance): Promise<void> {
     }
   }, async (request, _reply) => {
     const { domain } = request.params
+    // TODO: stub
     return {
       domain,
       dns: {
@@ -78,8 +79,7 @@ export async function siteRoutes (server: FastifyInstance): Promise<void> {
       }
     }
   }, async (_request, reply) => {
-    // TODO
-    // const { domain } = request.params
+    // TODO: stub
     return await reply.status(200)
   })
 }

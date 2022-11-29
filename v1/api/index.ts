@@ -1,33 +1,60 @@
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox'
-import fastify, { FastifyBaseLogger, FastifyInstance, RawReplyDefaultExpression, RawRequestDefaultExpression, RawServerDefault } from 'fastify'
+import fastify, { FastifyBaseLogger, FastifyInstance, RawReplyDefaultExpression, RawRequestDefaultExpression, RawServerDefault, RegisterOptions } from 'fastify'
 import { siteRoutes } from './sites'
 import multipart from '@fastify/multipart'
+import swagger from '@fastify/swagger'
+import swagger_ui from '@fastify/swagger-ui'
 
 export type FastifyTypebox = FastifyInstance<
-RawServerDefault,
-RawRequestDefaultExpression<RawServerDefault>,
-RawReplyDefaultExpression<RawServerDefault>,
-FastifyBaseLogger,
-TypeBoxTypeProvider
+  RawServerDefault,
+  RawRequestDefaultExpression<RawServerDefault>,
+  RawReplyDefaultExpression<RawServerDefault>,
+  FastifyBaseLogger,
+  TypeBoxTypeProvider
 >
 
-function apiBuilder (logging = false): FastifyTypebox {
-  const server = fastify({
-    logger: logging
-  })
-    .register(multipart) // TODO: discuss whether we want to set a filesize limit
-    .withTypeProvider<TypeBoxTypeProvider>()
+interface APIConfig {
+  useLogging: boolean
+  useSwagger: boolean
+}
+
+async function apiBuilder({ useLogging, useSwagger }: Partial<APIConfig>): Promise<FastifyTypebox> {
+  const server = fastify({ logger: useLogging }).withTypeProvider<TypeBoxTypeProvider>()
+  await server.register(multipart) // TODO: discuss whether we want to set a filesize limit
 
   server.get('/healthz', () => {
     return 'ok\n'
   })
 
-  void server.register(v1Routes, { prefix: '/v1' })
+  await server.register(v1Routes(useSwagger ?? false), { prefix: '/v1' })
+  await server.ready()
   return server
 }
 
-async function v1Routes (server: FastifyTypebox): Promise<void> {
+const v1Routes = (useSwagger: boolean) => async (server: FastifyTypebox): Promise<void> => {
+  if (useSwagger) {
+    await server.register(swagger, {
+      swagger: {
+        info: {
+          title: 'Distributed Press API',
+          description: 'Documentation on how to use the Distributed Press API to publish your website content and the Distributed Press API for your project',
+          version: '1.0.0'
+        },
+      },
+    })
+
+    await server.register(swagger_ui, {
+      routePrefix: '/docs',
+    })
+  }
+  
+  // Register Routes
   await server.register(siteRoutes)
+
+  if (useSwagger) {
+    server.swagger()
+    server.log.info("Registered Swagger endpoints")
+  }
 }
 
 export default apiBuilder
