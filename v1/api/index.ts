@@ -4,6 +4,8 @@ import { siteRoutes } from './sites'
 import multipart from '@fastify/multipart'
 import swagger from '@fastify/swagger'
 import swagger_ui from '@fastify/swagger-ui'
+import { adminRoutes } from './admin'
+import { publisherRoutes } from './publisher'
 
 export type FastifyTypebox = FastifyInstance<
   RawServerDefault,
@@ -39,7 +41,11 @@ const v1Routes = (useSwagger: boolean) => async (server: FastifyTypebox): Promis
           title: 'Distributed Press API',
           description: 'Documentation on how to use the Distributed Press API to publish your website content and the Distributed Press API for your project',
           version: '1.0.0'
-        },
+        }, tags: [
+          { name: 'site', description: 'Managing site deployments' },
+          { name: 'publisher', description: 'Publisher account management' },
+          { name: 'admin', description: 'Admin account management' },
+        ],
       },
     })
 
@@ -47,9 +53,11 @@ const v1Routes = (useSwagger: boolean) => async (server: FastifyTypebox): Promis
       routePrefix: '/docs',
     })
   }
-  
+
   // Register Routes
   await server.register(siteRoutes)
+  await server.register(publisherRoutes)
+  await server.register(adminRoutes)
 
   if (useSwagger) {
     server.swagger()

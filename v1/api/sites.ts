@@ -1,9 +1,7 @@
 import { FastifyInstance } from 'fastify'
-import { Site } from './schemas'
+import { NewSite, Site, UpdateSite } from './schemas'
 import { Type, Static } from '@sinclair/typebox'
-
-export const NewSite = Type.Pick(Site, ['domain', 'publication'])
-export const UpdateSite = Type.Pick(Site, ['publication'])
+import config from '../config'
 
 // TODO, use a preValidation hook here to check for JWT, this should
 // call into the authorization module
@@ -17,11 +15,13 @@ export async function siteRoutes(server: FastifyInstance): Promise<void> {
       response: {
         200: Site
       },
-      description: "Create a new site"
+      description: "Create a new site.",
+      tags: ["site"]
     }
-  }, async (_request, reply) => {
+  }, async (request, reply) => {
     // TODO: stub
-    return await reply.status(200)
+    config.sites.create(request.body)
+    return reply.status(200)
   })
 
   server.get<{
@@ -36,34 +36,14 @@ export async function siteRoutes(server: FastifyInstance): Promise<void> {
       },
       response: {
         200: Site
-      }
+      },
+      description: "Returns the configuration and info about the domain.",
+      tags: ["site"]
     }
   }, async (request, _reply) => {
-    const { domain } = request.params
     // TODO: stub
-    return {
-      domain,
-      dns: {
-        server: '',
-        domains: []
-      },
-      links: {
-        http: '',
-        hyper: '',
-        hyperGateway: '',
-        hyperRaw: '',
-        ipns: '',
-        ipnsRaw: '',
-        ipnsGateway: '',
-        ipfs: '',
-        ipfsGateway: ''
-      },
-      publication: {
-        http: {},
-        hyper: {},
-        ipfs: {}
-      }
-    }
+    const { domain } = request.params
+    return config.sites.get(domain) 
   })
 
   server.post<{
@@ -76,10 +56,63 @@ export async function siteRoutes(server: FastifyInstance): Promise<void> {
       body: UpdateSite,
       params: {
         domain: Type.String()
-      }
+      },
+      description: "Update the configuration for the site.",
+      tags: ["site"]
     }
-  }, async (_request, reply) => {
+  }, async (request, reply) => {
     // TODO: stub
-    return await reply.status(200)
+    const { domain } = request.params
+    config.sites.update(domain, request.body)
+    return reply.status(200)
   })
+
+  server.put<{
+    Params: { domain: string },
+    Body: Static<typeof UpdateSite>
+  }>('/sites/:domain', {
+    schema: {
+      body: NewSite,
+      params: {
+        domain: Type.String()
+      },
+      description: "Upload content to the site. Body must be a `tar.gz` file which will get extracted out and served. Any files missing from the tarball that are on disk, will be deleted from disk and the p2p archives.",
+      tags: ["site"]
+    }
+  }, async (request, reply) => {
+    // TODO: stub 
+    // handle errors
+    // - ensure only one file 
+    // - ensure its a tarball
+    // - ensure size in range
+    // do something with files
+    const { domain } = request.params
+    const files = await request.saveRequestFiles()
+    request.log.info(`${domain} ${files}`)
+    return reply.status(200)
+  })
+
+  server.patch<{
+    Params: { domain: string },
+  }>('/sites/:domain', {
+    schema: {
+      params: {
+        domain: Type.String()
+      },
+      description: "Upload a patch with just the files you want added. This will only do a diff on the files in the tarball and will not delete any missing files.",
+      tags: ["site"]
+    }
+  }, async (request, reply) => {
+    // TODO: stub 
+    // handle errors
+    // - ensure only one file 
+    // - ensure its a tarball
+    // - ensure size in range
+    // do something with files
+    const { domain } = request.params
+    const files = await request.saveRequestFiles()
+    request.log.info(`${domain}, ${files}`)
+    return reply.status(200)
+  })
+
 }

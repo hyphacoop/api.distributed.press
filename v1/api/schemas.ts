@@ -32,3 +32,17 @@ export const Site = Type.Object({
     ipfs: Type.Partial(Publication)
   })
 })
+export const NewSite = Type.Pick(Site, ['publication'])
+export const UpdateSite = Type.Pick(Site, ['domain'])
+
+export const Publisher = Type.Object({
+  id: Type.String()
+  // TODO: what other fields do we need here?
+})
+export const NewPublisher = Type.Pick(Publisher, ['id'])
+
+export const Admin = Type.Object({
+  id: Type.String()
+  // TODO: what other fields do we need here?
+})
+export const NewAdmin = Type.Pick(Admin, ['id'])
