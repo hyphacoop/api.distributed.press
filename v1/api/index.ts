@@ -1,5 +1,5 @@
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox'
-import fastify, { FastifyBaseLogger, FastifyInstance, RawReplyDefaultExpression, RawRequestDefaultExpression, RawServerDefault, RegisterOptions } from 'fastify'
+import fastify, { FastifyBaseLogger, FastifyInstance, RawReplyDefaultExpression, RawRequestDefaultExpression, RawServerDefault } from 'fastify'
 import { siteRoutes } from './sites'
 import multipart from '@fastify/multipart'
 import swagger from '@fastify/swagger'
@@ -8,11 +8,11 @@ import { adminRoutes } from './admin'
 import { publisherRoutes } from './publisher'
 
 export type FastifyTypebox = FastifyInstance<
-  RawServerDefault,
-  RawRequestDefaultExpression<RawServerDefault>,
-  RawReplyDefaultExpression<RawServerDefault>,
-  FastifyBaseLogger,
-  TypeBoxTypeProvider
+RawServerDefault,
+RawRequestDefaultExpression<RawServerDefault>,
+RawReplyDefaultExpression<RawServerDefault>,
+FastifyBaseLogger,
+TypeBoxTypeProvider
 >
 
 interface APIConfig {
@@ -20,7 +20,7 @@ interface APIConfig {
   useSwagger: boolean
 }
 
-async function apiBuilder({ useLogging, useSwagger }: Partial<APIConfig>): Promise<FastifyTypebox> {
+async function apiBuilder ({ useLogging, useSwagger }: Partial<APIConfig>): Promise<FastifyTypebox> {
   const server = fastify({ logger: useLogging }).withTypeProvider<TypeBoxTypeProvider>()
   await server.register(multipart) // TODO: discuss whether we want to set a filesize limit
 
@@ -41,16 +41,17 @@ const v1Routes = (useSwagger: boolean) => async (server: FastifyTypebox): Promis
           title: 'Distributed Press API',
           description: 'Documentation on how to use the Distributed Press API to publish your website content and the Distributed Press API for your project',
           version: '1.0.0'
-        }, tags: [
+        },
+        tags: [
           { name: 'site', description: 'Managing site deployments' },
           { name: 'publisher', description: 'Publisher account management' },
-          { name: 'admin', description: 'Admin account management' },
-        ],
-      },
+          { name: 'admin', description: 'Admin account management' }
+        ]
+      }
     })
 
     await server.register(swagger_ui, {
-      routePrefix: '/docs',
+      routePrefix: '/docs'
     })
   }
 
@@ -61,7 +62,7 @@ const v1Routes = (useSwagger: boolean) => async (server: FastifyTypebox): Promis
 
   if (useSwagger) {
     server.swagger()
-    server.log.info("Registered Swagger endpoints")
+    server.log.info('Registered Swagger endpoints')
   }
 }
 

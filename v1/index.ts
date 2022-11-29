@@ -1,6 +1,6 @@
 import apiBuilder from './api'
 
-const PORT = Number(process.env.PORT ?? '8080');
+const PORT = Number(process.env.PORT ?? '8080')
 
 apiBuilder({ useLogging: true, useSwagger: true })
   .then(server => server.listen({ port: PORT }, (err, _address) => {

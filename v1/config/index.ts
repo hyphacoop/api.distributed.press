@@ -1,13 +1,13 @@
-import { createAdmin, deleteAdmin, getAdmin, updateAdmin } from "./admin";
-import { createPublisher, deletePublisher, getPublisher, updatePublisher } from "./publisher";
-import { createSite, deleteSite, getSite, updateSite } from "./sites";
+import { createAdmin, deleteAdmin, getAdmin, updateAdmin } from './admin'
+import { createPublisher, deletePublisher, getPublisher, updatePublisher } from './publisher'
+import { createSite, deleteSite, getSite, updateSite } from './sites'
 
 export default {
   admin: {
     create: createAdmin,
     update: updateAdmin,
     get: getAdmin,
-    delete: deleteAdmin,
+    delete: deleteAdmin
   },
   publisher: {
     create: createPublisher,
@@ -19,6 +19,6 @@ export default {
     create: createSite,
     update: updateSite,
     get: getSite,
-    delete: deleteSite,
-  },
+    delete: deleteSite
+  }
 }

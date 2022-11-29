@@ -1,16 +1,16 @@
 import { Static } from '@sinclair/typebox'
-import { FastifyInstance } from "fastify";
-import config from '../config';
-import { NewAdmin } from './schemas';
+import { FastifyInstance } from 'fastify'
+import config from '../config'
+import { NewAdmin } from './schemas'
 
-export async function adminRoutes(server: FastifyInstance): Promise<void> {
+export async function adminRoutes (server: FastifyInstance): Promise<void> {
   server.post<{
     Body: Static<typeof NewAdmin>
   }>('/admin', {
     schema: {
       body: NewAdmin,
-      description: "Add a new admin.",
-      tags: ["admin"]
+      description: 'Add a new admin.',
+      tags: ['admin']
     }
   }, async (request, reply) => {
     // TODO: stub
@@ -24,8 +24,8 @@ export async function adminRoutes(server: FastifyInstance): Promise<void> {
     }
   }>('/admin/:id', {
     schema: {
-      description: "Delete an admin",
-      tags: ["admin"]
+      description: 'Delete an admin',
+      tags: ['admin']
     }
   }, async (request, reply) => {
     // TODO: stub

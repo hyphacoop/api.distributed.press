@@ -1,15 +1,15 @@
-import { NewSite, UpdateSite, Site } from "../api/schemas";
+import { NewSite, UpdateSite, Site } from '../api/schemas'
 import { Static } from '@sinclair/typebox'
 
-export function createSite(cfg: Static<typeof NewSite>) {
+export function createSite (cfg: Static<typeof NewSite>): void {
   console.log(cfg)
 }
 
-export function updateSite(domain: string, cfg: Static<typeof UpdateSite>) {
+export function updateSite (domain: string, cfg: Static<typeof UpdateSite>): void {
   console.log(domain, cfg)
 }
 
-export function getSite(domain: string): Static<typeof Site> {
+export function getSite (domain: string): Static<typeof Site> {
   return {
     domain,
     dns: {
@@ -35,6 +35,6 @@ export function getSite(domain: string): Static<typeof Site> {
   }
 }
 
-export function deleteSite(id: string): void {
+export function deleteSite (id: string): void {
   console.log(id)
 }
