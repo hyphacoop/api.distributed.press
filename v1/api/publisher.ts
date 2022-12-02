@@ -1,7 +1,7 @@
 import { Type, Static } from '@sinclair/typebox'
 import { FastifyInstance } from 'fastify'
-import config from '../config'
-import { NewPublisher, Publisher } from './schemas'
+import config from '../config/index.js'
+import { NewPublisher, Publisher } from './schemas.js'
 
 export async function publisherRoutes (server: FastifyInstance): Promise<void> {
   server.post<{

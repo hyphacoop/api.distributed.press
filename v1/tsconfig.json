@@ -3,9 +3,11 @@
     "**/*.ts"
   ],
   "compilerOptions": {
-    "target": "ES2021",
-    "module": "commonjs",
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "node",
     "outDir": "./build",
+    "sourceMap": true,
     "rootDir": ".",
     "strict": true,
     "esModuleInterop": true

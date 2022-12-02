@@ -1,11 +1,12 @@
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox'
 import fastify, { FastifyBaseLogger, FastifyInstance, RawReplyDefaultExpression, RawRequestDefaultExpression, RawServerDefault } from 'fastify'
-import { siteRoutes } from './sites'
 import multipart from '@fastify/multipart'
 import swagger from '@fastify/swagger'
 import swagger_ui from '@fastify/swagger-ui'
-import { adminRoutes } from './admin'
-import { publisherRoutes } from './publisher'
+import metrics from 'fastify-metrics'
+import { siteRoutes } from './sites.js'
+import { adminRoutes } from './admin.js'
+import { publisherRoutes } from './publisher.js'
 
 export type FastifyTypebox = FastifyInstance<
 RawServerDefault,
@@ -18,23 +19,28 @@ TypeBoxTypeProvider
 interface APIConfig {
   useLogging: boolean
   useSwagger: boolean
+  usePrometheus: boolean
 }
 
-async function apiBuilder ({ useLogging, useSwagger }: Partial<APIConfig>): Promise<FastifyTypebox> {
-  const server = fastify({ logger: useLogging }).withTypeProvider<TypeBoxTypeProvider>()
-  await server.register(multipart) // TODO: discuss whether we want to set a filesize limit
+async function apiBuilder (cfg: Partial<APIConfig>): Promise<FastifyTypebox> {
+  const server = fastify({ logger: cfg.useLogging }).withTypeProvider<TypeBoxTypeProvider>()
+  await server.register(multipart)
 
   server.get('/healthz', () => {
     return 'ok\n'
   })
 
-  await server.register(v1Routes(useSwagger ?? false), { prefix: '/v1' })
+  await server.register(v1Routes(cfg), { prefix: '/v1' })
   await server.ready()
   return server
 }
 
-const v1Routes = (useSwagger: boolean) => async (server: FastifyTypebox): Promise<void> => {
-  if (useSwagger) {
+const v1Routes = (cfg: Partial<APIConfig>) => async (server: FastifyTypebox): Promise<void> => {
+  if (cfg.usePrometheus ?? false) {
+    server.register(metrics, { endpoint: '/metrics' });
+  }
+
+  if (cfg.useSwagger ?? false) {
     await server.register(swagger, {
       swagger: {
         info: {
@@ -44,8 +50,8 @@ const v1Routes = (useSwagger: boolean) => async (server: FastifyTypebox): Promis
         },
         tags: [
           { name: 'site', description: 'Managing site deployments' },
-          { name: 'publisher', description: 'Publisher account management' },
-          { name: 'admin', description: 'Admin account management' }
+          { name: 'publisher', description: 'Publisher account management. Publishers can manage site deployments' },
+          { name: 'admin', description: 'Admin management. Admins can create, modify, and delete publishers' }
         ]
       }
     })
@@ -60,7 +66,7 @@ const v1Routes = (useSwagger: boolean) => async (server: FastifyTypebox): Promis
   await server.register(publisherRoutes)
   await server.register(adminRoutes)
 
-  if (useSwagger) {
+  if (cfg.useSwagger ?? false) {
     server.swagger()
     server.log.info('Registered Swagger endpoints')
   }

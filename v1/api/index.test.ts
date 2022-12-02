@@ -1,5 +1,5 @@
 import test from 'ava'
-import apiBuilder from './'
+import apiBuilder from './index.js'
 
 test('health check /healthz', async t => {
   const server = await apiBuilder({})

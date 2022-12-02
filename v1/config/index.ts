@@ -1,6 +1,6 @@
-import { createAdmin, deleteAdmin, getAdmin, updateAdmin } from './admin'
-import { createPublisher, deletePublisher, getPublisher, updatePublisher } from './publisher'
-import { createSite, deleteSite, getSite, updateSite } from './sites'
+import { createAdmin, deleteAdmin, getAdmin, updateAdmin } from './admin.js'
+import { createPublisher, deletePublisher, getPublisher, updatePublisher } from './publisher.js'
+import { createSite, deleteSite, getSite, updateSite } from './sites.js'
 
 export default {
   admin: {

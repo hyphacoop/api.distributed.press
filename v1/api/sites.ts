@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify'
-import { NewSite, Site, UpdateSite } from './schemas'
 import { Type, Static } from '@sinclair/typebox'
-import config from '../config'
+import { NewSite, Site, UpdateSite } from './schemas.js'
+import config from '../config/index.js'
 
 // TODO, use a preValidation hook here to check for JWT, this should
 // call into the authorization module

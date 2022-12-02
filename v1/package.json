@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "description": "API for the Distributed Press",
   "main": "build/index.js",
+  "type": "module",
   "scripts": {
     "clean": "rm -rf build",
     "build": "npm run clean && tsc",
-    "fmt": "ts-standard --fix",
+    "lint": "tsc --noEmit && ts-standard --fix",
     "dev": "npm run build && node build/index.js | pino-pretty -c -t",
     "start": "node build/index.js",
     "test": "ava"
@@ -38,7 +39,9 @@
     "cors": "^2.8.5",
     "express": "^4.17.1",
     "fastify": "^4.10.2",
-    "fs": "0.0.1-security"
+    "fastify-metrics": "^10.0.0",
+    "fs": "0.0.1-security",
+    "prom-client": "^14.1.0"
   },
   "devDependencies": {
     "@ava/typescript": "^3.0.1",

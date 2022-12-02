@@ -1,7 +1,7 @@
 import { Static } from '@sinclair/typebox'
 import { FastifyInstance } from 'fastify'
-import config from '../config'
-import { NewAdmin } from './schemas'
+import config from '../config/index.js'
+import { NewAdmin } from './schemas.js'
 
 export async function adminRoutes (server: FastifyInstance): Promise<void> {
   server.post<{
