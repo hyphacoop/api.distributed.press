@@ -18,10 +18,8 @@ export async function siteRoutes (server: FastifyInstance): Promise<void> {
       description: 'Create a new site.',
       tags: ['site']
     }
-  }, async (request, reply) => {
-    // TODO: stub
-    config.sites.create(request.body)
-    return await reply.status(200)
+  }, async (request, _reply) => {
+    return config.sites.create(request.body)
   })
 
   server.get<{
@@ -41,7 +39,6 @@ export async function siteRoutes (server: FastifyInstance): Promise<void> {
       tags: ['site']
     }
   }, async (request, _reply) => {
-    // TODO: stub
     const { domain } = request.params
     return config.sites.get(domain)
   })
@@ -60,11 +57,9 @@ export async function siteRoutes (server: FastifyInstance): Promise<void> {
       description: 'Update the configuration for the site.',
       tags: ['site']
     }
-  }, async (request, reply) => {
-    // TODO: stub
+  }, async (request, _reply) => {
     const { domain } = request.params
-    config.sites.update(domain, request.body)
-    return await reply.status(200)
+    return config.sites.update(domain, request.body)
   })
 
   server.put<{
