@@ -1,40 +1,41 @@
 import { NewSite, UpdateSite, Site } from '../api/schemas'
 import { Static } from '@sinclair/typebox'
+import { Config } from './store.js';
+import { nanoid } from 'nanoid';
 
-export function createSite (cfg: Static<typeof NewSite>): void {
-  console.log(cfg)
-}
-
-export function updateSite (domain: string, cfg: Static<typeof UpdateSite>): void {
-  console.log(domain, cfg)
-}
-
-export function getSite (domain: string): Static<typeof Site> {
-  return {
-    domain,
-    dns: {
-      server: '',
-      domains: []
-    },
-    links: {
-      http: '',
-      hyper: '',
-      hyperGateway: '',
-      hyperRaw: '',
-      ipns: '',
-      ipnsRaw: '',
-      ipnsGateway: '',
-      ipfs: '',
-      ipfsGateway: ''
-    },
-    publication: {
-      http: {},
-      hyper: {},
-      ipfs: {}
-    }
+export class SiteConfigStore extends Config<Static<typeof Site>> {
+  getKeyPrefix(): string {
+    return "SITECFG"
   }
-}
 
-export function deleteSite (id: string): void {
-  console.log(id)
+  async create(cfg: Static<typeof NewSite>): Promise<void> {
+    const id = nanoid();
+    const obj = {
+      id,
+      publication: {
+        http: {},
+        hyper: {},
+        ipfs: {},
+      },
+      ...cfg
+    };
+    await this.db.put(this.wrapWithKeyPrefix(id), obj)
+  }
+
+  async update(id: string, cfg: Static<typeof UpdateSite>): Promise<void> {
+    const old = await this.get(id);
+    const obj = {
+      ...old,
+      ...cfg,
+    }
+    await this.db.put(this.wrapWithKeyPrefix(id), obj)
+  }
+
+  async get(id: string): Promise<Static<typeof Site>> {
+    return this.db.get(this.wrapWithKeyPrefix(id))
+  }
+
+  async delete(id: string): Promise<void> {
+    return this.db.del(this.wrapWithKeyPrefix(id))
+  }
 }

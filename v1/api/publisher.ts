@@ -16,9 +16,8 @@ export async function publisherRoutes (server: FastifyInstance): Promise<void> {
       description: 'Add a new publisher.',
       tags: ['publisher']
     }
-  }, async (request, reply) => {
-    config.publisher.create(request.body)
-    return await reply.status(200)
+  }, async (request, _reply) => {
+    return config.publisher.create(request.body)
   })
 
   server.get<{
@@ -38,7 +37,6 @@ export async function publisherRoutes (server: FastifyInstance): Promise<void> {
       tags: ['publisher']
     }
   }, async (request, _reply) => {
-    // TODO: stub
     const { id } = request.params
     return config.publisher.get(id)
   })
@@ -52,10 +50,8 @@ export async function publisherRoutes (server: FastifyInstance): Promise<void> {
       description: 'Delete a publisher',
       tags: ['publisher']
     }
-  }, async (request, reply) => {
-    // TODO: stub
+  }, async (request, _reply) => {
     const { id } = request.params
-    config.publisher.delete(id)
-    return await reply.status(200)
+    return config.publisher.delete(id)
   })
 }

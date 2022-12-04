@@ -1,19 +1,29 @@
 import { NewPublisher, Publisher } from '../api/schemas'
 import { Static } from '@sinclair/typebox'
+import { Config } from './store.js';
+import { nanoid } from 'nanoid';
 
-export function createPublisher (_cfg: Static<typeof NewPublisher>): string {
-  return 'PLACEHOLDER_ID'
-}
+export class PublisherStore extends Config<Static<typeof Publisher>> {
+  getKeyPrefix(): string {
+    return "PUBLISHER"
+  }
 
-export function updatePublisher (_cfg: Static<typeof NewPublisher>): void {
-}
+  async create(cfg: Static<typeof NewPublisher>): Promise<Static<typeof Publisher>> {
+    const id = nanoid();
+    const obj = {
+      id,
+      ...cfg
+    };
+    await this.db.put(this.wrapWithKeyPrefix(id), obj)
+    return obj
+  }
 
-export function getPublisher (id: string): Static<typeof Publisher> {
-  return {
-    id
+  async get(id: string): Promise<Static<typeof Publisher>> {
+    return this.db.get(this.wrapWithKeyPrefix(id))
+  }
+
+  async delete(id: string): Promise<void> {
+    return this.db.del(this.wrapWithKeyPrefix(id))
   }
 }
 
-export function deletePublisher (id: string): void {
-  console.log(id)
-}

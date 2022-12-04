@@ -6,6 +6,7 @@ import { NewAdmin } from './schemas.js'
 export async function adminRoutes (server: FastifyInstance): Promise<void> {
   server.post<{
     Body: Static<typeof NewAdmin>
+    Reply: string 
   }>('/admin', {
     schema: {
       body: NewAdmin,
@@ -13,9 +14,8 @@ export async function adminRoutes (server: FastifyInstance): Promise<void> {
       tags: ['admin']
     }
   }, async (request, reply) => {
-    // TODO: stub
-    config.admin.create(request.body)
-    return await reply.status(200)
+    const id = await config.admin.create(request.body)
+    return reply.send(id)
   })
 
   server.delete<{
@@ -28,9 +28,8 @@ export async function adminRoutes (server: FastifyInstance): Promise<void> {
       tags: ['admin']
     }
   }, async (request, reply) => {
-    // TODO: stub
     const { id } = request.params
-    config.admin.delete(id)
-    return await reply.status(200)
+    await config.admin.delete(id)
+    return reply.status(200)
   })
 }
