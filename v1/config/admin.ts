@@ -3,25 +3,20 @@ import { Static } from '@sinclair/typebox'
 import { Config } from './store.js'
 import { nanoid } from 'nanoid'
 
-export class AdminStore extends Config<Static<typeof Admin>> {
-  getKeyPrefix(): string {
-    return "ADMIN"
-  }
-
+export class AdminStore extends Config {
   async create(cfg: Static<typeof NewAdmin>): Promise<string> {
     const id = nanoid();
-    await this.db.put(this.wrapWithKeyPrefix(id), {
+    return this.db.put(id, {
       id,
       ...cfg
-    })
-    return id
+    }).then(() => id)
   }
 
   async get(id: string): Promise<Static<typeof Admin>> {
-    return this.db.get(this.wrapWithKeyPrefix(id))
+    return this.db.get(id)
   }
 
   async delete(id: string): Promise<void> {
-    return this.db.del(this.wrapWithKeyPrefix(id))
+    return this.db.del(id)
   }
 }

@@ -5,7 +5,7 @@ export const DNS = Type.Object({
   domains: Type.Array(Type.String())
 })
 
-export const Links = Type.Object({
+export const Links = Type.Partial(Type.Object({
   http: Type.String(),
   hyper: Type.String(),
   hyperGateway: Type.String(),
@@ -15,7 +15,7 @@ export const Links = Type.Object({
   ipnsGateway: Type.String(),
   ipfs: Type.String(),
   ipfsGateway: Type.String()
-})
+}))
 
 export const Publication = Type.Object({
   enabled: Type.Boolean(),
@@ -34,7 +34,7 @@ export const Site = Type.Object({
   })
 })
 export const NewSite = Type.Omit(Site, ['publication', 'id'])
-export const UpdateSite = Type.Omit(Site, ['domain', 'id'])
+export const UpdateSite = Type.Partial(Type.Omit(Site, ['id']))
 
 export const Publisher = Type.Object({
   id: Type.String(),

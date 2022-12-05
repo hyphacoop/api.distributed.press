@@ -1,23 +1,15 @@
-import levelup, { LevelUp } from 'levelup';
-import leveldown from 'leveldown';
-import { AbstractLevelDOWN } from 'abstract-leveldown'
+import { AbstractLevel } from 'abstract-level'
 
-/// Creates a new config database
-/// By default, creates a LevelDB instance
-export function makeDB(db?: AbstractLevelDOWN) {
-  db = (db === undefined) ? leveldown('./store') : db
-  return levelup(db)
-}
-
-export abstract class Config<T> {
-  db: LevelUp<AbstractLevelDOWN<string, T>>
-
-  constructor(db: LevelUp) {
+// NB: ideally, this Config class takes in a generic param `T`
+// so that `db` can be `AbstractLevel<any, string, T>` however
+// the typings force .sublevel() to product an `AbstractSublevel<any, string, string>` 
+export abstract class Config {
+  protected db: AbstractLevel<any, string, any>
+  constructor(db: AbstractLevel<any, string, any>) {
     this.db = db;
   }
-  
-  abstract getKeyPrefix(): string
-  wrapWithKeyPrefix(id: string): string {
-    return `${this.getKeyPrefix}_${id}`
+
+  async keys(): Promise<string[]> {
+    return this.db.keys().all()
   }
 }
