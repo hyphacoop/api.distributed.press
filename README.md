@@ -25,3 +25,6 @@ All necessary files are in `v1`. The commands in the following section will assu
   1. Watch for changes: `npm run watch`
 3. Running tests: `npm test`
 4. Creating and running a production build: `npm run build && npm run start`
+
+## Generating Clients
+Swagger specs are OASv2 compliant. Use `swagger-codegen-cli` to generate appropriate client implementations
