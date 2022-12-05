@@ -1,9 +1,9 @@
 import { Type, Static } from '@sinclair/typebox'
 import { FastifyInstance } from 'fastify'
-import config from '../config/index.js'
+import { StoreI } from '../config/index.js'
 import { NewPublisher, Publisher } from './schemas.js'
 
-export async function publisherRoutes (server: FastifyInstance): Promise<void> {
+export const publisherRoutes = (store: StoreI) => async (server: FastifyInstance): Promise<void> => {
   server.post<{
     Body: Static<typeof NewPublisher>
     Reply: Static<typeof Publisher>
@@ -17,7 +17,7 @@ export async function publisherRoutes (server: FastifyInstance): Promise<void> {
       tags: ['publisher']
     }
   }, async (request, _reply) => {
-    return config.publisher.create(request.body)
+    return store.publisher.create(request.body)
   })
 
   server.get<{
@@ -38,7 +38,7 @@ export async function publisherRoutes (server: FastifyInstance): Promise<void> {
     }
   }, async (request, _reply) => {
     const { id } = request.params
-    return config.publisher.get(id)
+    return store.publisher.get(id)
   })
 
   server.delete<{
@@ -52,6 +52,6 @@ export async function publisherRoutes (server: FastifyInstance): Promise<void> {
     }
   }, async (request, _reply) => {
     const { id } = request.params
-    return config.publisher.delete(id)
+    return store.publisher.delete(id)
   })
 }
