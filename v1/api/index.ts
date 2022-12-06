@@ -7,6 +7,7 @@ import metrics from 'fastify-metrics'
 import { siteRoutes } from './sites.js'
 import { adminRoutes } from './admin.js'
 import { publisherRoutes } from './publisher.js'
+import Store, { StoreI } from '../config/index.js'
 
 export type FastifyTypebox = FastifyInstance<
 RawServerDefault,
@@ -22,7 +23,7 @@ interface APIConfig {
   usePrometheus: boolean
 }
 
-async function apiBuilder (cfg: Partial<APIConfig>): Promise<FastifyTypebox> {
+async function apiBuilder (cfg: Partial<APIConfig>, store: StoreI = new Store()): Promise<FastifyTypebox> {
   const server = fastify({ logger: cfg.useLogging }).withTypeProvider<TypeBoxTypeProvider>()
   await server.register(multipart)
 
@@ -30,12 +31,12 @@ async function apiBuilder (cfg: Partial<APIConfig>): Promise<FastifyTypebox> {
     return 'ok\n'
   })
 
-  await server.register(v1Routes(cfg), { prefix: '/v1' })
+  await server.register(v1Routes(cfg, store), { prefix: '/v1' })
   await server.ready()
   return server
 }
 
-const v1Routes = (cfg: Partial<APIConfig>) => async (server: FastifyTypebox): Promise<void> => {
+const v1Routes = (cfg: Partial<APIConfig>, store: StoreI) => async (server: FastifyTypebox): Promise<void> => {
   if (cfg.usePrometheus ?? false) {
     server.register(metrics, { endpoint: '/metrics' });
   }
@@ -62,9 +63,9 @@ const v1Routes = (cfg: Partial<APIConfig>) => async (server: FastifyTypebox): Pr
   }
 
   // Register Routes
-  await server.register(siteRoutes)
-  await server.register(publisherRoutes)
-  await server.register(adminRoutes)
+  await server.register(siteRoutes(store))
+  await server.register(publisherRoutes(store))
+  await server.register(adminRoutes(store))
 
   if (cfg.useSwagger ?? false) {
     server.swagger()

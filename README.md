@@ -15,3 +15,16 @@ The Distributed Press is in early development, and is currently used to publish 
 The official instance of the Distributed Press API is hosted at [api.distributed.press](https://api.distributed.press).
 
 > Please check [v0/README.md](./v0/README.md) for the v0 documentation
+
+## Developing
+All necessary files are in `v1`. The commands in the following section will assume your current working directory is in the `v1` folder.
+
+1. (Only once) Install dependencies: `npm i`
+2. Running the development server:
+  1. Normal: `npm run dev`
+  1. Watch for changes: `npm run watch`
+3. Running tests: `npm test`
+4. Creating and running a production build: `npm run build && npm run start`
+
+## Generating Clients
+Swagger specs are OASv2 compliant. Use `swagger-codegen-cli` to generate appropriate client implementations

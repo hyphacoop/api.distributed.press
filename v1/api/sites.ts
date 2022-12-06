@@ -1,11 +1,11 @@
 import { FastifyInstance } from 'fastify'
 import { Type, Static } from '@sinclair/typebox'
 import { NewSite, Site, UpdateSite } from './schemas.js'
-import config from '../config/index.js'
+import { StoreI } from '../config/index.js'
 
 // TODO, use a preValidation hook here to check for JWT, this should
 // call into the authorization module
-export async function siteRoutes (server: FastifyInstance): Promise<void> {
+export const siteRoutes = (store: StoreI) => async (server: FastifyInstance): Promise<void> => {
   server.post<{
     Body: Static<typeof NewSite>
     Reply: Static<typeof Site>
@@ -18,10 +18,8 @@ export async function siteRoutes (server: FastifyInstance): Promise<void> {
       description: 'Create a new site.',
       tags: ['site']
     }
-  }, async (request, reply) => {
-    // TODO: stub
-    config.sites.create(request.body)
-    return await reply.status(200)
+  }, async (request, _reply) => {
+    return store.sites.create(request.body)
   })
 
   server.get<{
@@ -41,9 +39,8 @@ export async function siteRoutes (server: FastifyInstance): Promise<void> {
       tags: ['site']
     }
   }, async (request, _reply) => {
-    // TODO: stub
     const { domain } = request.params
-    return config.sites.get(domain)
+    return store.sites.get(domain)
   })
 
   server.post<{
@@ -60,11 +57,9 @@ export async function siteRoutes (server: FastifyInstance): Promise<void> {
       description: 'Update the configuration for the site.',
       tags: ['site']
     }
-  }, async (request, reply) => {
-    // TODO: stub
+  }, async (request, _reply) => {
     const { domain } = request.params
-    config.sites.update(domain, request.body)
-    return await reply.status(200)
+    return store.sites.update(domain, request.body)
   })
 
   server.put<{

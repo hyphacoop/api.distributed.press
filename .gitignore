@@ -106,3 +106,4 @@ dist
 
 # Distributed Press data files
 .data/
+v1/store

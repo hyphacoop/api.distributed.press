@@ -5,7 +5,7 @@ export const DNS = Type.Object({
   domains: Type.Array(Type.String())
 })
 
-export const Links = Type.Object({
+export const Links = Type.Partial(Type.Object({
   http: Type.String(),
   hyper: Type.String(),
   hyperGateway: Type.String(),
@@ -15,7 +15,7 @@ export const Links = Type.Object({
   ipnsGateway: Type.String(),
   ipfs: Type.String(),
   ipfsGateway: Type.String()
-})
+}))
 
 export const Publication = Type.Object({
   enabled: Type.Boolean(),
@@ -23,6 +23,7 @@ export const Publication = Type.Object({
 })
 
 export const Site = Type.Object({
+  id: Type.String(),
   domain: Type.String(),
   dns: DNS,
   links: Links,
@@ -32,17 +33,19 @@ export const Site = Type.Object({
     ipfs: Type.Partial(Publication)
   })
 })
-export const NewSite = Type.Pick(Site, ['publication'])
-export const UpdateSite = Type.Pick(Site, ['domain'])
+export const NewSite = Type.Omit(Site, ['publication', 'id'])
+export const UpdateSite = Type.Partial(Type.Omit(Site, ['id']))
 
 export const Publisher = Type.Object({
-  id: Type.String()
+  id: Type.String(),
+  name: Type.String()
   // TODO: what other fields do we need here?
 })
-export const NewPublisher = Type.Pick(Publisher, ['id'])
+export const NewPublisher = Type.Omit(Publisher, ['id'])
 
 export const Admin = Type.Object({
-  id: Type.String()
+  id: Type.String(),
+  name: Type.String()
   // TODO: what other fields do we need here?
 })
-export const NewAdmin = Type.Pick(Admin, ['id'])
+export const NewAdmin = Type.Omit(Admin, ['id'])
