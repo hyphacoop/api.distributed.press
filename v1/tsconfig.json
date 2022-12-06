@@ -1,0 +1,15 @@
+{
+  "include": [
+    "**/*.ts"
+  ],
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "outDir": "./build",
+    "sourceMap": true,
+    "rootDir": ".",
+    "strict": true,
+    "esModuleInterop": true
+  }
+}
