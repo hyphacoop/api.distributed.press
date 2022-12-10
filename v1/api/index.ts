@@ -8,6 +8,7 @@ import { siteRoutes } from './sites.js'
 import { adminRoutes } from './admin.js'
 import { publisherRoutes } from './publisher.js'
 import Store, { StoreI } from '../config/index.js'
+import { registerAuth } from '../authorization/cfg.js'
 
 export type FastifyTypebox = FastifyInstance<
 RawServerDefault,
@@ -25,6 +26,7 @@ interface APIConfig {
 
 async function apiBuilder (cfg: Partial<APIConfig>, store: StoreI = new Store()): Promise<FastifyTypebox> {
   const server = fastify({ logger: cfg.useLogging }).withTypeProvider<TypeBoxTypeProvider>()
+  await registerAuth(server)
   await server.register(multipart)
 
   server.get('/healthz', () => {
