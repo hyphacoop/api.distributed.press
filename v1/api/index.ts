@@ -12,11 +12,11 @@ import { registerAuth } from '../authorization/cfg.js'
 import { FastifyInstance } from 'fastify'
 
 export type FastifyTypebox = FastifyInstance<
-RawServerDefault,
-RawRequestDefaultExpression<RawServerDefault>,
-RawReplyDefaultExpression<RawServerDefault>,
-FastifyBaseLogger,
-TypeBoxTypeProvider
+  RawServerDefault,
+  RawRequestDefaultExpression<RawServerDefault>,
+  RawReplyDefaultExpression<RawServerDefault>,
+  FastifyBaseLogger,
+  TypeBoxTypeProvider
 >
 
 interface APIConfig {
@@ -25,7 +25,7 @@ interface APIConfig {
   usePrometheus: boolean
 }
 
-async function apiBuilder (cfg: Partial<APIConfig>, store: StoreI = new Store()): Promise<FastifyTypebox> {
+async function apiBuilder(cfg: Partial<APIConfig>, store: StoreI = new Store()): Promise<FastifyTypebox> {
   const server = fastify({ logger: cfg.useLogging }).withTypeProvider<TypeBoxTypeProvider>()
   await registerAuth(server)
   await server.register(multipart)
@@ -46,7 +46,7 @@ const v1Routes = (cfg: Partial<APIConfig>, store: StoreI) => async (server: Fast
 
   if (cfg.useSwagger ?? false) {
     await server.register(swagger, {
-      swagger: {
+      openapi: {
         info: {
           title: 'Distributed Press API',
           description: 'Documentation on how to use the Distributed Press API to publish your website content and the Distributed Press API for your project',
@@ -56,7 +56,16 @@ const v1Routes = (cfg: Partial<APIConfig>, store: StoreI) => async (server: Fast
           { name: 'site', description: 'Managing site deployments' },
           { name: 'publisher', description: 'Publisher account management. Publishers can manage site deployments' },
           { name: 'admin', description: 'Admin management. Admins can create, modify, and delete publishers' }
-        ]
+        ],
+        components: {
+          securitySchemes: {
+            jwt: {
+              type: "http",
+              scheme: "bearer",
+              bearerFormat: "String containing the full JWT token"
+            }
+          }
+        }
       }
     })
 

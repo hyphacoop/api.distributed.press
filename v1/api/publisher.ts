@@ -14,7 +14,8 @@ export const publisherRoutes = (store: StoreI) => async (server: FastifyInstance
         200: Publisher
       },
       description: 'Add a new publisher.',
-      tags: ['publisher']
+      tags: ['publisher'],
+      security: [{ "jwt": [] }]
     },
     preHandler: server.auth([server.verifyAdmin]),
   }, async (request, _reply) => {
@@ -49,7 +50,8 @@ export const publisherRoutes = (store: StoreI) => async (server: FastifyInstance
   }>('/publisher/:id', {
     schema: {
       description: 'Delete a publisher',
-      tags: ['publisher']
+      tags: ['publisher'],
+      security: [{ "jwt": [] }]
     },
     preHandler: server.auth([server.verifyAdmin]),
   }, async (request, _reply) => {

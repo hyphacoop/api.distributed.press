@@ -11,7 +11,8 @@ export const adminRoutes = (store: StoreI) => async (server: FastifyInstance): P
     schema: {
       body: NewAdmin,
       description: 'Add a new admin.',
-      tags: ['admin']
+      tags: ['admin'],
+      security: [{ "jwt": [] }]
     },
     preHandler: server.auth([server.verifyAdmin]),
   }, async (request, reply) => {
@@ -26,7 +27,8 @@ export const adminRoutes = (store: StoreI) => async (server: FastifyInstance): P
   }>('/admin/:id', {
     schema: {
       description: 'Delete an admin',
-      tags: ['admin']
+      tags: ['admin'],
+      security: [{ "jwt": [] }]
     },
     preHandler: server.auth([server.verifyAdmin]),
   }, async (request, reply) => {

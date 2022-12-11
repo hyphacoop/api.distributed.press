@@ -56,7 +56,8 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyInstance): Pr
         domain: Type.String()
       },
       description: 'Update the configuration for the site.',
-      tags: ['site']
+      tags: ['site'],
+      security: [{ "jwt": [] }]
     },
     preHandler: server.auth([server.verifyPublisher]),
   }, async (request, _reply) => {
@@ -74,7 +75,8 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyInstance): Pr
         domain: Type.String()
       },
       description: 'Upload content to the site. Body must be a `tar.gz` file which will get extracted out and served. Any files missing from the tarball that are on disk, will be deleted from disk and the p2p archives.',
-      tags: ['site']
+      tags: ['site'],
+      security: [{ "jwt": [] }]
     },
     preHandler: server.auth([server.verifyPublisher]),
   }, async (request, reply) => {
@@ -98,7 +100,8 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyInstance): Pr
         domain: Type.String()
       },
       description: 'Upload a patch with just the files you want added. This will only do a diff on the files in the tarball and will not delete any missing files.',
-      tags: ['site']
+      tags: ['site'],
+      security: [{ "jwt": [] }]
     },
     preHandler: server.auth([server.verifyPublisher]),
   }, async (request, reply) => {
