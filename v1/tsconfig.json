@@ -2,6 +2,7 @@
   "include": [
     "**/*.ts"
   ],
+  "files": ["@types/fastify.d.ts", "@types/fastify-jwt.d.ts"],
   "compilerOptions": {
     "target": "esnext",
     "module": "esnext",
@@ -9,7 +10,11 @@
     "outDir": "./build",
     "sourceMap": true,
     "rootDir": ".",
+    "typeRoots": ["./@types"],
     "strict": true,
     "esModuleInterop": true
+  },
+  "ts-node": {
+    "files": true
   }
 }

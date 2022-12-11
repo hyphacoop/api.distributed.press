@@ -1,5 +1,5 @@
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox'
-import fastify, { FastifyBaseLogger, FastifyInstance, RawReplyDefaultExpression, RawRequestDefaultExpression, RawServerDefault } from 'fastify'
+import fastify, { FastifyBaseLogger, RawReplyDefaultExpression, RawRequestDefaultExpression, RawServerDefault } from 'fastify'
 import multipart from '@fastify/multipart'
 import swagger from '@fastify/swagger'
 import swagger_ui from '@fastify/swagger-ui'
@@ -9,6 +9,7 @@ import { adminRoutes } from './admin.js'
 import { publisherRoutes } from './publisher.js'
 import Store, { StoreI } from '../config/index.js'
 import { registerAuth } from '../authorization/cfg.js'
+import { FastifyInstance } from 'fastify'
 
 export type FastifyTypebox = FastifyInstance<
 RawServerDefault,

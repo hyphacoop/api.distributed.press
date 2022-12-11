@@ -26,9 +26,6 @@ const genericVerify = (accountType: "admin" | "publisher") => (request: FastifyR
 
 
 export const registerAuth = async (route: FastifyTypebox) => {
-  route.decorate('verifyAdmin', genericVerify('admin'));
-  route.decorate('verifyPublisher', genericVerify('publisher'));
-  await route.register(auth)
   route.register(jwt, {
     secret: {
       private: readFileSync(path.join(__dirname, 'keys', 'private.key'), 'utf8'),
@@ -36,4 +33,8 @@ export const registerAuth = async (route: FastifyTypebox) => {
     },
     sign: { algorithm: 'RS256' }
   })
+  await route.register(auth)
+  route.decorate('verifyAdmin', genericVerify('admin'));
+  route.decorate('verifyPublisher', genericVerify('publisher'));
+  return route.after()
 }

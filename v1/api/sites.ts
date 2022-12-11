@@ -17,7 +17,8 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyInstance): Pr
       },
       description: 'Create a new site.',
       tags: ['site']
-    }
+    },
+    preHandler: server.auth([server.verifyPublisher]),
   }, async (request, _reply) => {
     return store.sites.create(request.body)
   })
@@ -56,7 +57,8 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyInstance): Pr
       },
       description: 'Update the configuration for the site.',
       tags: ['site']
-    }
+    },
+    preHandler: server.auth([server.verifyPublisher]),
   }, async (request, _reply) => {
     const { domain } = request.params
     return store.sites.update(domain, request.body)
@@ -73,7 +75,8 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyInstance): Pr
       },
       description: 'Upload content to the site. Body must be a `tar.gz` file which will get extracted out and served. Any files missing from the tarball that are on disk, will be deleted from disk and the p2p archives.',
       tags: ['site']
-    }
+    },
+    preHandler: server.auth([server.verifyPublisher]),
   }, async (request, reply) => {
     // TODO: stub
     // handle errors
@@ -96,7 +99,8 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyInstance): Pr
       },
       description: 'Upload a patch with just the files you want added. This will only do a diff on the files in the tarball and will not delete any missing files.',
       tags: ['site']
-    }
+    },
+    preHandler: server.auth([server.verifyPublisher]),
   }, async (request, reply) => {
     // TODO: stub
     // handle errors
