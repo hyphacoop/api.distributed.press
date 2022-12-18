@@ -1,13 +1,25 @@
 import apiBuilder from './api/index.js'
+import yargs from 'yargs'
+import { hideBin } from 'yargs/helpers'
+import envPaths from 'env-paths'
+const paths = envPaths('distributed-press')
+
+const argv = yargs(hideBin(process.argv)).options({
+  port: { type: 'number' },
+  host: { type: 'string' },
+  data: { type: 'string' }
+}).parseSync()
 
 interface ServerI {
-  port?: number,
-  host?: string,
+  port: number
+  host?: string
+  storage: string
 }
 
-const PORT = Number(process.env.PORT ?? '8080')
+const PORT = Number(argv.port ?? process.env.PORT ?? '8080')
 const cfg: ServerI = {
-  port: PORT
+  port: PORT,
+  storage: argv.data ?? paths.data
 }
 
 if (process.env.HOST !== undefined) {

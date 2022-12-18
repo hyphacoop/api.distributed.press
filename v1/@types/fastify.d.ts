@@ -1,8 +1,7 @@
-import fastify from "fastify";
-import { DoneFuncWithErrOrRes } from "fastify";
-declare module "fastify" {
+import fastify, { DoneFuncWithErrOrRes } from 'fastify'
+declare module 'fastify' {
   export interface FastifyInstance {
-    verifyAdmin(): (request: FastifyRequest, _reply: FastifyReply, done: DoneFuncWithErrOrRes) => void;
-    verifyPublisher(): (request: FastifyRequest, _reply: FastifyReply, done: DoneFuncWithErrOrRes) => void;
+    verifyAdmin(): (request: FastifyRequest, _reply: FastifyReply, done: DoneFuncWithErrOrRes) => void
+    verifyPublisher(): (request: FastifyRequest, _reply: FastifyReply, done: DoneFuncWithErrOrRes) => void
   }
 }

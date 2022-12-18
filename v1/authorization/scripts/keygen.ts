@@ -1,10 +1,16 @@
 import { generateKeyPairSync } from 'crypto'
 import fs from 'fs'
 import path from 'path'
-import { fileURLToPath } from 'url';
+import yargs from 'yargs'
+import { hideBin } from 'yargs/helpers'
+import envPaths from 'env-paths'
+import makeDir from 'make-dir'
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const paths = envPaths('distributed-press')
+const argv = yargs(hideBin(process.argv)).options({
+  data: { type: 'string' }
+}).parseSync()
+const dataPath = argv.data ?? paths.data
 
 const { privateKey, publicKey } = generateKeyPairSync('rsa', {
   modulusLength: 2048,
@@ -14,10 +20,11 @@ const { privateKey, publicKey } = generateKeyPairSync('rsa', {
   },
   privateKeyEncoding: {
     type: 'pkcs8',
-    format: 'pem',
+    format: 'pem'
   }
 })
 
-fs.writeFileSync(path.join(__dirname, '..', 'keys', 'private.key'), privateKey)
-fs.writeFileSync(path.join(__dirname, '..', 'keys', 'public.key'), publicKey)
-
+makeDir.sync(path.join(dataPath, 'keys'))
+fs.writeFileSync(path.join(dataPath, 'keys', 'private.key'), privateKey)
+fs.writeFileSync(path.join(dataPath, 'keys', 'public.key'), publicKey)
+console.log(`Wrote keys to ${dataPath}`)

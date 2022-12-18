@@ -15,11 +15,11 @@ export const publisherRoutes = (store: StoreI) => async (server: FastifyInstance
       },
       description: 'Add a new publisher.',
       tags: ['publisher'],
-      security: [{ "jwt": [] }]
+      security: [{ jwt: [] }]
     },
-    preHandler: server.auth([server.verifyAdmin]),
+    preHandler: server.auth([server.verifyAdmin])
   }, async (request, _reply) => {
-    return store.publisher.create(request.body)
+    return await store.publisher.create(request.body)
   })
 
   server.get<{
@@ -37,10 +37,10 @@ export const publisherRoutes = (store: StoreI) => async (server: FastifyInstance
       },
       description: 'Gets information about a specific publisher',
       tags: ['publisher']
-    },
+    }
   }, async (request, _reply) => {
     const { id } = request.params
-    return store.publisher.get(id)
+    return await store.publisher.get(id)
   })
 
   server.delete<{
@@ -51,11 +51,11 @@ export const publisherRoutes = (store: StoreI) => async (server: FastifyInstance
     schema: {
       description: 'Delete a publisher',
       tags: ['publisher'],
-      security: [{ "jwt": [] }]
+      security: [{ jwt: [] }]
     },
-    preHandler: server.auth([server.verifyAdmin]),
+    preHandler: server.auth([server.verifyAdmin])
   }, async (request, _reply) => {
     const { id } = request.params
-    return store.publisher.delete(id)
+    return await store.publisher.delete(id)
   })
 }

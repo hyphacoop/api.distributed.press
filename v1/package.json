@@ -44,6 +44,7 @@
     "@sinclair/typebox": "^0.24.1",
     "abstract-level": "^1.0.3",
     "cors": "^2.8.5",
+    "env-paths": "^3.0.0",
     "express": "^4.17.1",
     "fast-jwt": "^2.0.2",
     "fastify": "^4.10.2",
@@ -51,12 +52,15 @@
     "fastify-plugin": "^4.4.0",
     "fs": "0.0.1-security",
     "level": "^8.0.0",
+    "make-dir": "^3.1.0",
     "nanoid": "^4.0.0",
-    "prom-client": "^14.1.0"
+    "prom-client": "^14.1.0",
+    "yargs": "^17.6.2"
   },
   "devDependencies": {
     "@ava/typescript": "^3.0.1",
     "@types/node": "^18.11.13",
+    "@types/yargs": "^17.0.17",
     "ava": "^5.1.0",
     "memory-level": "^1.0.0",
     "nodemon": "^2.0.20",

@@ -1,5 +1,5 @@
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox'
-import fastify, { FastifyBaseLogger, RawReplyDefaultExpression, RawRequestDefaultExpression, RawServerDefault } from 'fastify'
+import fastify, { FastifyBaseLogger, RawReplyDefaultExpression, RawRequestDefaultExpression, RawServerDefault, FastifyInstance } from 'fastify'
 import multipart from '@fastify/multipart'
 import swagger from '@fastify/swagger'
 import swagger_ui from '@fastify/swagger-ui'
@@ -9,14 +9,13 @@ import { adminRoutes } from './admin.js'
 import { publisherRoutes } from './publisher.js'
 import Store, { StoreI } from '../config/index.js'
 import { registerAuth } from '../authorization/cfg.js'
-import { FastifyInstance } from 'fastify'
 
 export type FastifyTypebox = FastifyInstance<
-  RawServerDefault,
-  RawRequestDefaultExpression<RawServerDefault>,
-  RawReplyDefaultExpression<RawServerDefault>,
-  FastifyBaseLogger,
-  TypeBoxTypeProvider
+RawServerDefault,
+RawRequestDefaultExpression<RawServerDefault>,
+RawReplyDefaultExpression<RawServerDefault>,
+FastifyBaseLogger,
+TypeBoxTypeProvider
 >
 
 interface APIConfig {
@@ -25,7 +24,7 @@ interface APIConfig {
   usePrometheus: boolean
 }
 
-async function apiBuilder(cfg: Partial<APIConfig>, store: StoreI = new Store()): Promise<FastifyTypebox> {
+async function apiBuilder (cfg: Partial<APIConfig>, store: StoreI = new Store()): Promise<FastifyTypebox> {
   const server = fastify({ logger: cfg.useLogging }).withTypeProvider<TypeBoxTypeProvider>()
   await registerAuth(server)
   await server.register(multipart)
@@ -41,7 +40,7 @@ async function apiBuilder(cfg: Partial<APIConfig>, store: StoreI = new Store()):
 
 const v1Routes = (cfg: Partial<APIConfig>, store: StoreI) => async (server: FastifyTypebox): Promise<void> => {
   if (cfg.usePrometheus ?? false) {
-    server.register(metrics, { endpoint: '/metrics' });
+    server.register(metrics, { endpoint: '/metrics' })
   }
 
   if (cfg.useSwagger ?? false) {
@@ -60,9 +59,9 @@ const v1Routes = (cfg: Partial<APIConfig>, store: StoreI) => async (server: Fast
         components: {
           securitySchemes: {
             jwt: {
-              type: "http",
-              scheme: "bearer",
-              bearerFormat: "String containing the full JWT token"
+              type: 'http',
+              scheme: 'bearer',
+              bearerFormat: 'String containing the full JWT token'
             }
           }
         }

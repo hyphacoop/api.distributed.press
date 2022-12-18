@@ -21,12 +21,12 @@ All necessary files are in `v1`. The commands in the following section will assu
 
 1. (Only once) Install dependencies: `npm i`
 2. (Only once) Create an RSA keypair for signing JWTs: `npm run keygen`
-3. (Only once) To get the admin JWT that can be used to bootstrap other admin accounts, run `npm run make-admin`
-3. Running the development server:
+3. To get the admin JWT that can be used to bootstrap other admin accounts, run `npm run make-admin`. This should only be used once to create actual admins (e.g. individuals in your organization who have the ability to add/edit publishers).
+4. Running the development server:
   1. Normal: `npm run dev`
   1. Watch for changes: `npm run watch`
-4. Running tests: `npm test`
-5. Creating and running a production build: `npm run build && npm run start`
+5. Running tests: `npm test`
+6. Creating and running a production build: `npm run build && npm run start`
 
 ## Generating Clients
 Swagger specs are OASv2 compliant. Use `swagger-codegen-cli` to generate appropriate client implementations

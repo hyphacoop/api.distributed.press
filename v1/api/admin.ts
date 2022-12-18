@@ -12,12 +12,12 @@ export const adminRoutes = (store: StoreI) => async (server: FastifyInstance): P
       body: NewAdmin,
       description: 'Add a new admin.',
       tags: ['admin'],
-      security: [{ "jwt": [] }]
+      security: [{ jwt: [] }]
     },
-    preHandler: server.auth([server.verifyAdmin]),
+    preHandler: server.auth([server.verifyAdmin])
   }, async (request, reply) => {
     const id = await store.admin.create(request.body)
-    return reply.send(id)
+    return await reply.send(id)
   })
 
   server.delete<{
@@ -28,12 +28,12 @@ export const adminRoutes = (store: StoreI) => async (server: FastifyInstance): P
     schema: {
       description: 'Delete an admin',
       tags: ['admin'],
-      security: [{ "jwt": [] }]
+      security: [{ jwt: [] }]
     },
-    preHandler: server.auth([server.verifyAdmin]),
+    preHandler: server.auth([server.verifyAdmin])
   }, async (request, reply) => {
     const { id } = request.params
     await store.admin.delete(id)
-    return reply.status(200)
+    return await reply.status(200)
   })
 }
