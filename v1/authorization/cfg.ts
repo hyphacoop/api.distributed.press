@@ -16,12 +16,12 @@ const argv = yargs(hideBin(process.argv)).options({
 const dataPath = argv.data ?? paths.data
 
 const genericVerify = (accountType: 'admin' | 'publisher') => (request: FastifyRequest, _reply: FastifyReply, done: DoneFuncWithErrOrRes) => {
-  if (!request.raw.headers.auth) {
+  if (request.raw.headers.auth === undefined) {
     return done(new Error('Missing token header'))
   }
 
   request.jwtVerify<JWTPayload>().then((decoded) => {
-    if (decoded.createdBy && decoded.accountType === accountType) {
+    if (decoded.createdBy !== undefined && decoded.accountType === accountType) {
       return done()
     } else {
       return done(new Error('Malformed JWT (wrong account type/missing fields)'))
@@ -29,8 +29,8 @@ const genericVerify = (accountType: 'admin' | 'publisher') => (request: FastifyR
   }).catch(() => done(new Error('Cannot verify JWT')))
 }
 
-export const registerAuth = async (route: FastifyTypebox) => {
-  route.register(jwt, {
+export const registerAuth = async (route: FastifyTypebox): Promise<void> => {
+  await route.register(jwt, {
     secret: {
       private: readFileSync(path.join(dataPath, 'keys', 'private.key'), 'utf8'),
       public: readFileSync(path.join(dataPath, 'keys', 'public.key'), 'utf8')

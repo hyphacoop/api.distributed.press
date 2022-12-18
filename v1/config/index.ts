@@ -4,7 +4,7 @@ import { AdminStore } from './admin.js'
 import { PublisherStore } from './publisher.js'
 import { SiteConfigStore } from './sites.js'
 
-const defaultDB = () => new Level('./store', { valueEncoding: 'json' })
+const defaultDB = (): Level<string, string> => new Level('./store', { valueEncoding: 'json' })
 
 export interface StoreI {
   admin: AdminStore

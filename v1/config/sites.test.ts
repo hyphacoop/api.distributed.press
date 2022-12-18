@@ -45,8 +45,8 @@ test('update siteconfig', async t => {
     }
   }
   await cfg.update(site.id, updated)
-  const new_result = await cfg.get(site.id)
-  t.deepEqual(new_result, updated)
+  const newResult = await cfg.get(site.id)
+  t.deepEqual(newResult, updated)
 })
 
 test('delete siteconfig', async t => {

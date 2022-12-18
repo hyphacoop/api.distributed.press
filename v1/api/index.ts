@@ -40,7 +40,7 @@ async function apiBuilder (cfg: Partial<APIConfig>, store: StoreI = new Store())
 
 const v1Routes = (cfg: Partial<APIConfig>, store: StoreI) => async (server: FastifyTypebox): Promise<void> => {
   if (cfg.usePrometheus ?? false) {
-    server.register(metrics, { endpoint: '/metrics' })
+    await server.register(metrics, { endpoint: '/metrics' })
   }
 
   if (cfg.useSwagger ?? false) {
