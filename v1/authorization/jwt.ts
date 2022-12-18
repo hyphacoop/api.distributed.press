@@ -1,16 +1,16 @@
 import { Static, Type } from '@sinclair/typebox'
-import { nanoid } from 'nanoid'
-import { Admin, Publisher } from '../api/schemas.js'
 
 export const SYSTEM = 'system'
 
 // account types
 export const ADMIN = 'admin'
 export const PUBLISHER = 'publisher'
+export const AccountType = Type.Union([Type.Literal(ADMIN), Type.Literal(PUBLISHER)])
+export type AccountTypeT = Static<typeof AccountType>
 
 // 1 day
 const EXPIRY_MS = 1 * 24 * 60 * 60 * 1000
-function getExpiry(isRefresh: boolean): number {
+function getExpiry (isRefresh: boolean): number {
   return isRefresh ? (new Date()).getTime() + EXPIRY_MS : -1
 }
 
@@ -18,57 +18,32 @@ function getExpiry(isRefresh: boolean): number {
 export const Creator = Type.Union([
   Type.Literal(SYSTEM),
   Type.String()
-]);
+])
 export type CreatorT = Static<typeof Creator>
 
-export const BaseToken = Type.Object({
+export const JWTPayload = Type.Object({
   createdBy: Creator,
-  expires: Type.Number()
+  expires: Type.Number(),
+  accountType: AccountType,
+  accountId: Type.String()
 })
 
-export const AdminToken = Type.Object({
-  type: Type.Literal(ADMIN),
-  details: Admin
-})
+export type JWTPayloadT = Static<typeof JWTPayload>
 
-export const PublisherToken = Type.Object({
-  type: Type.Literal(PUBLISHER),
-  details: Publisher
-})
-
-export const JWTPayload = Type.Intersect([
-  BaseToken,
-  Type.Object({
-    account: Type.Union([AdminToken, PublisherToken])
-  }),
-])
-
-export type JWTPayloadT = Static<typeof JWTPayload>;
-
-export function makeAdmin(name: string, isRefresh: boolean, createdBy?: CreatorT): JWTPayloadT {
+export function makeAdminToken (id: string, isRefresh: boolean, createdBy?: CreatorT): JWTPayloadT {
   return {
-    createdBy: createdBy ?? 'system',
+    createdBy: createdBy ?? SYSTEM,
     expires: getExpiry(isRefresh),
-    account: {
-      type: 'admin',
-      details: {
-        id: nanoid(),
-        name
-      }
-    }
+    accountType: ADMIN,
+    accountId: id
   }
 }
 
-export function makePublisher(name: string, isRefresh: boolean, createdBy?: CreatorT): JWTPayloadT {
+export function makePublisherToken (id: string, isRefresh: boolean, createdBy?: CreatorT): JWTPayloadT {
   return {
-    createdBy: createdBy ?? 'system',
+    createdBy: createdBy ?? SYSTEM,
     expires: getExpiry(isRefresh),
-    account: {
-      type: 'publisher',
-      details: {
-        id: nanoid(),
-        name
-      }
-    }
+    accountType: PUBLISHER,
+    accountId: id
   }
 }

@@ -1,9 +1,9 @@
 import '@fastify/jwt'
-import { JWTPayload } from '../authorization/jwt'
+import { JWTPayloadT } from '../authorization/jwt'
 
 declare module '@fastify/jwt' {
   interface FastifyJWT {
-    payload: JWTPayload
-    user: JWTPayload
+    payload: JWTPayloadT
+    user: JWTPayloadT
   }
 }

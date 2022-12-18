@@ -1,5 +1,6 @@
 import { Type, Static } from '@sinclair/typebox'
 import { FastifyInstance } from 'fastify'
+import { makePublisherToken } from '../authorization/jwt.js'
 import { StoreI } from '../config/index.js'
 import { NewPublisher, Publisher } from './schemas.js'
 
@@ -41,6 +42,47 @@ export const publisherRoutes = (store: StoreI) => async (server: FastifyInstance
   }, async (request, _reply) => {
     const { id } = request.params
     return await store.publisher.get(id)
+  })
+
+  server.get<{
+    Params: {
+      id: string
+    }
+    Reply: string
+  }>('/publisher/:id/auth', {
+    schema: {
+      params: {
+        id: Type.String()
+      },
+      description: 'Retrieves refresh token for specified publisher. Admin gated',
+      tags: ['publisher'],
+      security: [{ jwt: [] }]
+    },
+    preHandler: server.auth([server.verifyAdmin])
+  }, async (request, reply) => {
+    const { id } = request.params
+    const token = await reply.jwtSign(makePublisherToken(id, true))
+    return token
+  })
+
+  server.post<{
+    Params: {
+      id: string
+    }
+  }>('/publisher/:id/auth/refresh', {
+    schema: {
+      params: {
+        id: Type.String()
+      },
+      description: 'Exchange a refresh token for an access token',
+      tags: ['publisher'],
+      security: [{ jwt: [] }]
+    },
+    preHandler: server.auth([server.verifyPublisherRefresh])
+  }, async (request, reply) => {
+    const { id } = request.params
+    const token = await reply.jwtSign(makePublisherToken(id, false))
+    return token
   })
 
   server.delete<{
