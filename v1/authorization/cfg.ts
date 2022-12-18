@@ -3,11 +3,12 @@ import auth from '@fastify/auth'
 import { readFileSync } from 'fs'
 import path from 'path'
 import { FastifyTypebox } from '../api/index.js'
-import { JWTPayload } from './jwt.js'
+import { JWTPayload, JWTPayloadT } from './jwt.js'
 import { FastifyRequest, FastifyReply, DoneFuncWithErrOrRes } from 'fastify'
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 import envPaths from 'env-paths'
+import { Value } from '@sinclair/typebox/value'
 
 const paths = envPaths('distributed-press')
 const argv = yargs(hideBin(process.argv)).options({
@@ -20,12 +21,17 @@ const genericVerify = (accountType: 'admin' | 'publisher') => (request: FastifyR
     return done(new Error('Missing token header'))
   }
 
-  request.jwtVerify<JWTPayload>().then((decoded) => {
-    if (decoded.createdBy !== undefined && decoded.accountType === accountType) {
-      return done()
-    } else {
-      return done(new Error('Malformed JWT (wrong account type/missing fields)'))
+  request.jwtVerify<JWTPayloadT>().then((decoded) => {
+    if (!Value.Check(JWTPayload, decoded)) {
+      return done(new Error('Malformed JWT Payload'))
     }
+    if (decoded.account.type !== accountType) {
+      return done(new Error(`Mismatched account type: got ${decoded.account.type}, wanted ${accountType}`))
+    }
+    if (decoded.expires < (new Date).getTime() && decoded.expires !== -1) {
+      return done(new Error('JWT token has expired. Please get a new one using a refresh token'))
+    }
+    return done()
   }).catch(() => done(new Error('Cannot verify JWT')))
 }
 
