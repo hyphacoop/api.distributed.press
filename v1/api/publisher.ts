@@ -19,8 +19,8 @@ export const publisherRoutes = (store: StoreI) => async (server: FastifyInstance
       security: [{ jwt: [] }]
     },
     preHandler: server.auth([server.verifyAdmin])
-  }, async (request, _reply) => {
-    return await store.publisher.create(request.body)
+  }, async (request, reply) => {
+    return reply.send(await store.publisher.create(request.body))
   })
 
   server.get<{
@@ -39,9 +39,9 @@ export const publisherRoutes = (store: StoreI) => async (server: FastifyInstance
       description: 'Gets information about a specific publisher',
       tags: ['publisher']
     }
-  }, async (request, _reply) => {
+  }, async (request, reply) => {
     const { id } = request.params
-    return await store.publisher.get(id)
+    return reply.send(await store.publisher.get(id))
   })
 
   server.get<{
@@ -62,7 +62,7 @@ export const publisherRoutes = (store: StoreI) => async (server: FastifyInstance
   }, async (request, reply) => {
     const { id } = request.params
     const token = await reply.jwtSign(makePublisherToken(id, true))
-    return token
+    return reply.send(token)
   })
 
   server.post<{
@@ -71,9 +71,6 @@ export const publisherRoutes = (store: StoreI) => async (server: FastifyInstance
     }
   }>('/publisher/:id/auth/refresh', {
     schema: {
-      params: {
-        id: Type.String()
-      },
       description: 'Exchange a refresh token for an access token',
       tags: ['publisher'],
       security: [{ jwt: [] }]
@@ -82,7 +79,7 @@ export const publisherRoutes = (store: StoreI) => async (server: FastifyInstance
   }, async (request, reply) => {
     const { id } = request.params
     const token = await reply.jwtSign(makePublisherToken(id, false))
-    return token
+    return reply.send(token)
   })
 
   server.delete<{
@@ -96,8 +93,9 @@ export const publisherRoutes = (store: StoreI) => async (server: FastifyInstance
       security: [{ jwt: [] }]
     },
     preHandler: server.auth([server.verifyAdmin])
-  }, async (request, _reply) => {
+  }, async (request, reply) => {
     const { id } = request.params
-    return await store.publisher.delete(id)
+    await store.publisher.delete(id)
+    return reply.code(200).send()
   })
 }

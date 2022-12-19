@@ -2,7 +2,7 @@ import test from 'ava'
 import apiBuilder from './index.js'
 
 test('health check /healthz', async t => {
-  const server = await apiBuilder({})
+  const server = await apiBuilder({ useMemoryBackedDB: true })
   const response = await server.inject({
     method: 'GET',
     url: '/healthz'

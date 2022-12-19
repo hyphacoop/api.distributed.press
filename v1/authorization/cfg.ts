@@ -17,7 +17,7 @@ const argv = yargs(hideBin(process.argv)).options({
 const dataPath = argv.data ?? paths.data
 
 const verifyAccessToken = (accountType: AccountTypeT) => (request: FastifyRequest, _reply: FastifyReply, done: DoneFuncWithErrOrRes) => {
-  if (request.raw.headers.auth === undefined) {
+  if (request.raw.headers.authorization === undefined) {
     return done(new Error('Missing token header'))
   }
   request.jwtVerify<JWTPayloadT>().then((decoded) => {
@@ -34,11 +34,11 @@ const verifyAccessToken = (accountType: AccountTypeT) => (request: FastifyReques
       return done(new Error('JWT token has expired. Please get a new one using a refresh token'))
     }
     return done()
-  }).catch(() => done(new Error('Cannot verify access token JWT')))
+  }).catch((err) => done(new Error(`Cannot verify access token JWT: ${err}`)))
 }
 
 const verifyRefreshToken = (accountType: AccountTypeT) => (request: FastifyRequest, _reply: FastifyReply, done: DoneFuncWithErrOrRes) => {
-  if (request.raw.headers.auth === undefined) {
+  if (request.raw.headers.authorization === undefined) {
     return done(new Error('Missing token header'))
   }
   request.jwtVerify<JWTPayloadT>().then((decoded) => {
@@ -52,7 +52,7 @@ const verifyRefreshToken = (accountType: AccountTypeT) => (request: FastifyReque
       return done(new Error('Received an access token; expected a refresh token'))
     }
     return done()
-  }).catch(() => done(new Error('Cannot verify refresh token JWT')))
+  }).catch((err) => done(new Error(`Cannot verify refresh token JWT: ${err}`)))
 }
 
 export const registerAuth = async (route: FastifyTypebox): Promise<void> => {

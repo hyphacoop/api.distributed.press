@@ -1,11 +1,9 @@
-import { FastifyInstance } from 'fastify'
 import { Type, Static } from '@sinclair/typebox'
 import { NewSite, Site, UpdateSite } from './schemas.js'
 import { StoreI } from '../config/index.js'
+import { FastifyTypebox } from './index.js'
 
-// TODO, use a preValidation hook here to check for JWT, this should
-// call into the authorization module
-export const siteRoutes = (store: StoreI) => async (server: FastifyInstance): Promise<void> => {
+export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Promise<void> => {
   server.post<{
     Body: Static<typeof NewSite>
     Reply: Static<typeof Site>
@@ -19,8 +17,8 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyInstance): Pr
       tags: ['site']
     },
     preHandler: server.auth([server.verifyPublisher])
-  }, async (request, _reply) => {
-    return await store.sites.create(request.body)
+  }, async (request, reply) => {
+    return reply.send(await store.sites.create(request.body))
   })
 
   server.get<{
@@ -30,18 +28,18 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyInstance): Pr
     Reply: Static<typeof Site>
   }>('/sites/:domain', {
     schema: {
-      params: {
+      params: Type.Object({
         domain: Type.String()
-      },
+      }),
       response: {
         200: Site
       },
       description: 'Returns the configuration and info about the domain.',
       tags: ['site']
     }
-  }, async (request, _reply) => {
+  }, async (request, reply) => {
     const { domain } = request.params
-    return await store.sites.get(domain)
+    return reply.send(await store.sites.get(domain))
   })
 
   server.post<{
@@ -60,9 +58,10 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyInstance): Pr
       security: [{ jwt: [] }]
     },
     preHandler: server.auth([server.verifyPublisher])
-  }, async (request, _reply) => {
+  }, async (request, reply) => {
     const { domain } = request.params
-    return await store.sites.update(domain, request.body)
+    await store.sites.update(domain, request.body)
+    return reply.code(200).send()
   })
 
   server.put<{
@@ -89,7 +88,7 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyInstance): Pr
     const { domain } = request.params
     const files = await request.saveRequestFiles()
     request.log.info(`${domain} ${files.length}`)
-    return await reply.status(200)
+    return reply.code(200).send()
   })
 
   server.patch<{
@@ -114,6 +113,6 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyInstance): Pr
     const { domain } = request.params
     const files = await request.saveRequestFiles()
     request.log.info(`${domain}, ${files.length}`)
-    return await reply.status(200)
+    return reply.code(200).send()
   })
 }

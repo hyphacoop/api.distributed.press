@@ -1,10 +1,10 @@
 import { Static, Type } from '@sinclair/typebox'
-import { FastifyInstance } from 'fastify'
 import { makeAdminToken } from '../authorization/jwt.js'
 import { StoreI } from '../config/index.js'
+import { FastifyTypebox } from './index.js'
 import { NewAdmin } from './schemas.js'
 
-export const adminRoutes = (store: StoreI) => async (server: FastifyInstance): Promise<void> => {
+export const adminRoutes = (store: StoreI) => async (server: FastifyTypebox): Promise<void> => {
   server.post<{
     Body: Static<typeof NewAdmin>
     Reply: string // id of the admin
@@ -18,7 +18,7 @@ export const adminRoutes = (store: StoreI) => async (server: FastifyInstance): P
     preHandler: server.auth([server.verifyAdmin])
   }, async (request, reply) => {
     const id = await store.admin.create(request.body)
-    return await reply.send(id)
+    return reply.send(id)
   })
 
   server.delete<{
@@ -38,7 +38,7 @@ export const adminRoutes = (store: StoreI) => async (server: FastifyInstance): P
   }, async (request, reply) => {
     const { id } = request.params
     await store.admin.delete(id)
-    return await reply.status(200)
+    return reply.code(200).send()
   })
 
   server.post<{
@@ -59,6 +59,6 @@ export const adminRoutes = (store: StoreI) => async (server: FastifyInstance): P
   }, async (request, reply) => {
     const { id } = request.params
     const token = await reply.jwtSign(makeAdminToken(id, false))
-    return token
+    return reply.send(token)
   })
 }

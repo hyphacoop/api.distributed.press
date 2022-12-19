@@ -11,7 +11,7 @@ export type AccountTypeT = Static<typeof AccountType>
 // 1 day
 const EXPIRY_MS = 1 * 24 * 60 * 60 * 1000
 function getExpiry (isRefresh: boolean): number {
-  return isRefresh ? (new Date()).getTime() + EXPIRY_MS : -1
+  return isRefresh ? -1 : (new Date()).getTime() + EXPIRY_MS
 }
 
 // ID of admin that created the token (or system if generated from keygen.ts)

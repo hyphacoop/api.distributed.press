@@ -1,4 +1,4 @@
-import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox'
+import { TypeBoxTypeProvider, TypeBoxValidatorCompiler } from '@fastify/type-provider-typebox'
 import fastify, { FastifyBaseLogger, RawReplyDefaultExpression, RawRequestDefaultExpression, RawServerDefault, FastifyInstance } from 'fastify'
 import multipart from '@fastify/multipart'
 import swagger from '@fastify/swagger'
@@ -9,22 +9,25 @@ import { adminRoutes } from './admin.js'
 import { publisherRoutes } from './publisher.js'
 import Store, { StoreI } from '../config/index.js'
 import { registerAuth } from '../authorization/cfg.js'
+import { MemoryLevel } from 'memory-level'
 
 export type FastifyTypebox = FastifyInstance<
-RawServerDefault,
-RawRequestDefaultExpression<RawServerDefault>,
-RawReplyDefaultExpression<RawServerDefault>,
-FastifyBaseLogger,
-TypeBoxTypeProvider
+  RawServerDefault,
+  RawRequestDefaultExpression<RawServerDefault>,
+  RawReplyDefaultExpression<RawServerDefault>,
+  FastifyBaseLogger,
+  TypeBoxTypeProvider
 >
 
 interface APIConfig {
   useLogging: boolean
   useSwagger: boolean
   usePrometheus: boolean
+  useMemoryBackedDB: boolean
 }
 
-async function apiBuilder (cfg: Partial<APIConfig>, store: StoreI = new Store()): Promise<FastifyTypebox> {
+async function apiBuilder(cfg: Partial<APIConfig>, store?: StoreI): Promise<FastifyTypebox> {
+  store = store ?? new Store(cfg.useMemoryBackedDB ? new MemoryLevel({ valueEncoding: 'json' }) : undefined)
   const server = fastify({ logger: cfg.useLogging }).withTypeProvider<TypeBoxTypeProvider>()
   await registerAuth(server)
   await server.register(multipart)
