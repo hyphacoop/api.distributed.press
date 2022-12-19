@@ -16,7 +16,7 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
       description: 'Create a new site.',
       tags: ['site']
     },
-    preHandler: server.auth([server.verifyPublisher])
+    preHandler: server.auth([server.verifyPublisher, server.verifyAdmin])
   }, async (request, reply) => {
     return reply.send(await store.sites.create(request.body))
   })
@@ -57,7 +57,7 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
       tags: ['site'],
       security: [{ jwt: [] }]
     },
-    preHandler: server.auth([server.verifyPublisher])
+    preHandler: server.auth([server.verifyPublisher, server.verifyAdmin])
   }, async (request, reply) => {
     const { domain } = request.params
     await store.sites.update(domain, request.body)
@@ -77,7 +77,7 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
       tags: ['site'],
       security: [{ jwt: [] }]
     },
-    preHandler: server.auth([server.verifyPublisher])
+    preHandler: server.auth([server.verifyPublisher, server.verifyAdmin])
   }, async (request, reply) => {
     // TODO: stub
     // handle errors
