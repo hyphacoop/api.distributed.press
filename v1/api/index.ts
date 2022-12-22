@@ -1,4 +1,4 @@
-import { TypeBoxTypeProvider, TypeBoxValidatorCompiler } from '@fastify/type-provider-typebox'
+import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox'
 import fastify, { FastifyBaseLogger, RawReplyDefaultExpression, RawRequestDefaultExpression, RawServerDefault, FastifyInstance } from 'fastify'
 import multipart from '@fastify/multipart'
 import swagger from '@fastify/swagger'

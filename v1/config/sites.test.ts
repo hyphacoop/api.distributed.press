@@ -1,18 +1,18 @@
 import test from 'ava'
-import { SiteConfigStore } from './sites.js'
+import { DEFAULT_SITE_CFG, SiteConfigStore } from './sites.js'
 import { MemoryLevel } from 'memory-level'
 
-function newSiteConfigStore (): SiteConfigStore {
+function newSiteConfigStore(): SiteConfigStore {
   return new SiteConfigStore(new MemoryLevel({ valueEncoding: 'json' }))
 }
 
 const exampleSiteConfig = {
   domain: 'https://example.com',
-  dns: {
-    server: 'some_dns_server',
-    domains: []
-  },
-  links: {}
+  publication: {
+    http: {},
+    ipfs: {},
+    hyper: {},
+  }
 }
 
 test('create new siteconfig', async t => {
@@ -20,13 +20,9 @@ test('create new siteconfig', async t => {
   const site = await cfg.create(exampleSiteConfig)
   const result = await cfg.get(site.id)
   t.deepEqual(result, {
+    ...DEFAULT_SITE_CFG,
     ...exampleSiteConfig,
     id: site.id,
-    publication: {
-      http: {},
-      hyper: {},
-      ipfs: {}
-    }
   })
 })
 

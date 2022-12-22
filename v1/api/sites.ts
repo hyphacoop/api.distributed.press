@@ -69,7 +69,6 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
     Body: Static<typeof UpdateSite>
   }>('/sites/:domain', {
     schema: {
-      body: NewSite,
       params: {
         domain: Type.String()
       },

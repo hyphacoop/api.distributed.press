@@ -33,7 +33,7 @@ export const Site = Type.Object({
     ipfs: Type.Partial(Publication)
   })
 })
-export const NewSite = Type.Omit(Site, ['publication', 'id'])
+export const NewSite = Type.Omit(Site, ['dns', 'links', 'id'])
 export const UpdateSite = Type.Partial(Type.Omit(Site, ['id']))
 
 export const Publisher = Type.Object({

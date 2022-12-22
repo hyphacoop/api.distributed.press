@@ -10,7 +10,7 @@ export const publisherRoutes = (store: StoreI) => async (server: FastifyInstance
     Reply: Static<typeof Publisher>
   }>('/publisher', {
     schema: {
-      body: Publisher,
+      body: NewPublisher,
       response: {
         200: Publisher
       },

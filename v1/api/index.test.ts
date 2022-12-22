@@ -118,6 +118,7 @@ test('E2E: admin -> publisher -> site flow', async t => {
   t.is(createResponse.statusCode, 200, 'creating a new publisher with right tokens returns a status code of 200')
 
   // use this publisher to create a new site
+  // console.log(createResponse)
   // fetch site info
   // delete the site
 })
