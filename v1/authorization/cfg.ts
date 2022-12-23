@@ -68,5 +68,5 @@ export const registerAuth = async (route: FastifyTypebox): Promise<void> => {
   route.decorate('verifyPublisher', verifyAccessToken(PUBLISHER))
   route.decorate('verifyAdminRefresh', verifyRefreshToken(ADMIN))
   route.decorate('verifyPublisherRefresh', verifyRefreshToken(PUBLISHER))
-  return await route.after()
+  return route.after()
 }

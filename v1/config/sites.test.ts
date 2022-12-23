@@ -6,7 +6,7 @@ function newSiteConfigStore(): SiteConfigStore {
   return new SiteConfigStore(new MemoryLevel({ valueEncoding: 'json' }))
 }
 
-const exampleSiteConfig = {
+export const exampleSiteConfig = {
   domain: 'https://example.com',
   publication: {
     http: {},

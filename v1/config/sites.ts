@@ -19,7 +19,7 @@ export class SiteConfigStore extends Config {
       ...DEFAULT_SITE_CFG,
       ...cfg
     }
-    return await this.db.put(id, obj).then(() => obj)
+    return this.db.put(id, obj).then(() => obj)
   }
 
   async update(id: string, cfg: Static<typeof UpdateSite>): Promise<void> {
@@ -28,14 +28,14 @@ export class SiteConfigStore extends Config {
       ...old,
       ...cfg
     }
-    return await this.db.put(id, obj)
+    return this.db.put(id, obj)
   }
 
   async get(id: string): Promise<Static<typeof Site>> {
-    return await this.db.get(id)
+    return this.db.get(id)
   }
 
   async delete(id: string): Promise<void> {
-    return await this.db.del(id)
+    return this.db.del(id)
   }
 }

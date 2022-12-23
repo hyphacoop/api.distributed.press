@@ -6,17 +6,17 @@ import { nanoid } from 'nanoid'
 export class AdminStore extends Config {
   async create (cfg: Static<typeof NewAdmin>): Promise<string> {
     const id = nanoid()
-    return await this.db.put(id, {
+    return this.db.put(id, {
       id,
       ...cfg
     }).then(() => id)
   }
 
   async get (id: string): Promise<Static<typeof Admin>> {
-    return await this.db.get(id)
+    return this.db.get(id)
   }
 
   async delete (id: string): Promise<void> {
-    return await this.db.del(id)
+    return this.db.del(id)
   }
 }

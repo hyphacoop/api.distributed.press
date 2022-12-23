@@ -10,6 +10,6 @@ export abstract class Config {
   }
 
   async keys (): Promise<string[]> {
-    return await this.db.keys().all()
+    return this.db.keys().all()
   }
 }

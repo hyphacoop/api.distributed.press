@@ -18,10 +18,10 @@ export default class Store implements StoreI {
   public publisher: PublisherStore
   public sites: SiteConfigStore
 
-  constructor (db?: AbstractLevel<any, string, any>) {
+  constructor(db?: AbstractLevel<any, string, any>) {
     this.db = db ?? defaultDB()
-    this.admin = new AdminStore(this.db.sublevel('admin'))
-    this.publisher = new PublisherStore(this.db.sublevel('publisher'))
-    this.sites = new SiteConfigStore(this.db.sublevel('sites'))
+    this.admin = new AdminStore(this.db.sublevel('admin', { valueEncoding: 'json' }))
+    this.publisher = new PublisherStore(this.db.sublevel('publisher', { valueEncoding: 'json' }))
+    this.sites = new SiteConfigStore(this.db.sublevel('sites', { valueEncoding: 'json' }))
   }
 }

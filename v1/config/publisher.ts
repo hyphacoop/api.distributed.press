@@ -10,14 +10,14 @@ export class PublisherStore extends Config {
       id,
       ...cfg
     }
-    return await this.db.put(id, obj).then(() => obj)
+    return this.db.put(id, obj).then(() => obj)
   }
 
   async get (id: string): Promise<Static<typeof Publisher>> {
-    return await this.db.get(id)
+    return this.db.get(id)
   }
 
   async delete (id: string): Promise<void> {
-    return await this.db.del(id)
+    return this.db.del(id)
   }
 }

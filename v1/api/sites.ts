@@ -14,7 +14,8 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
         200: Site
       },
       description: 'Create a new site.',
-      tags: ['site']
+      tags: ['site'],
+      security: [{ jwt: [] }]
     },
     preHandler: server.auth([server.verifyPublisher, server.verifyAdmin])
   }, async (request, reply) => {
@@ -23,35 +24,57 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
 
   server.get<{
     Params: {
-      domain: string
+      id: string
     }
     Reply: Static<typeof Site>
-  }>('/sites/:domain', {
+  }>('/sites/:id', {
     schema: {
       params: Type.Object({
-        domain: Type.String()
+        id: Type.String()
       }),
       response: {
         200: Site
       },
       description: 'Returns the configuration and info about the domain.',
-      tags: ['site']
-    }
+      tags: ['site'],
+      security: [{ jwt: [] }]
+    },
+    preHandler: server.auth([server.verifyPublisher, server.verifyAdmin])
   }, async (request, reply) => {
-    const { domain } = request.params
-    return reply.send(await store.sites.get(domain))
+    const { id } = request.params
+    return reply.send(await store.sites.get(id))
   })
+
+  server.delete<{
+    Params: {
+      id: string
+    }
+  }>('/sites/:id', {
+    schema: {
+      params: Type.Object({
+        id: Type.String()
+      }),
+      description: 'Deletes a site',
+      tags: ['site'],
+      security: [{ jwt: [] }]
+    },
+  }, async (request, reply) => {
+    const { id } = request.params
+    await store.sites.delete(id)
+    return reply.send()
+  })
+
 
   server.post<{
     Params: {
-      domain: string
+      id: string
     }
     Body: Static<typeof UpdateSite>
-  }>('/sites/:domain', {
+  }>('/sites/:id', {
     schema: {
       body: UpdateSite,
       params: {
-        domain: Type.String()
+        id: Type.String()
       },
       description: 'Update the configuration for the site.',
       tags: ['site'],
@@ -59,18 +82,18 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
     },
     preHandler: server.auth([server.verifyPublisher, server.verifyAdmin])
   }, async (request, reply) => {
-    const { domain } = request.params
-    await store.sites.update(domain, request.body)
+    const { id } = request.params
+    await store.sites.update(id, request.body)
     return reply.code(200).send()
   })
 
   server.put<{
-    Params: { domain: string }
+    Params: { id: string }
     Body: Static<typeof UpdateSite>
-  }>('/sites/:domain', {
+  }>('/sites/:id', {
     schema: {
       params: {
-        domain: Type.String()
+        id: Type.String()
       },
       description: 'Upload content to the site. Body must be a `tar.gz` file which will get extracted out and served. Any files missing from the tarball that are on disk, will be deleted from disk and the p2p archives.',
       tags: ['site'],
@@ -84,18 +107,18 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
     // - ensure its a tarball
     // - ensure size in range
     // do something with files
-    const { domain } = request.params
+    const { id } = request.params
     const files = await request.saveRequestFiles()
-    request.log.info(`${domain} ${files.length}`)
+    request.log.info(`${id} ${files.length}`)
     return reply.code(200).send()
   })
 
   server.patch<{
-    Params: { domain: string }
-  }>('/sites/:domain', {
+    Params: { id: string }
+  }>('/sites/:id', {
     schema: {
       params: {
-        domain: Type.String()
+        id: Type.String()
       },
       description: 'Upload a patch with just the files you want added. This will only do a diff on the files in the tarball and will not delete any missing files.',
       tags: ['site'],
@@ -109,9 +132,9 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
     // - ensure its a tarball
     // - ensure size in range
     // do something with files
-    const { domain } = request.params
+    const { id } = request.params
     const files = await request.saveRequestFiles()
-    request.log.info(`${domain}, ${files.length}`)
+    request.log.info(`${id}, ${files.length}`)
     return reply.code(200).send()
   })
 }

@@ -44,7 +44,7 @@ export const publisherRoutes = (store: StoreI) => async (server: FastifyInstance
     return reply.send(await store.publisher.get(id))
   })
 
-  server.get<{
+  server.post<{
     Params: {
       id: string
     }
