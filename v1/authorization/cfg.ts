@@ -3,7 +3,7 @@ import auth from '@fastify/auth'
 import { readFileSync } from 'fs'
 import path from 'path'
 import { FastifyTypebox } from '../api/index.js'
-import { CAPABILITIES, JWTPayload, JWTPayloadT } from './jwt.js'
+import { CAPABILITIES, JWTPayload, JWTPayloadT, subset } from './jwt.js'
 import { FastifyRequest, FastifyReply, DoneFuncWithErrOrRes } from 'fastify'
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
@@ -16,11 +16,6 @@ const argv = yargs(hideBin(process.argv)).options({
   data: { type: 'string' }
 }).parseSync()
 const dataPath = argv.data ?? paths.data
-
-// returns true if arr1 is a subset of arr2
-function subset<T> (arr1: T[], arr2: T[]): boolean {
-  return arr1.every(x => arr2.includes(x))
-}
 
 function printCapabilities (capabilities: CAPABILITIES[]): string {
   return capabilities.map(cap => cap.toString()).join(', ')
@@ -63,5 +58,5 @@ export const registerAuth = async (route: FastifyTypebox, store: StoreI): Promis
   route.decorate('verifyAdmin', verifyTokenCapabilities(store, [CAPABILITIES.ADMIN]))
   route.decorate('verifyPublisher', verifyTokenCapabilities(store, [CAPABILITIES.PUBLISHER]))
   route.decorate('verifyRefresh', verifyTokenCapabilities(store, [CAPABILITIES.REFRESH]))
-  return await route.after()
+  return route.after()
 }

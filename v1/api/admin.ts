@@ -17,7 +17,7 @@ export const adminRoutes = (store: StoreI) => async (server: FastifyTypebox): Pr
     preHandler: server.auth([server.verifyAdmin])
   }, async (request, reply) => {
     const id = await store.admin.create(request.body)
-    return await reply.send(id)
+    return reply.send(id)
   })
 
   server.delete<{
@@ -37,6 +37,6 @@ export const adminRoutes = (store: StoreI) => async (server: FastifyTypebox): Pr
   }, async (request, reply) => {
     const { id } = request.params
     await store.admin.delete(id)
-    return await reply.code(200).send()
+    return reply.code(200).send()
   })
 }

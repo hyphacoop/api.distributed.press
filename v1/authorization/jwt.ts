@@ -9,6 +9,12 @@ export enum CAPABILITIES {
   PUBLISHER = 'publisher',
   REFRESH = 'refresh',
 }
+export const CAPABILITIES_ARRAY = Type.Array(Type.Enum(CAPABILITIES))
+
+/// returns true if arr1 is a subset of arr2
+export function subset(arr1: CAPABILITIES[], arr2: CAPABILITIES[]): boolean {
+  return arr1.every(x => arr2.includes(x))
+}
 
 // 1 day
 const EXPIRY_MS = 1 * 24 * 60 * 60 * 1000
@@ -19,7 +25,7 @@ export function getExpiry (isRefresh: boolean): number {
 export const JWTPayload = Type.Object({
   id: Type.String(),
   expires: Type.Number(),
-  capabilities: Type.Array(Type.Enum(CAPABILITIES))
+  capabilities: CAPABILITIES_ARRAY 
 })
 
 export type JWTPayloadT = Static<typeof JWTPayload>

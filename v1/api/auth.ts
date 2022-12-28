@@ -1,28 +1,36 @@
-import { Type } from '@sinclair/typebox'
-import { getExpiry, JWTPayload, JWTPayloadT } from '../authorization/jwt.js'
+import { Type, Static } from '@sinclair/typebox'
+import { CAPABILITIES_ARRAY, CAPABILITIES, getExpiry, JWTPayload, subset } from '../authorization/jwt.js'
 import { StoreI } from '../config/index.js'
 import { FastifyTypebox } from './index.js'
 
 export const authRoutes = (store: StoreI) => async (server: FastifyTypebox): Promise<void> => {
   server.post<{
-    Reply: JWTPayloadT
-  }>('/auth', {
+    Body: Static<typeof CAPABILITIES_ARRAY>
+  }>('/auth/exchange', {
     schema: {
+      body: CAPABILITIES_ARRAY,
       response: {
-        200: JWTPayload
+        200: JWTPayload,
+        401: Type.String(),
       },
-      description: 'Exchange an old refresh token for a new one with an updated expiry time',
+      description: 'Exchange an old token for a new one with a subset of initial capabilities and an updated expiry time. Takes in the old token from the Authorization header',
       tags: ['admin', 'publisher'],
       security: [{ jwt: [] }]
     },
     preHandler: server.auth([server.verifyRefresh])
   }, async (request, reply) => {
     const token = request.user
+    if (!subset(request.body, token.capabilities)) {
+      return reply.status(401).send("Requested more permissions than original token has")
+    }
+    if (!token.capabilities.includes(CAPABILITIES.ADMIN)) {
+      return reply.status(401).send("Can't create new refresh tokens if you are not an admin. Please contact an administrator")
+    }
     const newToken = {
       ...token,
-      expires: getExpiry(true)
+      expires: getExpiry(false),
     }
-    return await reply.status(200).send(newToken)
+    return reply.status(200).send(newToken)
   })
 
   server.delete<{
@@ -42,6 +50,6 @@ export const authRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
   }, async (request, reply) => {
     const { hash } = request.params
     await store.revocations.revoke(hash)
-    return await reply.code(200).send()
+    return reply.code(200).send()
   })
 }
