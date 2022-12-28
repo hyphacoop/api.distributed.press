@@ -1,5 +1,5 @@
 import { Type, Static } from '@sinclair/typebox'
-import { CAPABILITIES_ARRAY, CAPABILITIES, getExpiry, JWTPayload, subset } from '../authorization/jwt.js'
+import { CAPABILITIES_ARRAY, CAPABILITIES, getExpiry, subset } from '../authorization/jwt.js'
 import { StoreI } from '../config/index.js'
 import { FastifyTypebox } from './index.js'
 
@@ -10,7 +10,7 @@ export const authRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
     schema: {
       body: CAPABILITIES_ARRAY,
       response: {
-        200: JWTPayload,
+        200: Type.String(),
         401: Type.String(),
       },
       description: 'Exchange an old token for a new one with a subset of initial capabilities and an updated expiry time. Takes in the old token from the Authorization header',
@@ -30,7 +30,8 @@ export const authRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
       ...token,
       expires: getExpiry(false),
     }
-    return reply.status(200).send(newToken)
+    const signed = await reply.jwtSign(newToken)
+    return reply.status(200).send(signed)
   })
 
   server.delete<{
