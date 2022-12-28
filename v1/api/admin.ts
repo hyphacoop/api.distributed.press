@@ -1,5 +1,4 @@
 import { Static, Type } from '@sinclair/typebox'
-import { makeAdminToken } from '../authorization/jwt.js'
 import { StoreI } from '../config/index.js'
 import { FastifyTypebox } from './index.js'
 import { NewAdmin } from './schemas.js'
@@ -18,7 +17,7 @@ export const adminRoutes = (store: StoreI) => async (server: FastifyTypebox): Pr
     preHandler: server.auth([server.verifyAdmin])
   }, async (request, reply) => {
     const id = await store.admin.create(request.body)
-    return reply.send(id)
+    return await reply.send(id)
   })
 
   server.delete<{
@@ -38,27 +37,6 @@ export const adminRoutes = (store: StoreI) => async (server: FastifyTypebox): Pr
   }, async (request, reply) => {
     const { id } = request.params
     await store.admin.delete(id)
-    return reply.code(200).send()
-  })
-
-  server.post<{
-    Params: {
-      id: string
-    }
-    Reply: string // raw string of the JWT token
-  }>('/admin/:id/auth/refresh', {
-    schema: {
-      description: 'Exchange a refresh token for an access token',
-      tags: ['admin'],
-      params: {
-        id: Type.String()
-      },
-      security: [{ jwt: [] }]
-    },
-    preHandler: server.auth([server.verifyAdminRefresh])
-  }, async (request, reply) => {
-    const { id } = request.params
-    const token = await reply.jwtSign(makeAdminToken(id, false))
-    return reply.send(token)
+    return await reply.code(200).send()
   })
 }

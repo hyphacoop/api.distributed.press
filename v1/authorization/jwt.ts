@@ -1,49 +1,40 @@
 import { Static, Type } from '@sinclair/typebox'
+import { nanoid } from 'nanoid'
 
 export const SYSTEM = 'system'
 
-// account types
-export const ADMIN = 'admin'
-export const PUBLISHER = 'publisher'
-export const AccountType = Type.Union([Type.Literal(ADMIN), Type.Literal(PUBLISHER)])
-export type AccountTypeT = Static<typeof AccountType>
+// CAPABILITIES
+export enum CAPABILITIES {
+  ADMIN = 'admin',
+  PUBLISHER = 'publisher',
+  REFRESH = 'refresh',
+}
 
 // 1 day
 const EXPIRY_MS = 1 * 24 * 60 * 60 * 1000
-function getExpiry (isRefresh: boolean): number {
+export function getExpiry (isRefresh: boolean): number {
   return isRefresh ? -1 : (new Date()).getTime() + EXPIRY_MS
 }
 
-// ID of admin that created the token (or system if generated from keygen.ts)
-export const Creator = Type.Union([
-  Type.Literal(SYSTEM),
-  Type.String()
-])
-export type CreatorT = Static<typeof Creator>
-
 export const JWTPayload = Type.Object({
-  createdBy: Creator,
+  id: Type.String(),
   expires: Type.Number(),
-  accountType: AccountType,
-  accountId: Type.String()
+  capabilities: Type.Array(Type.Enum(CAPABILITIES))
 })
 
 export type JWTPayloadT = Static<typeof JWTPayload>
 
-export function makeAdminToken (id: string, isRefresh: boolean, createdBy?: CreatorT): JWTPayloadT {
-  return {
-    createdBy: createdBy ?? SYSTEM,
-    expires: getExpiry(isRefresh),
-    accountType: ADMIN,
-    accountId: id
+export function makeJWTToken ({ isAdmin, isRefresh }: { isAdmin: boolean, isRefresh: boolean }): JWTPayloadT {
+  const baseCapabilities = [CAPABILITIES.PUBLISHER]
+  if (isAdmin) {
+    baseCapabilities.push(CAPABILITIES.ADMIN)
   }
-}
-
-export function makePublisherToken (id: string, isRefresh: boolean, createdBy?: CreatorT): JWTPayloadT {
+  if (isRefresh) {
+    baseCapabilities.push(CAPABILITIES.REFRESH)
+  }
   return {
-    createdBy: createdBy ?? SYSTEM,
+    id: nanoid(),
     expires: getExpiry(isRefresh),
-    accountType: PUBLISHER,
-    accountId: id
+    capabilities: baseCapabilities
   }
 }

@@ -19,7 +19,7 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
     },
     preHandler: server.auth([server.verifyPublisher, server.verifyAdmin])
   }, async (request, reply) => {
-    return reply.send(await store.sites.create(request.body))
+    return await reply.send(await store.sites.create(request.body))
   })
 
   server.get<{
@@ -42,7 +42,7 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
     preHandler: server.auth([server.verifyPublisher, server.verifyAdmin])
   }, async (request, reply) => {
     const { id } = request.params
-    return reply.send(await store.sites.get(id))
+    return await reply.send(await store.sites.get(id))
   })
 
   server.delete<{
@@ -57,13 +57,12 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
       description: 'Deletes a site',
       tags: ['site'],
       security: [{ jwt: [] }]
-    },
+    }
   }, async (request, reply) => {
     const { id } = request.params
     await store.sites.delete(id)
-    return reply.send()
+    return await reply.send()
   })
-
 
   server.post<{
     Params: {
@@ -84,7 +83,7 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
   }, async (request, reply) => {
     const { id } = request.params
     await store.sites.update(id, request.body)
-    return reply.code(200).send()
+    return await reply.code(200).send()
   })
 
   server.put<{
@@ -110,7 +109,7 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
     const { id } = request.params
     const files = await request.saveRequestFiles()
     request.log.info(`${id} ${files.length}`)
-    return reply.code(200).send()
+    return await reply.code(200).send()
   })
 
   server.patch<{
@@ -135,6 +134,6 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
     const { id } = request.params
     const files = await request.saveRequestFiles()
     request.log.info(`${id}, ${files.length}`)
-    return reply.code(200).send()
+    return await reply.code(200).send()
   })
 }

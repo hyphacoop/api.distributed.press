@@ -2,7 +2,7 @@ import test from 'ava'
 import { DEFAULT_SITE_CFG, SiteConfigStore } from './sites.js'
 import { MemoryLevel } from 'memory-level'
 
-function newSiteConfigStore(): SiteConfigStore {
+function newSiteConfigStore (): SiteConfigStore {
   return new SiteConfigStore(new MemoryLevel({ valueEncoding: 'json' }))
 }
 
@@ -11,7 +11,7 @@ export const exampleSiteConfig = {
   publication: {
     http: {},
     ipfs: {},
-    hyper: {},
+    hyper: {}
   }
 }
 
@@ -22,7 +22,7 @@ test('create new siteconfig', async t => {
   t.deepEqual(result, {
     ...DEFAULT_SITE_CFG,
     ...exampleSiteConfig,
-    id: site.id,
+    id: site.id
   })
 })
 

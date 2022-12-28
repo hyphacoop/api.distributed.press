@@ -1,6 +1,5 @@
 import { Type, Static } from '@sinclair/typebox'
 import { FastifyInstance } from 'fastify'
-import { makePublisherToken } from '../authorization/jwt.js'
 import { StoreI } from '../config/index.js'
 import { NewPublisher, Publisher } from './schemas.js'
 
@@ -20,7 +19,7 @@ export const publisherRoutes = (store: StoreI) => async (server: FastifyInstance
     },
     preHandler: server.auth([server.verifyAdmin])
   }, async (request, reply) => {
-    return reply.send(await store.publisher.create(request.body))
+    return await reply.send(await store.publisher.create(request.body))
   })
 
   server.get<{
@@ -41,45 +40,7 @@ export const publisherRoutes = (store: StoreI) => async (server: FastifyInstance
     }
   }, async (request, reply) => {
     const { id } = request.params
-    return reply.send(await store.publisher.get(id))
-  })
-
-  server.post<{
-    Params: {
-      id: string
-    }
-    Reply: string
-  }>('/publisher/:id/auth', {
-    schema: {
-      params: {
-        id: Type.String()
-      },
-      description: 'Retrieves refresh token for specified publisher. Admin gated',
-      tags: ['publisher'],
-      security: [{ jwt: [] }]
-    },
-    preHandler: server.auth([server.verifyAdmin])
-  }, async (request, reply) => {
-    const { id } = request.params
-    const token = await reply.jwtSign(makePublisherToken(id, true))
-    return reply.send(token)
-  })
-
-  server.post<{
-    Params: {
-      id: string
-    }
-  }>('/publisher/:id/auth/refresh', {
-    schema: {
-      description: 'Exchange a refresh token for an access token',
-      tags: ['publisher'],
-      security: [{ jwt: [] }]
-    },
-    preHandler: server.auth([server.verifyPublisherRefresh])
-  }, async (request, reply) => {
-    const { id } = request.params
-    const token = await reply.jwtSign(makePublisherToken(id, false))
-    return reply.send(token)
+    return await reply.send(await store.publisher.get(id))
   })
 
   server.delete<{
@@ -96,6 +57,6 @@ export const publisherRoutes = (store: StoreI) => async (server: FastifyInstance
   }, async (request, reply) => {
     const { id } = request.params
     await store.publisher.delete(id)
-    return reply.code(200).send()
+    return await reply.code(200).send()
   })
 }

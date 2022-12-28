@@ -3,12 +3,13 @@ import auth from '@fastify/auth'
 import { readFileSync } from 'fs'
 import path from 'path'
 import { FastifyTypebox } from '../api/index.js'
-import { AccountTypeT, ADMIN, JWTPayload, JWTPayloadT, PUBLISHER } from './jwt.js'
+import { CAPABILITIES, JWTPayload, JWTPayloadT } from './jwt.js'
 import { FastifyRequest, FastifyReply, DoneFuncWithErrOrRes } from 'fastify'
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 import envPaths from 'env-paths'
 import { Value } from '@sinclair/typebox/value/index.js'
+import { StoreI } from '../config/index.js'
 
 const paths = envPaths('distributed-press')
 const argv = yargs(hideBin(process.argv)).options({
@@ -16,7 +17,16 @@ const argv = yargs(hideBin(process.argv)).options({
 }).parseSync()
 const dataPath = argv.data ?? paths.data
 
-const verifyAccessToken = (accountType: AccountTypeT) => (request: FastifyRequest, _reply: FastifyReply, done: DoneFuncWithErrOrRes) => {
+// returns true if arr1 is a subset of arr2
+function subset<T> (arr1: T[], arr2: T[]): boolean {
+  return arr1.every(x => arr2.includes(x))
+}
+
+function printCapabilities (capabilities: CAPABILITIES[]): string {
+  return capabilities.map(cap => cap.toString()).join(', ')
+}
+
+const verifyTokenCapabilities = (store: StoreI, capabilities: CAPABILITIES[]) => (request: FastifyRequest, _reply: FastifyReply, done: DoneFuncWithErrOrRes) => {
   if (request.raw.headers.authorization === undefined) {
     return done(new Error('Missing token header'))
   }
@@ -24,38 +34,24 @@ const verifyAccessToken = (accountType: AccountTypeT) => (request: FastifyReques
     if (!Value.Check(JWTPayload, decoded)) {
       return done(new Error('Malformed JWT Payload'))
     }
-    if (decoded.accountType !== accountType) {
-      return done(new Error(`Mismatched account type: got ${decoded.accountType}, wanted ${accountType}`))
+    if (!subset(capabilities, decoded.capabilities)) {
+      return done(new Error(`Mismatched capabilities: got ${printCapabilities(decoded.capabilities)}, wanted ${printCapabilities(capabilities)}`))
     }
-    if (decoded.expires === -1) {
-      return done(new Error('Received a refresh token; expected an access token'))
+    if (decoded.expires !== -1 && decoded.expires < (new Date()).getTime()) {
+      return done(new Error('JWT token has expired, please refresh it'))
     }
-    if (decoded.expires < (new Date()).getTime()) {
-      return done(new Error('JWT token has expired. Please get a new one using a refresh token'))
-    }
-    return done()
-  }).catch((err) => done(new Error(`Cannot verify access token JWT: ${err}`)))
+
+    store.revocations.isRevoked(decoded).then(isRevoked => {
+      if (isRevoked) {
+        return done(new Error('JWT token has been revoked'))
+      } else {
+        return done()
+      }
+    }).catch((err: string) => done(new Error(`Failed to check whether token was revoked: ${err}`)))
+  }).catch((err: string) => done(new Error(`Cannot verify access token JWT: ${err}`)))
 }
 
-const verifyRefreshToken = (accountType: AccountTypeT) => (request: FastifyRequest, _reply: FastifyReply, done: DoneFuncWithErrOrRes) => {
-  if (request.raw.headers.authorization === undefined) {
-    return done(new Error('Missing token header'))
-  }
-  request.jwtVerify<JWTPayloadT>().then((decoded) => {
-    if (!Value.Check(JWTPayload, decoded)) {
-      return done(new Error('Malformed JWT Payload'))
-    }
-    if (decoded.accountType !== accountType) {
-      return done(new Error(`Mismatched account type: got ${decoded.accountType}, wanted ${accountType}`))
-    }
-    if (decoded.expires !== -1) {
-      return done(new Error('Received an access token; expected a refresh token'))
-    }
-    return done()
-  }).catch((err) => done(new Error(`Cannot verify refresh token JWT: ${err}`)))
-}
-
-export const registerAuth = async (route: FastifyTypebox): Promise<void> => {
+export const registerAuth = async (route: FastifyTypebox, store: StoreI): Promise<void> => {
   await route.register(jwt, {
     secret: {
       private: readFileSync(path.join(dataPath, 'keys', 'private.key'), 'utf8'),
@@ -64,9 +60,8 @@ export const registerAuth = async (route: FastifyTypebox): Promise<void> => {
     sign: { algorithm: 'RS256' }
   })
   await route.register(auth)
-  route.decorate('verifyAdmin', verifyAccessToken(ADMIN))
-  route.decorate('verifyPublisher', verifyAccessToken(PUBLISHER))
-  route.decorate('verifyAdminRefresh', verifyRefreshToken(ADMIN))
-  route.decorate('verifyPublisherRefresh', verifyRefreshToken(PUBLISHER))
-  return route.after()
+  route.decorate('verifyAdmin', verifyTokenCapabilities(store, [CAPABILITIES.ADMIN]))
+  route.decorate('verifyPublisher', verifyTokenCapabilities(store, [CAPABILITIES.PUBLISHER]))
+  route.decorate('verifyRefresh', verifyTokenCapabilities(store, [CAPABILITIES.REFRESH]))
+  return await route.after()
 }
