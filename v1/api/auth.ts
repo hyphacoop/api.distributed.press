@@ -11,7 +11,7 @@ export const authRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
       body: CAPABILITIES_ARRAY,
       response: {
         200: Type.String(),
-        401: Type.String(),
+        401: Type.String()
       },
       description: 'Exchange an old token for a new one with a subset of initial capabilities and an updated expiry time. Takes in the old token from the Authorization header',
       tags: ['admin', 'publisher'],
@@ -21,17 +21,17 @@ export const authRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
   }, async (request, reply) => {
     const token = request.user
     if (!subset(request.body, token.capabilities)) {
-      return reply.status(401).send("Requested more permissions than original token has")
+      return await reply.status(401).send('Requested more permissions than original token has')
     }
-    if (!token.capabilities.includes(CAPABILITIES.ADMIN)) {
-      return reply.status(401).send("Can't create new refresh tokens if you are not an admin. Please contact an administrator")
+    if (!token.capabilities.includes(CAPABILITIES.ADMIN) && request.body.includes(CAPABILITIES.REFRESH)) {
+      return await reply.status(401).send("Can't create new refresh tokens if you are not an admin. Please contact an administrator")
     }
     const newToken = {
       ...token,
-      expires: getExpiry(false),
+      expires: getExpiry(false)
     }
     const signed = await reply.jwtSign(newToken)
-    return reply.status(200).send(signed)
+    return await reply.status(200).send(signed)
   })
 
   server.delete<{
@@ -51,6 +51,6 @@ export const authRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
   }, async (request, reply) => {
     const { hash } = request.params
     await store.revocations.revoke(hash)
-    return reply.code(200).send()
+    return await reply.code(200).send()
   })
 }

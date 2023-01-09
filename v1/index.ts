@@ -10,23 +10,19 @@ const argv = yargs(hideBin(process.argv)).options({
   data: { type: 'string' }
 }).parseSync()
 
-interface ServerI {
+export interface ServerI {
   port: number
-  host?: string
+  host: string
   storage: string
 }
 
-const PORT = Number(argv.port ?? process.env.PORT ?? '8080')
 const cfg: ServerI = {
-  port: PORT,
+  port: Number(argv.port ?? process.env.PORT ?? '8080'),
+  host: argv.host ?? process.env.HOST ?? 'localhost',
   storage: argv.data ?? paths.data
 }
 
-if (process.env.HOST !== undefined) {
-  cfg.host = process.env.HOST
-}
-
-const server = await apiBuilder({ useLogging: true, useSwagger: true, usePrometheus: true })
+const server = await apiBuilder({ ...cfg, useLogging: true, useSwagger: true, usePrometheus: true })
 server.listen(cfg, (err, _address) => {
   if (err != null) {
     server.log.error(err)

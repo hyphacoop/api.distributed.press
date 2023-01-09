@@ -2,6 +2,7 @@ import { Type, Static } from '@sinclair/typebox'
 import { NewSite, Site, UpdateSite } from './schemas.js'
 import { StoreI } from '../config/index.js'
 import { FastifyTypebox } from './index.js'
+import { FastifyReply, FastifyRequest } from 'fastify'
 
 export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Promise<void> => {
   server.post<{
@@ -19,7 +20,7 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
     },
     preHandler: server.auth([server.verifyPublisher, server.verifyAdmin])
   }, async (request, reply) => {
-    return reply.send(await store.sites.create(request.body))
+    return await reply.send(await store.sites.create(request.body))
   })
 
   server.get<{
@@ -42,7 +43,7 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
     preHandler: server.auth([server.verifyPublisher, server.verifyAdmin])
   }, async (request, reply) => {
     const { id } = request.params
-    return reply.send(await store.sites.get(id))
+    return await reply.send(await store.sites.get(id))
   })
 
   server.delete<{
@@ -61,7 +62,7 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
   }, async (request, reply) => {
     const { id } = request.params
     await store.sites.delete(id)
-    return reply.send()
+    return await reply.send()
   })
 
   server.post<{
@@ -83,12 +84,30 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
   }, async (request, reply) => {
     const { id } = request.params
     await store.sites.update(id, request.body)
-    return reply.code(200).send()
+    return await reply.code(200).send()
   })
+
+  async function processRequestFiles (request: FastifyRequest, reply: FastifyReply, fn: (filePath: string) => Promise<void>): Promise<void> {
+    try {
+      const files = await request.saveRequestFiles({
+        limits: {
+          files: 1,
+          fileSize: 1e9 // 1GB,
+        }
+      })
+      const tarballPath = files[0].filepath
+      await fn(tarballPath)
+      return await reply.code(200).send()
+    } catch (error) {
+      if (error instanceof server.multipartErrors.RequestFileTooLargeError) {
+        return await reply.code(400).send('tarball too large (limit 1GB)')
+      }
+      return await reply.code(500).send()
+    }
+  }
 
   server.put<{
     Params: { id: string }
-    Body: Static<typeof UpdateSite>
   }>('/sites/:id', {
     schema: {
       params: {
@@ -96,20 +115,22 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
       },
       description: 'Upload content to the site. Body must be a `tar.gz` file which will get extracted out and served. Any files missing from the tarball that are on disk, will be deleted from disk and the p2p archives.',
       tags: ['site'],
+      consumes: ['multipart/form-data'],
+      body: {
+        type: 'object',
+        properties: {
+          file: { type: 'string', format: 'binary' }
+        }
+      },
       security: [{ jwt: [] }]
     },
     preHandler: server.auth([server.verifyPublisher, server.verifyAdmin])
   }, async (request, reply) => {
-    // TODO: stub
-    // handle errors
-    // - ensure only one file
-    // - ensure its a tarball
-    // - ensure size in range
-    // do something with files
     const { id } = request.params
-    const files = await request.saveRequestFiles()
-    request.log.info(`${id} ${files.length}`)
-    return reply.code(200).send()
+    return await processRequestFiles(request, reply, async (tarballPath) => {
+      await store.fs.clear(id)
+      await store.fs.extract(tarballPath, id)
+    })
   })
 
   server.patch<{
@@ -121,19 +142,20 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
       },
       description: 'Upload a patch with just the files you want added. This will only do a diff on the files in the tarball and will not delete any missing files.',
       tags: ['site'],
+      consumes: ['multipart/form-data'],
+      body: {
+        type: 'object',
+        properties: {
+          file: { type: 'string', format: 'binary' }
+        }
+      },
       security: [{ jwt: [] }]
     },
     preHandler: server.auth([server.verifyPublisher])
   }, async (request, reply) => {
-    // TODO: stub
-    // handle errors
-    // - ensure only one file
-    // - ensure its a tarball
-    // - ensure size in range
-    // do something with files
     const { id } = request.params
-    const files = await request.saveRequestFiles()
-    request.log.info(`${id}, ${files.length}`)
-    return reply.code(200).send()
+    return await processRequestFiles(request, reply, async (tarballPath) => {
+      await store.fs.extract(tarballPath, id)
+    })
   })
 }

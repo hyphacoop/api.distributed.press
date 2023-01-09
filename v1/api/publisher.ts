@@ -19,7 +19,7 @@ export const publisherRoutes = (store: StoreI) => async (server: FastifyInstance
     },
     preHandler: server.auth([server.verifyAdmin])
   }, async (request, reply) => {
-    return reply.send(await store.publisher.create(request.body))
+    return await reply.send(await store.publisher.create(request.body))
   })
 
   server.get<{
@@ -40,7 +40,7 @@ export const publisherRoutes = (store: StoreI) => async (server: FastifyInstance
     }
   }, async (request, reply) => {
     const { id } = request.params
-    return reply.send(await store.publisher.get(id))
+    return await reply.send(await store.publisher.get(id))
   })
 
   server.delete<{
@@ -57,6 +57,6 @@ export const publisherRoutes = (store: StoreI) => async (server: FastifyInstance
   }, async (request, reply) => {
     const { id } = request.params
     await store.publisher.delete(id)
-    return reply.code(200).send()
+    return await reply.code(200).send()
   })
 }

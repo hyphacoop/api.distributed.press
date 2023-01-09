@@ -17,7 +17,7 @@ test('admin: no payload should 400', async t => {
   const server = await apiBuilder({ useMemoryBackedDB: true })
   const response = await server.inject({
     method: 'POST',
-    url: '/v1/admin',
+    url: '/v1/admin'
   })
   t.is(response.statusCode, 400, 'no payload returns a status code of 400')
 })
@@ -29,7 +29,7 @@ test('admin: malformed payload should 400', async t => {
     method: 'POST',
     url: '/v1/admin',
     headers: {
-      authorization: `Bearer ${token}`,
+      authorization: `Bearer ${token}`
     },
     payload: {
       nmae: 'test_admin',
@@ -46,10 +46,10 @@ test('admin: create/delete should be ok with token', async t => {
     method: 'POST',
     url: '/v1/admin',
     headers: {
-      authorization: `Bearer ${token}`,
+      authorization: `Bearer ${token}`
     },
     payload: {
-      name: 'test_admin',
+      name: 'test_admin'
     }
   })
   t.is(response.statusCode, 200, 'normal payload returns a status code of 200')
@@ -59,8 +59,8 @@ test('admin: create/delete should be ok with token', async t => {
     method: 'DELETE',
     url: `/v1/admin/${id}`,
     headers: {
-      authorization: `Bearer ${token}`,
-    },
+      authorization: `Bearer ${token}`
+    }
   })
 
   t.is(deleteResponse.statusCode, 200, 'deletion payload returns a status code of 200')
@@ -75,10 +75,10 @@ test('E2E: admin -> publisher -> site flow', async t => {
     method: 'POST',
     url: '/v1/admin',
     headers: {
-      authorization: `Bearer ${rootAccessToken}`,
+      authorization: `Bearer ${rootAccessToken}`
     },
     payload: {
-      name: 'test_admin',
+      name: 'test_admin'
     }
   })
   t.is(response.statusCode, 200, 'creating admin returns a status code of 200')
@@ -88,9 +88,9 @@ test('E2E: admin -> publisher -> site flow', async t => {
     method: 'POST',
     url: '/v1/auth/exchange',
     headers: {
-      authorization: `Bearer ${rootAccessToken}`,
+      authorization: `Bearer ${rootAccessToken}`
     },
-    payload: [CAPABILITIES.ADMIN, CAPABILITIES.PUBLISHER],
+    payload: [CAPABILITIES.ADMIN, CAPABILITIES.PUBLISHER]
   })
   t.is(adminRefreshResponse.statusCode, 200, 'refresh payload returns a status code of 200')
   const adminAccessToken = adminRefreshResponse.body
@@ -100,10 +100,10 @@ test('E2E: admin -> publisher -> site flow', async t => {
     method: 'POST',
     url: '/v1/publisher',
     headers: {
-      authorization: `Bearer ${adminAccessToken}`,
+      authorization: `Bearer ${adminAccessToken}`
     },
     payload: {
-      name: 'test_publisher',
+      name: 'test_publisher'
     }
   })
   t.is(createPublisherResponse.statusCode, 200, 'creating a new publisher with right tokens returns a status code of 200')
@@ -113,9 +113,9 @@ test('E2E: admin -> publisher -> site flow', async t => {
     method: 'POST',
     url: '/v1/auth/exchange',
     headers: {
-      authorization: `Bearer ${adminAccessToken}`,
+      authorization: `Bearer ${adminAccessToken}`
     },
-    payload: [CAPABILITIES.PUBLISHER],
+    payload: [CAPABILITIES.PUBLISHER]
   })
   t.is(publisherAccessResponse.statusCode, 200, 'getting access token from refresh token for new publisher returns a status code of 200')
   const publisherAccessToken = publisherAccessResponse.body
@@ -123,28 +123,28 @@ test('E2E: admin -> publisher -> site flow', async t => {
   // use access token to create a new site
   const createSiteResponse = await server.inject({
     method: 'POST',
-    url: `/v1/sites`,
+    url: '/v1/sites',
     headers: {
-      authorization: `Bearer ${publisherAccessToken}`,
+      authorization: `Bearer ${publisherAccessToken}`
     },
-    payload: exampleSiteConfig,
+    payload: exampleSiteConfig
   })
   t.is(createSiteResponse.statusCode, 200, 'getting refresh token for new publisher returns a status code of 200')
-  const siteId = createSiteResponse.json().id
+  const siteId: string = createSiteResponse.json().id
 
   // fetch site info
   const getSiteResponse = await server.inject({
     method: 'GET',
     url: `/v1/sites/${siteId}`,
     headers: {
-      authorization: `Bearer ${publisherAccessToken}`,
+      authorization: `Bearer ${publisherAccessToken}`
     }
   })
   t.is(getSiteResponse.statusCode, 200, 'getting site info returns a status code of 200')
   t.deepEqual(getSiteResponse.json(), {
     ...DEFAULT_SITE_CFG,
     ...exampleSiteConfig,
-    id: siteId,
+    id: siteId
   })
 
   // delete the site
@@ -157,4 +157,3 @@ test('E2E: admin -> publisher -> site flow', async t => {
   })
   t.is(deleteSiteResponse.statusCode, 200, 'deleting site returns a status code of 200')
 })
-

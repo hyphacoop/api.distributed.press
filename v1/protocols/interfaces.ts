@@ -5,10 +5,10 @@ interface SyncOptions {
   ignoreDeletes: boolean
 }
 
-export default abstract class Protocol {
+export default abstract class Protocol<ProtocolConfig> {
   abstract load (): Promise<void>
-  abstract create<T>(config: T): Promise<Static<typeof Site>>
-  abstract sync (info: Static<typeof Site>, folder: string, options: SyncOptions): Promise<void>
+  abstract create (config: ProtocolConfig): Promise<Static<typeof Site>>
+  abstract sync (info: Static<typeof Site>, folderPath: string, options: SyncOptions): Promise<void>
   abstract delete (info: Static<typeof Site>): Promise<void>
-  abstract delete<T>(config: T): Promise<void>
+  abstract delete (config: ProtocolConfig): Promise<void>
 }

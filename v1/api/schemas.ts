@@ -39,13 +39,11 @@ export const UpdateSite = Type.Partial(Type.Omit(Site, ['id']))
 export const Publisher = Type.Object({
   id: Type.String(),
   name: Type.String()
-  // TODO: what other fields do we need here?
 })
 export const NewPublisher = Type.Omit(Publisher, ['id'])
 
 export const Admin = Type.Object({
   id: Type.String(),
   name: Type.String()
-  // TODO: what other fields do we need here?
 })
 export const NewAdmin = Type.Omit(Admin, ['id'])

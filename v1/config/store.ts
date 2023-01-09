@@ -5,11 +5,11 @@ import { AbstractLevel } from 'abstract-level'
 // the typings force .sublevel() to product an `AbstractSublevel<any, string, string>`
 export abstract class Config {
   protected db: AbstractLevel<any, string, any>
-  constructor(db: AbstractLevel<any, string, any>) {
+  constructor (db: AbstractLevel<any, string, any>) {
     this.db = db
   }
 
-  async keys(): Promise<string[]> {
-    return this.db.keys().all()
+  async keys (): Promise<string[]> {
+    return await this.db.keys().all()
   }
 }

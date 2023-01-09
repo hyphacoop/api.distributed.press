@@ -11,6 +11,8 @@ import Store, { StoreI } from '../config/index.js'
 import { registerAuth } from '../authorization/cfg.js'
 import { MemoryLevel } from 'memory-level'
 import { authRoutes } from './auth.js'
+import { ServerI } from '../index.js'
+import { Level } from 'level'
 
 export type FastifyTypebox = FastifyInstance<
 RawServerDefault,
@@ -20,17 +22,23 @@ FastifyBaseLogger,
 TypeBoxTypeProvider
 >
 
-interface APIConfig {
+export type APIConfig = Partial<{
   useLogging: boolean
   useSwagger: boolean
   usePrometheus: boolean
   useMemoryBackedDB: boolean
-}
+} & ServerI>
 
-async function apiBuilder (cfg: Partial<APIConfig>, store?: StoreI): Promise<FastifyTypebox> {
-  store = store ?? new Store(cfg.useMemoryBackedDB === true ? new MemoryLevel({ valueEncoding: 'json' }) : undefined)
+async function apiBuilder (cfg: APIConfig): Promise<FastifyTypebox> {
+  const db = cfg.useMemoryBackedDB === true
+    ? new MemoryLevel({ valueEncoding: 'json' })
+    : new Level('store', { valueEncoding: 'json' })
+  const store = new Store(cfg, db)
+
+  // TODO: register protocols here
+
   const server = fastify({ logger: cfg.useLogging }).withTypeProvider<TypeBoxTypeProvider>()
-  await registerAuth(server, store)
+  await registerAuth(cfg, server, store)
   await server.register(multipart)
 
   server.get('/healthz', () => {
@@ -42,7 +50,7 @@ async function apiBuilder (cfg: Partial<APIConfig>, store?: StoreI): Promise<Fas
   return server
 }
 
-const v1Routes = (cfg: Partial<APIConfig>, store: StoreI) => async (server: FastifyTypebox): Promise<void> => {
+const v1Routes = (cfg: APIConfig, store: StoreI) => async (server: FastifyTypebox): Promise<void> => {
   if (cfg.usePrometheus ?? false) {
     await server.register(metrics, { endpoint: '/metrics' })
   }

@@ -1,4 +1,5 @@
 import { Static, Type } from '@sinclair/typebox'
+import { generateKeyPairSync } from 'crypto'
 import { nanoid } from 'nanoid'
 
 export const SYSTEM = 'system'
@@ -12,7 +13,7 @@ export enum CAPABILITIES {
 export const CAPABILITIES_ARRAY = Type.Array(Type.Enum(CAPABILITIES))
 
 /// returns true if arr1 is a subset of arr2
-export function subset(arr1: CAPABILITIES[], arr2: CAPABILITIES[]): boolean {
+export function subset (arr1: CAPABILITIES[], arr2: CAPABILITIES[]): boolean {
   return arr1.every(x => arr2.includes(x))
 }
 
@@ -25,7 +26,7 @@ export function getExpiry (isRefresh: boolean): number {
 export const JWTPayload = Type.Object({
   id: Type.String(),
   expires: Type.Number(),
-  capabilities: CAPABILITIES_ARRAY 
+  capabilities: CAPABILITIES_ARRAY
 })
 
 export type JWTPayloadT = Static<typeof JWTPayload>
@@ -43,4 +44,18 @@ export function makeJWTToken ({ isAdmin, isRefresh }: { isAdmin: boolean, isRefr
     expires: getExpiry(isRefresh),
     capabilities: baseCapabilities
   }
+}
+
+export function generateKeyPair (): { privateKey: string, publicKey: string } {
+  return generateKeyPairSync('rsa', {
+    modulusLength: 2048,
+    publicKeyEncoding: {
+      type: 'spki',
+      format: 'pem'
+    },
+    privateKeyEncoding: {
+      type: 'pkcs8',
+      format: 'pem'
+    }
+  })
 }
