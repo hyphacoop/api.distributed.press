@@ -92,7 +92,7 @@ test('E2E: admin -> publisher -> site flow', async t => {
     },
     payload: {
       capabilities: [CAPABILITIES.ADMIN, CAPABILITIES.PUBLISHER]
-    } 
+    }
   })
   t.is(adminRefreshResponse.statusCode, 200, 'refresh payload returns a status code of 200')
   const adminAccessToken = adminRefreshResponse.body
@@ -119,7 +119,7 @@ test('E2E: admin -> publisher -> site flow', async t => {
     },
     payload: {
       capabilities: [CAPABILITIES.PUBLISHER]
-    } 
+    }
   })
   t.is(publisherAccessResponse.statusCode, 200, 'getting access token from refresh token for new publisher returns a status code of 200')
   const publisherAccessToken = publisherAccessResponse.body

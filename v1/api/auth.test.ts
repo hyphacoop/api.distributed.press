@@ -34,7 +34,7 @@ test('token refresh with non-refresh token should fail', async t => {
     },
     payload: {
       capabilities: [CAPABILITIES.PUBLISHER, CAPABILITIES.REFRESH]
-    } 
+    }
   })
   t.is(adminResponse.statusCode, 401, 'refreshing a non-refresh admin token returns a status code of 401')
   const publisherResponse = await server.inject({
@@ -45,7 +45,7 @@ test('token refresh with non-refresh token should fail', async t => {
     },
     payload: {
       capabilities: [CAPABILITIES.PUBLISHER, CAPABILITIES.REFRESH]
-    } 
+    }
   })
   t.is(publisherResponse.statusCode, 401, 'refreshing a non-refresh publisher token returns a status code of 401')
 })
@@ -64,7 +64,7 @@ test('revocation works', async t => {
     },
     payload: {
       capabilities: [CAPABILITIES.PUBLISHER, CAPABILITIES.REFRESH]
-    } 
+    }
   })
   t.is(revokeResponse.statusCode, 200, 'revocation of another token works (should return 200)')
 
@@ -76,7 +76,7 @@ test('revocation works', async t => {
     },
     payload: {
       capabilities: [CAPABILITIES.PUBLISHER, CAPABILITIES.REFRESH]
-    } 
+    }
   })
   t.is(failingRevokeResponse.statusCode, 401, 'trying to revoke the original token using the revoked token should no longer work')
 })
@@ -92,7 +92,7 @@ test('requesting new token with superset of permissions (publisher -> admin) sho
     },
     payload: {
       capabilities: [CAPABILITIES.ADMIN, CAPABILITIES.PUBLISHER, CAPABILITIES.REFRESH]
-    } 
+    }
   })
   t.is(response.statusCode, 401)
 })
@@ -108,7 +108,7 @@ test('requesting new token with subset of permissions (admin -> publisher) shoul
     },
     payload: {
       capabilities: [CAPABILITIES.PUBLISHER, CAPABILITIES.REFRESH]
-    } 
+    }
   })
   t.is(response.statusCode, 200)
 })
@@ -124,7 +124,7 @@ test('trying to create new refresh tokens as a publisher should fail', async t =
     },
     payload: {
       capabilities: [CAPABILITIES.PUBLISHER, CAPABILITIES.REFRESH]
-    } 
+    }
   })
   t.is(response.statusCode, 401)
 })
