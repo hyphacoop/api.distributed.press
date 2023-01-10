@@ -12,6 +12,10 @@ export enum CAPABILITIES {
 }
 export const CAPABILITIES_ARRAY = Type.Array(Type.Enum(CAPABILITIES))
 
+export const NewJWTPayload = Type.Object({
+  capabilities: CAPABILITIES_ARRAY
+})
+
 /// returns true if arr1 is a subset of arr2
 export function subset (arr1: CAPABILITIES[], arr2: CAPABILITIES[]): boolean {
   return arr1.every(x => arr2.includes(x))
