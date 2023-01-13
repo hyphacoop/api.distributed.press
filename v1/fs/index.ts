@@ -3,6 +3,7 @@ import fs from 'fs'
 import tar from 'tar-fs'
 import gunzip from 'gunzip-maybe'
 import rimraf from 'rimraf'
+import { pipeline } from 'stream/promises'
 
 export class SiteFileSystem {
   path: string
@@ -28,18 +29,15 @@ export class SiteFileSystem {
   /// Reads a .tar or .tar.gz from given `tarballPath` and extracts it to
   /// the target directory. Deletes original tarball when done
   async extract(tarballPath: string, siteId: string): Promise<void> {
-    return await new Promise((resolve, reject) => {
-      const sitePath = this.getPath(siteId)
-      fs.createReadStream(tarballPath).on('error', reject)
-        .pipe(gunzip()).on('error', reject)
-        .pipe(tar.extract(sitePath, {
-          readable: true,
-          writable: false
-        })).on('error', reject)
-        .on('finish', () => {
-          fs.unlinkSync(tarballPath)
-          resolve()
-        })
-    })
+    const sitePath = this.getPath(siteId)
+    await pipeline(
+      fs.createReadStream(tarballPath),
+      gunzip(),
+      tar.extract(sitePath, {
+        readable: true,
+        writable: false
+      })
+    );
+    fs.unlinkSync(tarballPath)
   }
 }
