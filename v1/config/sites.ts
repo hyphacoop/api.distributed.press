@@ -11,7 +11,7 @@ export const DEFAULT_SITE_CFG = {
   links: {}
 }
 
-export class SiteConfigStore extends Config {
+export class SiteConfigStore extends Config<Static<typeof Site>> {
   async create (cfg: Static<typeof NewSite>): Promise<Static<typeof Site>> {
     const id = nanoid()
     const obj = {

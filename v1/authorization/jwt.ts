@@ -13,6 +13,7 @@ export enum CAPABILITIES {
 export const CAPABILITIES_ARRAY = Type.Array(Type.Enum(CAPABILITIES))
 
 export const NewJWTPayload = Type.Object({
+  issuedTo: Type.Optional(Type.String()),
   capabilities: CAPABILITIES_ARRAY
 })
 
@@ -27,15 +28,22 @@ export function getExpiry (isRefresh: boolean): number {
   return isRefresh ? -1 : (new Date()).getTime() + EXPIRY_MS
 }
 
+interface JWTArgs {
+  isAdmin: boolean
+  isRefresh: boolean
+  issuedTo?: string
+}
+
 export const JWTPayload = Type.Object({
-  id: Type.String(),
+  tokenId: Type.String(),
+  issuedTo: Type.String(),
   expires: Type.Number(),
   capabilities: CAPABILITIES_ARRAY
 })
 
 export type JWTPayloadT = Static<typeof JWTPayload>
 
-export function makeJWTToken ({ isAdmin, isRefresh }: { isAdmin: boolean, isRefresh: boolean }): JWTPayloadT {
+export function makeJWTToken ({ isAdmin, isRefresh, issuedTo }: JWTArgs): JWTPayloadT {
   const baseCapabilities = [CAPABILITIES.PUBLISHER]
   if (isAdmin) {
     baseCapabilities.push(CAPABILITIES.ADMIN)
@@ -44,7 +52,8 @@ export function makeJWTToken ({ isAdmin, isRefresh }: { isAdmin: boolean, isRefr
     baseCapabilities.push(CAPABILITIES.REFRESH)
   }
   return {
-    id: nanoid(),
+    tokenId: nanoid(),
+    issuedTo: issuedTo ?? SYSTEM,
     expires: getExpiry(isRefresh),
     capabilities: baseCapabilities
   }

@@ -3,7 +3,7 @@ import { Static } from '@sinclair/typebox'
 import { Config } from './store.js'
 import { nanoid } from 'nanoid'
 
-export class AdminStore extends Config {
+export class AdminStore extends Config<Static<typeof Admin>> {
   async create (cfg: Static<typeof NewAdmin>): Promise<string> {
     const id = nanoid()
     return await this.db.put(id, {

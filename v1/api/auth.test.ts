@@ -58,7 +58,7 @@ test('revocation works', async t => {
   const signedTokenToBeRevoked = server.jwt.sign(tokenToBeRevoked)
   const revokeResponse = await server.inject({
     method: 'DELETE',
-    url: `/v1/auth/revoke/${tokenToBeRevoked.id}`,
+    url: `/v1/auth/revoke/${tokenToBeRevoked.tokenId}`,
     headers: {
       authorization: `Bearer ${signedToken}`
     },
@@ -70,7 +70,7 @@ test('revocation works', async t => {
 
   const failingRevokeResponse = await server.inject({
     method: 'DELETE',
-    url: `/v1/auth/revoke/${token.id}`,
+    url: `/v1/auth/revoke/${token.tokenId}`,
     headers: {
       authorization: `Bearer ${signedTokenToBeRevoked}`
     },

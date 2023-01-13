@@ -118,7 +118,8 @@ test('E2E: admin -> publisher -> site flow', async t => {
       authorization: `Bearer ${adminAccessToken}`
     },
     payload: {
-      capabilities: [CAPABILITIES.PUBLISHER]
+      capabilities: [CAPABILITIES.PUBLISHER],
+      issuedTo: createPublisherResponse.json().id
     }
   })
   t.is(publisherAccessResponse.statusCode, 200, 'getting access token from refresh token for new publisher returns a status code of 200')

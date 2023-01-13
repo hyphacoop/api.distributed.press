@@ -3,8 +3,34 @@ import { NewSite, Site, UpdateSite } from './schemas.js'
 import { StoreI } from '../config/index.js'
 import { FastifyTypebox } from './index.js'
 import { FastifyReply, FastifyRequest } from 'fastify'
+import { CAPABILITIES, JWTPayloadT } from '../authorization/jwt.js'
 
 export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Promise<void> => {
+  async function processRequestFiles(request: FastifyRequest, reply: FastifyReply, fn: (filePath: string) => Promise<void>): Promise<void> {
+    try {
+      const files = await request.saveRequestFiles({
+        limits: {
+          files: 1,
+          fileSize: 1e9 // 1GB,
+        }
+      })
+      const tarballPath = files[0].filepath
+      await fn(tarballPath)
+      return await reply.code(200).send()
+    } catch (error) {
+      if (error instanceof server.multipartErrors.RequestFileTooLargeError) {
+        return await reply.code(400).send('tarball too large (limit 1GB)')
+      }
+      return await reply.code(500).send()
+    }
+  }
+
+  async function checkOwnsSite(token: JWTPayloadT, siteId: string): Promise<boolean> {
+    const isAdmin = token.capabilities.includes(CAPABILITIES.ADMIN)
+    const isOwnerOfSite = !isAdmin && (await store.publisher.get(token.issuedTo)).ownedSites.includes(siteId)
+    return isAdmin || isOwnerOfSite
+  }
+  
   server.post<{
     Body: Static<typeof NewSite>
     Reply: Static<typeof Site>
@@ -20,7 +46,16 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
     },
     preHandler: server.auth([server.verifyPublisher, server.verifyAdmin])
   }, async (request, reply) => {
-    return await reply.send(await store.sites.create(request.body))
+    const token = request.user
+    const site = await store.sites.create(request.body)
+
+    // Only register site to its owner if they are not an admin 
+    // Publishers need to track sites they own to ensure they can only modify/delete sites they own 
+    // This does *not* apply to admins as they effectively have 'wildcard' access to all sites
+    if (!request.user.capabilities.includes(CAPABILITIES.ADMIN)) {
+      await store.publisher.registerSiteToPublisher(token.issuedTo, site.id)
+    }
+    return await reply.send(site)
   })
 
   server.get<{
@@ -58,10 +93,17 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
       description: 'Deletes a site',
       tags: ['site'],
       security: [{ jwt: [] }]
-    }
+    },
+    preHandler: server.auth([server.verifyPublisher, server.verifyAdmin])
   }, async (request, reply) => {
     const { id } = request.params
+    const token = request.user
+    if (!await checkOwnsSite(token, id)) {
+      return await reply.status(401).send('You must either own the site or be an admin to modify this resource')
+    }
+
     await store.sites.delete(id)
+    await store.publisher.unregisterSiteFromAllPublishers(id)
     return await reply.send()
   })
 
@@ -83,28 +125,13 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
     preHandler: server.auth([server.verifyPublisher, server.verifyAdmin])
   }, async (request, reply) => {
     const { id } = request.params
+    const token = request.user
+    if (!await checkOwnsSite(token, id)) {
+      return await reply.status(401).send('You must either own the site or be an admin to modify this resource')
+    }
     await store.sites.update(id, request.body)
     return await reply.code(200).send()
   })
-
-  async function processRequestFiles (request: FastifyRequest, reply: FastifyReply, fn: (filePath: string) => Promise<void>): Promise<void> {
-    try {
-      const files = await request.saveRequestFiles({
-        limits: {
-          files: 1,
-          fileSize: 1e9 // 1GB,
-        }
-      })
-      const tarballPath = files[0].filepath
-      await fn(tarballPath)
-      return await reply.code(200).send()
-    } catch (error) {
-      if (error instanceof server.multipartErrors.RequestFileTooLargeError) {
-        return await reply.code(400).send('tarball too large (limit 1GB)')
-      }
-      return await reply.code(500).send()
-    }
-  }
 
   server.put<{
     Params: { id: string }
@@ -127,6 +154,10 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
     preHandler: server.auth([server.verifyPublisher, server.verifyAdmin])
   }, async (request, reply) => {
     const { id } = request.params
+    const token = request.user
+    if (!await checkOwnsSite(token, id)) {
+      return await reply.status(401).send('You must either own the site or be an admin to modify this resource')
+    }
     return await processRequestFiles(request, reply, async (tarballPath) => {
       await store.fs.clear(id)
       await store.fs.extract(tarballPath, id)
@@ -154,6 +185,10 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
     preHandler: server.auth([server.verifyPublisher])
   }, async (request, reply) => {
     const { id } = request.params
+    const token = request.user
+    if (!await checkOwnsSite(token, id)) {
+      return await reply.status(401).send('You must either own the site or be an admin to modify this resource')
+    }
     return await processRequestFiles(request, reply, async (tarballPath) => {
       await store.fs.extract(tarballPath, id)
     })

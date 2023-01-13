@@ -12,7 +12,8 @@ test('create new publisher', async t => {
   const result = await cfg.get(publisher.id)
   t.deepEqual(result, {
     id: publisher.id,
-    name: 'test_publisher'
+    name: 'test_publisher',
+    ownedSites: []
   })
   const keys = await cfg.keys()
   t.deepEqual(keys, [publisher.id])

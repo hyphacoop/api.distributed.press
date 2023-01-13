@@ -17,7 +17,7 @@ export const authRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
       tags: ['admin', 'publisher'],
       security: [{ jwt: [] }]
     },
-    preHandler: server.auth([server.verifyRefresh])
+    preHandler: server.auth([server.verifyRefresh, server.verifyAdmin])
   }, async (request, reply) => {
     const token = request.user
     if (!subset(request.body.capabilities, token.capabilities)) {
@@ -28,6 +28,8 @@ export const authRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
     }
     const newToken = {
       ...token,
+      issuedTo: request.body.issuedTo ?? token.issuedTo,
+      capabilities: request.body.capabilities,
       expires: getExpiry(false)
     }
     const signed = await reply.jwtSign(newToken)
@@ -36,9 +38,9 @@ export const authRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
 
   server.delete<{
     Params: {
-      hash: string
+      tokenId: string
     }
-  }>('/auth/revoke/:hash', {
+  }>('/auth/revoke/:tokenId', {
     schema: {
       description: 'Revoke a JWT with the corresponding hash',
       tags: ['admin'],
@@ -49,8 +51,8 @@ export const authRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
     },
     preHandler: server.auth([server.verifyAdmin])
   }, async (request, reply) => {
-    const { hash } = request.params
-    await store.revocations.revoke(hash)
+    const { tokenId } = request.params
+    await store.revocations.revoke(tokenId)
     return await reply.code(200).send()
   })
 }
