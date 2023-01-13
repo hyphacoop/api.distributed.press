@@ -7,17 +7,22 @@ import { CAPABILITIES, JWTPayloadT } from '../authorization/jwt.js'
 
 export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Promise<void> => {
   async function processRequestFiles(request: FastifyRequest, reply: FastifyReply, fn: (filePath: string) => Promise<void>): Promise<void> {
-    const data = await request.file({
-      limits: {
-        files: 1,
-        fileSize: 5e9 // 5GB limit (see discussion: https://github.com/hyphacoop/api.distributed.press/pull/34#discussion_r1066556612),
+    try {
+      const files = await request.saveRequestFiles({
+        limits: {
+          files: 1,
+          fileSize: 5e9 // 5GB limit (see discussion: https://github.com/hyphacoop/api.distributed.press/pull/34#discussion_r1066556612),
+        }
+      })
+      const tarballPath = files[0].filepath
+      await fn(tarballPath)
+      return await reply.code(200).send()
+    } catch (error) {
+      if (error instanceof server.multipartErrors.RequestFileTooLargeError) {
+        return await reply.code(400).send('tarball too large (limit 1GB)')
       }
-    })
-    if (data === undefined) {
-      return Promise.reject("no file in request")
+      return await reply.code(500).send()
     }
-    await fn(data.file)
-    return await reply.code(200).send()
   }
 
   async function checkOwnsSite(token: JWTPayloadT, siteId: string): Promise<boolean> {

@@ -3,7 +3,6 @@ import fs from 'fs'
 import tar from 'tar-fs'
 import gunzip from 'gunzip-maybe'
 import rimraf from 'rimraf'
-import { BusboyFileStream } from "@fastify/busboy";
 
 export class SiteFileSystem {
   path: string
@@ -28,19 +27,19 @@ export class SiteFileSystem {
 
   /// Reads a .tar or .tar.gz from given `tarballPath` and extracts it to
   /// the target directory. Deletes original tarball when done
-  async extract(stream: BusboyFileStream, siteId: string): Promise<void> {
+  async extract(tarballPath: string, siteId: string): Promise<void> {
     return await new Promise((resolve, reject) => {
       const sitePath = this.getPath(siteId)
-      stream.on('error', reject)
+      fs.createReadStream(tarballPath).on('error', reject)
         .pipe(gunzip()).on('error', reject)
         .pipe(tar.extract(sitePath, {
           readable: true,
           writable: false
         })).on('error', reject)
-        .on('finish', resolve)
-      if (stream.truncated) {
-        reject('file size limit reached')
-      }
+        .on('finish', () => {
+          fs.unlinkSync(tarballPath)
+          resolve()
+        })
     })
   }
 }
