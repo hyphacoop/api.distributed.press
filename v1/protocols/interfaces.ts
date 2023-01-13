@@ -5,6 +5,12 @@ interface SyncOptions {
   ignoreDeletes: boolean
 }
 
+interface CreateResponse {
+  links: {
+    [type : String]: 
+  }
+}
+
 export default abstract class Protocol {
   abstract load (): Promise<void>
   abstract create<T>(config: T): Promise<Static<typeof Site>>
