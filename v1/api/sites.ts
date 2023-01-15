@@ -6,7 +6,7 @@ import { FastifyReply, FastifyRequest } from 'fastify'
 import { CAPABILITIES, JWTPayloadT } from '../authorization/jwt.js'
 
 export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Promise<void> => {
-  async function processRequestFiles(request: FastifyRequest, reply: FastifyReply, fn: (filePath: string) => Promise<void>): Promise<void> {
+  async function processRequestFiles (request: FastifyRequest, reply: FastifyReply, fn: (filePath: string) => Promise<void>): Promise<void> {
     try {
       const files = await request.saveRequestFiles({
         limits: {
@@ -25,7 +25,7 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
     }
   }
 
-  async function checkOwnsSite(token: JWTPayloadT, siteId: string): Promise<boolean> {
+  async function checkOwnsSite (token: JWTPayloadT, siteId: string): Promise<boolean> {
     const isAdmin = token.capabilities.includes(CAPABILITIES.ADMIN)
     const isOwnerOfSite = !isAdmin && (await store.publisher.get(token.issuedTo)).ownedSites.includes(siteId)
     return isAdmin || isOwnerOfSite
@@ -49,8 +49,8 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
     const token = request.user
     const site = await store.sites.create(request.body)
 
-    // Only register site to its owner if they are not an admin 
-    // Publishers need to track sites they own to ensure they can only modify/delete sites they own 
+    // Only register site to its owner if they are not an admin
+    // Publishers need to track sites they own to ensure they can only modify/delete sites they own
     // This does *not* apply to admins as they effectively have 'wildcard' access to all sites
     if (!request.user.capabilities.includes(CAPABILITIES.ADMIN)) {
       await store.publisher.registerSiteToPublisher(token.issuedTo, site.id)

@@ -8,33 +8,33 @@ import { FastifyRequest, FastifyReply } from 'fastify'
 import { Value } from '@sinclair/typebox/value/index.js'
 import { StoreI } from '../config/index.js'
 
-function printCapabilities(capabilities: CAPABILITIES[]): string {
+function printCapabilities (capabilities: CAPABILITIES[]): string {
   return capabilities.map(cap => cap.toString()).join(', ')
 }
 
 const verifyTokenCapabilities = (store: StoreI, capabilities: CAPABILITIES[]) => async (request: FastifyRequest, _reply: FastifyReply) => {
   if (request.raw.headers.authorization === undefined) {
-    return Promise.reject(new Error('Missing token header'))
+    return await Promise.reject(new Error('Missing token header'))
   }
   try {
     const decoded = await request.jwtVerify<JWTPayloadT>()
     if (!Value.Check(JWTPayload, decoded)) {
-      return Promise.reject(new Error('Malformed JWT Payload'))
+      return await Promise.reject(new Error('Malformed JWT Payload'))
     }
     if (!subset(capabilities, decoded.capabilities)) {
-      return Promise.reject(new Error(`Mismatched capabilities: got ${printCapabilities(decoded.capabilities)}, wanted ${printCapabilities(capabilities)}`))
+      return await Promise.reject(new Error(`Mismatched capabilities: got ${printCapabilities(decoded.capabilities)}, wanted ${printCapabilities(capabilities)}`))
     }
     if (decoded.expires !== -1 && decoded.expires < (new Date()).getTime()) {
-      return Promise.reject(new Error('JWT token has expired, please refresh it'))
+      return await Promise.reject(new Error('JWT token has expired, please refresh it'))
     }
     const isRevoked = await store.revocations.isRevoked(decoded)
     if (isRevoked) {
-      return Promise.reject(new Error('JWT token has been revoked'))
+      return await Promise.reject(new Error('JWT token has been revoked'))
     } else {
-      return Promise.resolve()
+      return await Promise.resolve()
     }
   } catch (error) {
-    return Promise.reject(new Error(`Cannot verify access token JWT: ${error as string}`))
+    return await Promise.reject(new Error(`Cannot verify access token JWT: ${error as string}`))
   }
 }
 

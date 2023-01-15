@@ -7,28 +7,22 @@ import { pipeline } from 'stream/promises'
 
 export class SiteFileSystem {
   path: string
-  constructor(rootPath: string) {
+  constructor (rootPath: string) {
     this.path = path.join(rootPath, 'sites')
   }
 
-  async clear(siteId: string): Promise<void> {
+  async clear (siteId: string): Promise<void> {
     const sitePath = this.getPath(siteId)
-    return await new Promise((resolve, reject) => rimraf(sitePath, (err) => {
-      if (err === null || err === undefined) {
-        resolve()
-      } else {
-        reject(err)
-      }
-    }))
+    return await rimraf(sitePath) 
   }
 
-  getPath(siteId: string): string {
+  getPath (siteId: string): string {
     return path.join(this.path, siteId)
   }
 
   /// Reads a .tar or .tar.gz from given `tarballPath` and extracts it to
   /// the target directory. Deletes original tarball when done
-  async extract(tarballPath: string, siteId: string): Promise<void> {
+  async extract (tarballPath: string, siteId: string): Promise<void> {
     const sitePath = this.getPath(siteId)
     await pipeline(
       fs.createReadStream(tarballPath),
@@ -37,7 +31,7 @@ export class SiteFileSystem {
         readable: true,
         writable: false
       })
-    );
-    fs.unlinkSync(tarballPath)
+    )
+    return rimraf(tarballPath)
   }
 }
