@@ -9,15 +9,17 @@ export const publisherRoutes = (store: StoreI) => async (server: FastifyInstance
     Reply: Static<typeof Publisher>
   }>('/publisher', {
     schema: {
-      body: Publisher,
+      body: NewPublisher,
       response: {
         200: Publisher
       },
       description: 'Add a new publisher.',
-      tags: ['publisher']
-    }
-  }, async (request, _reply) => {
-    return store.publisher.create(request.body)
+      tags: ['publisher'],
+      security: [{ jwt: [] }]
+    },
+    preHandler: server.auth([server.verifyAdmin])
+  }, async (request, reply) => {
+    return await reply.send(await store.publisher.create(request.body))
   })
 
   server.get<{
@@ -36,9 +38,9 @@ export const publisherRoutes = (store: StoreI) => async (server: FastifyInstance
       description: 'Gets information about a specific publisher',
       tags: ['publisher']
     }
-  }, async (request, _reply) => {
+  }, async (request, reply) => {
     const { id } = request.params
-    return store.publisher.get(id)
+    return await reply.send(await store.publisher.get(id))
   })
 
   server.delete<{
@@ -48,10 +50,13 @@ export const publisherRoutes = (store: StoreI) => async (server: FastifyInstance
   }>('/publisher/:id', {
     schema: {
       description: 'Delete a publisher',
-      tags: ['publisher']
-    }
-  }, async (request, _reply) => {
+      tags: ['publisher'],
+      security: [{ jwt: [] }]
+    },
+    preHandler: server.auth([server.verifyAdmin])
+  }, async (request, reply) => {
     const { id } = request.params
-    return store.publisher.delete(id)
+    await store.publisher.delete(id)
+    return await reply.code(200).send()
   })
 }

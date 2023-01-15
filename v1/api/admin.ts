@@ -1,21 +1,23 @@
-import { Static } from '@sinclair/typebox'
-import { FastifyInstance } from 'fastify'
+import { Static, Type } from '@sinclair/typebox'
 import { StoreI } from '../config/index.js'
+import { FastifyTypebox } from './index.js'
 import { NewAdmin } from './schemas.js'
 
-export const adminRoutes = (store: StoreI) => async (server: FastifyInstance): Promise<void> => {
+export const adminRoutes = (store: StoreI) => async (server: FastifyTypebox): Promise<void> => {
   server.post<{
     Body: Static<typeof NewAdmin>
-    Reply: string
+    Reply: string // id of the admin
   }>('/admin', {
     schema: {
       body: NewAdmin,
       description: 'Add a new admin.',
-      tags: ['admin']
-    }
+      tags: ['admin'],
+      security: [{ jwt: [] }]
+    },
+    preHandler: server.auth([server.verifyAdmin])
   }, async (request, reply) => {
     const id = await store.admin.create(request.body)
-    return reply.send(id)
+    return await reply.send(id)
   })
 
   server.delete<{
@@ -25,11 +27,16 @@ export const adminRoutes = (store: StoreI) => async (server: FastifyInstance): P
   }>('/admin/:id', {
     schema: {
       description: 'Delete an admin',
-      tags: ['admin']
-    }
+      tags: ['admin'],
+      params: {
+        id: Type.String()
+      },
+      security: [{ jwt: [] }]
+    },
+    preHandler: server.auth([server.verifyAdmin])
   }, async (request, reply) => {
     const { id } = request.params
     await store.admin.delete(id)
-    return reply.status(200)
+    return await reply.send()
   })
 }

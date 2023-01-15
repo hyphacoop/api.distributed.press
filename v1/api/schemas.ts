@@ -33,19 +33,18 @@ export const Site = Type.Object({
     ipfs: Type.Partial(Publication)
   })
 })
-export const NewSite = Type.Omit(Site, ['publication', 'id'])
+export const NewSite = Type.Omit(Site, ['dns', 'links', 'id'])
 export const UpdateSite = Type.Partial(Type.Omit(Site, ['id']))
 
 export const Publisher = Type.Object({
   id: Type.String(),
-  name: Type.String()
-  // TODO: what other fields do we need here?
+  name: Type.String(),
+  ownedSites: Type.Array(Type.String()) // array of IDs of sites
 })
-export const NewPublisher = Type.Omit(Publisher, ['id'])
+export const NewPublisher = Type.Omit(Publisher, ['id', 'ownedSites'])
 
 export const Admin = Type.Object({
   id: Type.String(),
   name: Type.String()
-  // TODO: what other fields do we need here?
 })
 export const NewAdmin = Type.Omit(Admin, ['id'])

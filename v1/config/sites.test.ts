@@ -1,59 +1,54 @@
 import test from 'ava'
-import { SiteConfigStore } from './sites.js'
+import { DEFAULT_SITE_CFG, SiteConfigStore } from './sites.js'
 import { MemoryLevel } from 'memory-level'
 
-function newSiteConfigStore(): SiteConfigStore {
+function newSiteConfigStore (): SiteConfigStore {
   return new SiteConfigStore(new MemoryLevel({ valueEncoding: 'json' }))
 }
 
-const exampleSiteConfig = {
-  domain: "https://example.com",
-  dns: {
-    server: "some_dns_server",
-    domains: [],
-  },
-  links: {}
+export const exampleSiteConfig = {
+  domain: 'https://example.com',
+  publication: {
+    http: {},
+    ipfs: {},
+    hyper: {}
+  }
 }
 
 test('create new siteconfig', async t => {
-  const cfg = newSiteConfigStore();
+  const cfg = newSiteConfigStore()
   const site = await cfg.create(exampleSiteConfig)
-  const result = await cfg.get(site.id);
+  const result = await cfg.get(site.id)
   t.deepEqual(result, {
+    ...DEFAULT_SITE_CFG,
     ...exampleSiteConfig,
-    id: site.id,
-    publication: {
-      http: {},
-      hyper: {},
-      ipfs: {},
-    },
+    id: site.id
   })
 })
 
 test('update siteconfig', async t => {
-  const cfg = newSiteConfigStore();
+  const cfg = newSiteConfigStore()
   const site = await cfg.create(exampleSiteConfig)
-  const result = await cfg.get(site.id);
+  const result = await cfg.get(site.id)
   const updated = {
     ...result,
-    domain: "https://newdomain.org",
+    domain: 'https://newdomain.org',
     publication: {
       ...result.publication,
       ipfs: {
-        enabled: true,
+        enabled: true
       }
     }
   }
-  await cfg.update(site.id, updated);
-  const new_result = await cfg.get(site.id);
-  t.deepEqual(new_result, updated)
+  await cfg.update(site.id, updated)
+  const newResult = await cfg.get(site.id)
+  t.deepEqual(newResult, updated)
 })
 
 test('delete siteconfig', async t => {
-  const cfg = newSiteConfigStore();
+  const cfg = newSiteConfigStore()
   const site = await cfg.create(exampleSiteConfig)
   t.is((await cfg.keys()).length, 1)
   await cfg.delete(site.id)
   t.is((await cfg.keys()).length, 0)
 })
-
