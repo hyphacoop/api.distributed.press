@@ -1,1 +1,22 @@
-// STUB
+import Protocol, { SyncOptions } from './interfaces'
+import { Static } from '@sinclair/typebox'
+import { HTTPProtocolFields } from '../api/schemas'
+
+export class HTTPProtocol implements Protocol<Static<typeof HTTPProtocolFields>> {
+  async load (): Promise<void> {
+    // TODO(protocol-http): stub
+    return Promise.resolve()
+  }
+
+  async sync (id: string, folderPath: string, options?: SyncOptions): Promise<Static<typeof HTTPProtocolFields>> {
+    // TODO(protocol-http): stub
+    return {
+      enabled: true,
+      link: "example-link"
+    }
+  }
+
+  async unsync (site: Static<typeof HTTPProtocolFields>): Promise<void> {
+    return Promise.resolve()
+  }
+}

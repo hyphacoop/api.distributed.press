@@ -1,5 +1,5 @@
 import { Type, Static } from '@sinclair/typebox'
-import { NewSite, Site, UpdateSite } from './schemas.js'
+import { NewSite, Site, ProtocolStatus } from './schemas.js'
 import { StoreI } from '../config/index.js'
 import { FastifyTypebox } from './index.js'
 import { FastifyReply, FastifyRequest } from 'fastify'
@@ -55,6 +55,10 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
     if (!request.user.capabilities.includes(CAPABILITIES.ADMIN)) {
       await store.publisher.registerSiteToPublisher(token.issuedTo, site.id)
     }
+
+    // sync files with protocols
+    const path = store.fs.getPath(site.id)
+    await store.sites.sync(site.id, path)
     return await reply.send(site)
   })
 
@@ -104,6 +108,7 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
 
     await store.sites.delete(id)
     await store.publisher.unregisterSiteFromAllPublishers(id)
+    await store.fs.clear(id)
     return await reply.send()
   })
 
@@ -111,10 +116,10 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
     Params: {
       id: string
     }
-    Body: Static<typeof UpdateSite>
+    Body: Static<typeof ProtocolStatus>
   }>('/sites/:id', {
     schema: {
-      body: UpdateSite,
+      body: ProtocolStatus,
       params: {
         id: Type.String()
       },
@@ -129,7 +134,13 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
     if (!await checkOwnsSite(token, id)) {
       return await reply.status(401).send('You must either own the site or be an admin to modify this resource')
     }
+
+    // update config entry
     await store.sites.update(id, request.body)
+
+    // sync files with protocols
+    const path = store.fs.getPath(id)
+    await store.sites.sync(id, path)
     return await reply.code(200).send()
   })
 
@@ -159,8 +170,13 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
       return await reply.status(401).send('You must either own the site or be an admin to modify this resource')
     }
     return await processRequestFiles(request, reply, async (tarballPath) => {
+      // delete old files, extract new ones
       await store.fs.clear(id)
       await store.fs.extract(tarballPath, id)
+
+      // sync to protocols
+      const path = store.fs.getPath(id)
+      await store.sites.sync(id, path)
     })
   })
 
@@ -190,7 +206,12 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
       return await reply.status(401).send('You must either own the site or be an admin to modify this resource')
     }
     return await processRequestFiles(request, reply, async (tarballPath) => {
+      // extract in place to existing directory
       await store.fs.extract(tarballPath, id)
+
+      // sync to protocols
+      const path = store.fs.getPath(id)
+      await store.sites.sync(id, path)
     })
   })
 }

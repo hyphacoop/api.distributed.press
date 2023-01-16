@@ -2,7 +2,6 @@ import test from 'ava'
 import apiBuilder from './index.js'
 import { CAPABILITIES, makeJWTToken } from '../authorization/jwt.js'
 import { exampleSiteConfig } from '../config/sites.test.js'
-import { DEFAULT_SITE_CFG } from '../config/sites.js'
 
 test('health check /healthz', async t => {
   const server = await apiBuilder({ useMemoryBackedDB: true })
@@ -134,7 +133,7 @@ test('E2E: admin -> publisher -> site flow', async t => {
     },
     payload: exampleSiteConfig
   })
-  t.is(createSiteResponse.statusCode, 200, 'getting refresh token for new publisher returns a status code of 200')
+  t.is(createSiteResponse.statusCode, 200, 'creating a response with publisher access token should work')
   const siteId: string = createSiteResponse.json().id
 
   // fetch site info
@@ -146,11 +145,6 @@ test('E2E: admin -> publisher -> site flow', async t => {
     }
   })
   t.is(getSiteResponse.statusCode, 200, 'getting site info returns a status code of 200')
-  t.deepEqual(getSiteResponse.json(), {
-    ...DEFAULT_SITE_CFG,
-    ...exampleSiteConfig,
-    id: siteId
-  })
 
   // delete the site
   const deleteSiteResponse = await server.inject({

@@ -13,7 +13,7 @@ export class SiteFileSystem {
 
   async clear (siteId: string): Promise<void> {
     const sitePath = this.getPath(siteId)
-    return await rimraf(sitePath) 
+    return await rimraf(sitePath)
   }
 
   getPath (siteId: string): string {
@@ -22,7 +22,7 @@ export class SiteFileSystem {
 
   /// Reads a .tar or .tar.gz from given `tarballPath` and extracts it to
   /// the target directory. Deletes original tarball when done
-  async extract (tarballPath: string, siteId: string): Promise<void> {
+  async extract (tarballPath: string, siteId: string): Promise<string> {
     const sitePath = this.getPath(siteId)
     await pipeline(
       fs.createReadStream(tarballPath),
@@ -32,6 +32,7 @@ export class SiteFileSystem {
         writable: false
       })
     )
-    return rimraf(tarballPath)
+    await rimraf(tarballPath)
+    return await Promise.resolve(sitePath)
   }
 }

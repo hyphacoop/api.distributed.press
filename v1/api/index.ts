@@ -35,8 +35,6 @@ async function apiBuilder (cfg: APIConfig): Promise<FastifyTypebox> {
     : new Level('store', { valueEncoding: 'json' })
   const store = new Store(cfg, db)
 
-  // TODO: register protocols here
-
   const server = fastify({ logger: cfg.useLogging }).withTypeProvider<TypeBoxTypeProvider>()
   await registerAuth(cfg, server, store)
   await server.register(multipart)
