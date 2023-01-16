@@ -6,6 +6,8 @@ import { AdminStore } from './admin.js'
 import { PublisherStore } from './publisher.js'
 import { RevocationStore } from './revocations.js'
 import { SiteConfigStore } from './sites.js'
+import { nanoid } from 'nanoid'
+import path from 'path'
 
 const paths = envPaths('distributed-press')
 
@@ -25,9 +27,10 @@ export default class Store implements StoreI {
   public revocations: RevocationStore
   public fs: SiteFileSystem
 
-  constructor (cfg: APIConfig, db: AbstractLevel<any, string, any>) {
+  constructor(cfg: APIConfig, db: AbstractLevel<any, string, any>) {
     this.db = db
-    this.fs = new SiteFileSystem(cfg.storage ?? paths.temp)
+    const storagePath = cfg.storage ?? path.join(paths.temp, nanoid())
+    this.fs = new SiteFileSystem(storagePath)
     this.admin = new AdminStore(this.db.sublevel('admin', { valueEncoding: 'json' }))
     this.publisher = new PublisherStore(this.db.sublevel('publisher', { valueEncoding: 'json' }))
     this.sites = new SiteConfigStore(this.db.sublevel('sites', { valueEncoding: 'json' }))

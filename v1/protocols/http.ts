@@ -4,12 +4,12 @@ import { HTTPProtocolFields } from '../api/schemas'
 
 export class HTTPProtocol implements Protocol<Static<typeof HTTPProtocolFields>> {
   async load (): Promise<void> {
-    // TODO(protocol-http): stub
+    // TODO(protocol): stub
     return Promise.resolve()
   }
 
   async sync (id: string, folderPath: string, options?: SyncOptions): Promise<Static<typeof HTTPProtocolFields>> {
-    // TODO(protocol-http): stub
+    // TODO(protocol): stub
     return {
       enabled: true,
       link: "example-link"
