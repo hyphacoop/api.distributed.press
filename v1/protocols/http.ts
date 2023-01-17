@@ -5,18 +5,18 @@ import { HTTPProtocolFields } from '../api/schemas'
 export class HTTPProtocol implements Protocol<Static<typeof HTTPProtocolFields>> {
   async load (): Promise<void> {
     // TODO(protocol): stub
-    return Promise.resolve()
+    return await Promise.resolve()
   }
 
   async sync (id: string, folderPath: string, options?: SyncOptions): Promise<Static<typeof HTTPProtocolFields>> {
     // TODO(protocol): stub
     return {
       enabled: true,
-      link: "example-link"
+      link: 'example-link'
     }
   }
 
   async unsync (site: Static<typeof HTTPProtocolFields>): Promise<void> {
-    return Promise.resolve()
+    return await Promise.resolve()
   }
 }

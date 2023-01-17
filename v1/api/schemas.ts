@@ -34,6 +34,9 @@ export const Site = Type.Object({
   links: Type.Partial(Protocols)
 })
 export const NewSite = Type.Omit(Site, ['id', 'links'])
+export const UpdateSite = Type.Object({
+  protocols: ProtocolStatus
+})
 
 export const Publisher = Type.Object({
   id: Type.String(),

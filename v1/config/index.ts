@@ -27,7 +27,7 @@ export default class Store implements StoreI {
   public revocations: RevocationStore
   public fs: SiteFileSystem
 
-  constructor(cfg: APIConfig, db: AbstractLevel<any, string, any>) {
+  constructor (cfg: APIConfig, db: AbstractLevel<any, string, any>) {
     this.db = db
     const storagePath = cfg.storage ?? path.join(paths.temp, nanoid())
     this.fs = new SiteFileSystem(storagePath)

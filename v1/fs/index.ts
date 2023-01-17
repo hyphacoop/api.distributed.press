@@ -33,6 +33,6 @@ export class SiteFileSystem {
       })
     )
     await rimraf(tarballPath)
-    return await Promise.resolve(sitePath)
+    return sitePath
   }
 }

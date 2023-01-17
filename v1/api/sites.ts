@@ -1,5 +1,5 @@
 import { Type, Static } from '@sinclair/typebox'
-import { NewSite, Site, ProtocolStatus } from './schemas.js'
+import { NewSite, Site, UpdateSite } from './schemas.js'
 import { StoreI } from '../config/index.js'
 import { FastifyTypebox } from './index.js'
 import { FastifyReply, FastifyRequest } from 'fastify'
@@ -116,10 +116,10 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
     Params: {
       id: string
     }
-    Body: Static<typeof ProtocolStatus>
+    Body: Static<typeof UpdateSite>
   }>('/sites/:id', {
     schema: {
-      body: ProtocolStatus,
+      body: UpdateSite,
       params: {
         id: Type.String()
       },
@@ -136,7 +136,7 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
     }
 
     // update config entry
-    await store.sites.update(id, request.body)
+    await store.sites.update(id, request.body.protocols)
 
     // sync files with protocols
     const path = store.fs.getPath(id)

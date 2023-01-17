@@ -12,14 +12,14 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
   ipfs: IPFSProtocol
   hyper: HyperProtocol
 
-  constructor(db: AbstractLevel<any, string, any>) {
+  constructor (db: AbstractLevel<any, string, any>) {
     super(db)
     this.http = new HTTPProtocol()
     this.ipfs = new IPFSProtocol()
     this.hyper = new HyperProtocol()
   }
 
-  async create(cfg: Static<typeof NewSite>): Promise<Static<typeof Site>> {
+  async create (cfg: Static<typeof NewSite>): Promise<Static<typeof Site>> {
     const id = nanoid()
     const obj: Static<typeof Site> = {
       ...cfg,
@@ -29,7 +29,7 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
     return await this.db.put(id, obj).then(() => obj)
   }
 
-  async sync(siteId: string, filePath: string): Promise<void> {
+  async sync (siteId: string, filePath: string): Promise<void> {
     const site = await this.get(siteId)
     // TODO: pipeline this with Promise.all
     site.links.http = site.protocols.http ? await this.http.sync(siteId, filePath) : undefined
@@ -38,7 +38,7 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
   }
 
   /// Updates status of protocols for a given site
-  async update(id: string, cfg: Static<typeof ProtocolStatus>): Promise<void> {
+  async update (id: string, cfg: Static<typeof ProtocolStatus>): Promise<void> {
     const old = await this.get(id)
     const site = {
       ...old,
@@ -47,22 +47,22 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
     return await this.db.put(id, site)
   }
 
-  async get(id: string): Promise<Static<typeof Site>> {
+  async get (id: string): Promise<Static<typeof Site>> {
     return await this.db.get(id)
   }
 
-  async delete(id: string): Promise<void> {
+  async delete (id: string): Promise<void> {
     const site = await this.get(id)
 
     const promises = []
     if (site.links.http != null) {
-      promises.push(await this.http.unsync(site.links.http))
+      promises.push(this.http.unsync(site.links.http))
     }
     if (site.links.ipfs != null) {
-      promises.push(await this.ipfs.unsync(site.links.ipfs))
+      promises.push(this.ipfs.unsync(site.links.ipfs))
     }
     if (site.links.hyper != null) {
-      promises.push(await this.hyper.unsync(site.links.hyper))
+      promises.push(this.hyper.unsync(site.links.hyper))
     }
 
     await Promise.all(promises)
