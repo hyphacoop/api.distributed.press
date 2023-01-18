@@ -4,12 +4,13 @@ import { Config } from './store.js'
 import { nanoid } from 'nanoid'
 
 export class AdminStore extends Config<Static<typeof Admin>> {
-  async create (cfg: Static<typeof NewAdmin>): Promise<string> {
+  async create (cfg: Static<typeof NewAdmin>): Promise<Static<typeof Admin>> {
     const id = nanoid()
-    return await this.db.put(id, {
+    const obj: Static<typeof Admin> = {
       id,
       ...cfg
-    }).then(() => id)
+    }
+    return await this.db.put(id, obj).then(() => obj)
   }
 
   async get (id: string): Promise<Static<typeof Admin>> {
