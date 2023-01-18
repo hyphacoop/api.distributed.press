@@ -10,6 +10,9 @@ export const adminRoutes = (store: StoreI) => async (server: FastifyTypebox): Pr
   }>('/admin', {
     schema: {
       body: NewAdmin,
+      response: {
+        200: Type.String(),
+      },
       description: 'Add a new admin.',
       tags: ['admin'],
       security: [{ jwt: [] }]

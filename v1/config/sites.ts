@@ -4,8 +4,8 @@ import { Config } from './store.js'
 import { nanoid } from 'nanoid'
 import { AbstractLevel } from 'abstract-level'
 import { HTTPProtocol } from '../protocols/http.js'
-import { HyperProtocol } from '../protocols/hyper'
-import { IPFSProtocol } from '../protocols/ipfs'
+import { HyperProtocol } from '../protocols/hyper.js'
+import { IPFSProtocol } from '../protocols/ipfs.js'
 
 export class SiteConfigStore extends Config<Static<typeof Site>> {
   http: HTTPProtocol
