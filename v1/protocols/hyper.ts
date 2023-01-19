@@ -2,6 +2,10 @@ import Protocol, { SyncOptions } from './interfaces'
 import { Static } from '@sinclair/typebox'
 import { HyperProtocolFields } from '../api/schemas'
 
+export interface HyperProtocolOptions {
+  path?: string
+}
+
 export class HyperProtocol implements Protocol<Static<typeof HyperProtocolFields>> {
   async load (): Promise<void> {
     // TODO(protocol): stub

@@ -7,7 +7,7 @@
   "scripts": {
     "clean": "rimraf build",
     "build": "npm run clean && tsc",
-    "lint": "tsc --noEmit && ts-standard --fix",
+    "lint": "ts-standard --fix && tsc --noEmit",
     "keygen": "ts-node-esm authorization/scripts/keygen.ts",
     "make-admin": "ts-node-esm authorization/scripts/create_admin.ts",
     "dev": "ts-node-esm index.ts | pino-pretty -c -t",
@@ -52,6 +52,9 @@
     "fastify-plugin": "^4.4.0",
     "fs": "0.0.1-security",
     "gunzip-maybe": "^1.4.2",
+    "ipfs-core": "^0.18.0",
+    "ipfs-http-client": "^60.0.0",
+    "ipfs-mfs-sync": "^0.1.0",
     "level": "^8.0.0",
     "make-dir": "^3.1.0",
     "nanoid": "^4.0.0",
