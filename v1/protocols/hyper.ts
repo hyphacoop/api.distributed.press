@@ -3,10 +3,13 @@ import { Static } from '@sinclair/typebox'
 import { HyperProtocolFields } from '../api/schemas'
 
 export interface HyperProtocolOptions {
-  path?: string
+  path: string
 }
 
 export class HyperProtocol implements Protocol<Static<typeof HyperProtocolFields>> {
+  constructor (_options: HyperProtocolOptions) {
+  }
+
   async load (): Promise<void> {
     // TODO(protocol): stub
     return await Promise.resolve()
@@ -22,7 +25,7 @@ export class HyperProtocol implements Protocol<Static<typeof HyperProtocolFields
     }
   }
 
-  async unsync (site: Static<typeof HyperProtocolFields>): Promise<void> {
+  async unsync (id: string, site: Static<typeof HyperProtocolFields>): Promise<void> {
     return await Promise.resolve()
   }
 }

@@ -27,7 +27,7 @@ export type APIConfig = Partial<{
   useSwagger: boolean
   usePrometheus: boolean
   useMemoryBackedDB: boolean
-} & ServerI>
+}> & ServerI
 
 async function apiBuilder (cfg: APIConfig): Promise<FastifyTypebox> {
   const db = cfg.useMemoryBackedDB === true

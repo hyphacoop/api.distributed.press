@@ -1,10 +1,10 @@
 import test from 'ava'
-import apiBuilder from './index.js'
 import { CAPABILITIES, makeJWTToken } from '../authorization/jwt.js'
 import { exampleSiteConfig } from '../config/sites.test.js'
+import { spawnTestServer } from '../fixtures/spawnServer.js'
 
 test('health check /healthz', async t => {
-  const server = await apiBuilder({ useMemoryBackedDB: true })
+  const server = await spawnTestServer()
   const response = await server.inject({
     method: 'GET',
     url: '/healthz'
@@ -13,7 +13,7 @@ test('health check /healthz', async t => {
 })
 
 test('admin: no payload should 400', async t => {
-  const server = await apiBuilder({ useMemoryBackedDB: true })
+  const server = await spawnTestServer()
   const response = await server.inject({
     method: 'POST',
     url: '/v1/admin'
@@ -22,7 +22,7 @@ test('admin: no payload should 400', async t => {
 })
 
 test('admin: malformed payload should 400', async t => {
-  const server = await apiBuilder({ useMemoryBackedDB: true })
+  const server = await spawnTestServer()
   const token = server.jwt.sign(makeJWTToken({ isAdmin: true, isRefresh: false }))
   const response = await server.inject({
     method: 'POST',
@@ -39,7 +39,7 @@ test('admin: malformed payload should 400', async t => {
 })
 
 test('admin: create/delete should be ok with token', async t => {
-  const server = await apiBuilder({ useMemoryBackedDB: true })
+  const server = await spawnTestServer()
   const token = server.jwt.sign(makeJWTToken({ isAdmin: true, isRefresh: false }))
   const response = await server.inject({
     method: 'POST',
@@ -66,7 +66,7 @@ test('admin: create/delete should be ok with token', async t => {
 })
 
 test('E2E: admin -> publisher -> site flow', async t => {
-  const server = await apiBuilder({ useMemoryBackedDB: true })
+  const server = await spawnTestServer()
 
   // create an admin
   const rootAccessToken = server.jwt.sign(makeJWTToken({ isAdmin: true, isRefresh: true }))

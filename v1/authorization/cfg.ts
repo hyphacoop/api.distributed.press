@@ -8,7 +8,7 @@ import { FastifyRequest, FastifyReply } from 'fastify'
 import { Value } from '@sinclair/typebox/value/index.js'
 import { StoreI } from '../config/index.js'
 
-function printCapabilities (capabilities: CAPABILITIES[]): string {
+function printCapabilities(capabilities: CAPABILITIES[]): string {
   return capabilities.map(cap => cap.toString()).join(', ')
 }
 
@@ -39,18 +39,9 @@ const verifyTokenCapabilities = (store: StoreI, capabilities: CAPABILITIES[]) =>
 }
 
 export const registerAuth = async (cfg: APIConfig, route: FastifyTypebox, store: StoreI): Promise<void> => {
-  let keys
-  if (cfg.storage !== undefined) {
-    keys = {
-      private: readFileSync(path.join(cfg.storage, 'keys', 'private.key'), 'utf8'),
-      public: readFileSync(path.join(cfg.storage, 'keys', 'public.key'), 'utf8')
-    }
-  } else {
-    const { privateKey, publicKey } = generateKeyPair()
-    keys = {
-      private: privateKey,
-      public: publicKey
-    }
+  const keys = {
+    private: readFileSync(path.join(cfg.storage, 'keys', 'private.key'), 'utf8'),
+    public: readFileSync(path.join(cfg.storage, 'keys', 'public.key'), 'utf8')
   }
 
   await route.register(jwt, {

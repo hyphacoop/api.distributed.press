@@ -1,9 +1,9 @@
 import test from 'ava'
 import { CAPABILITIES, makeJWTToken } from '../authorization/jwt.js'
-import apiBuilder from './index.js'
+import { spawnTestServer } from '../fixtures/spawnServer.js'
 
 test('no auth header should 401', async t => {
-  const server = await apiBuilder({ useMemoryBackedDB: true })
+  const server = await spawnTestServer()
   const responseAdmin = await server.inject({
     method: 'POST',
     url: '/v1/admin',
@@ -23,7 +23,7 @@ test('no auth header should 401', async t => {
 })
 
 test('token refresh with non-refresh token should fail', async t => {
-  const server = await apiBuilder({ useMemoryBackedDB: true })
+  const server = await spawnTestServer()
   const tokenAdmin = server.jwt.sign(makeJWTToken({ isAdmin: true, isRefresh: false }))
   const tokenPublisher = server.jwt.sign(makeJWTToken({ isAdmin: false, isRefresh: false }))
   const adminResponse = await server.inject({
@@ -51,7 +51,7 @@ test('token refresh with non-refresh token should fail', async t => {
 })
 
 test('revocation works', async t => {
-  const server = await apiBuilder({ useMemoryBackedDB: true })
+  const server = await spawnTestServer()
   const token = makeJWTToken({ isAdmin: true, isRefresh: false })
   const signedToken = server.jwt.sign(token)
   const tokenToBeRevoked = makeJWTToken({ isAdmin: true, isRefresh: false })
@@ -82,7 +82,7 @@ test('revocation works', async t => {
 })
 
 test('requesting new token with superset of permissions (publisher -> admin) should fail', async t => {
-  const server = await apiBuilder({ useMemoryBackedDB: true })
+  const server = await spawnTestServer()
   const token = server.jwt.sign(makeJWTToken({ isAdmin: false, isRefresh: true }))
   const response = await server.inject({
     method: 'POST',
@@ -98,7 +98,7 @@ test('requesting new token with superset of permissions (publisher -> admin) sho
 })
 
 test('requesting new token with subset of permissions (admin -> publisher) should work', async t => {
-  const server = await apiBuilder({ useMemoryBackedDB: true })
+  const server = await spawnTestServer()
   const token = server.jwt.sign(makeJWTToken({ isAdmin: true, isRefresh: true }))
   const response = await server.inject({
     method: 'POST',
@@ -114,7 +114,7 @@ test('requesting new token with subset of permissions (admin -> publisher) shoul
 })
 
 test('trying to create new refresh tokens as a publisher should fail', async t => {
-  const server = await apiBuilder({ useMemoryBackedDB: true })
+  const server = await spawnTestServer()
   const token = server.jwt.sign(makeJWTToken({ isAdmin: false, isRefresh: true }))
   const response = await server.inject({
     method: 'POST',

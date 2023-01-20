@@ -3,20 +3,14 @@ import { Static } from '@sinclair/typebox'
 import { Config } from './store.js'
 import { nanoid } from 'nanoid'
 import { AbstractLevel } from 'abstract-level'
-import { HTTPProtocol } from '../protocols/http.js'
-import { HyperProtocol } from '../protocols/hyper.js'
-import { IPFSProtocol } from '../protocols/ipfs.js'
+import { ProtocolManager } from '../protocols/index.js'
 
 export class SiteConfigStore extends Config<Static<typeof Site>> {
-  http: HTTPProtocol
-  ipfs: IPFSProtocol
-  hyper: HyperProtocol
+  protocols?: ProtocolManager
 
-  constructor (db: AbstractLevel<any, string, any>) {
+  constructor (db: AbstractLevel<any, string, any>, protocols?: ProtocolManager) {
     super(db)
-    this.http = new HTTPProtocol()
-    this.ipfs = new IPFSProtocol()
-    this.hyper = new HyperProtocol()
+    this.protocols = protocols
   }
 
   async create (cfg: Static<typeof NewSite>): Promise<Static<typeof Site>> {
@@ -30,11 +24,13 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
   }
 
   async sync (siteId: string, filePath: string): Promise<void> {
-    const site = await this.get(siteId)
-    // TODO: pipeline this with Promise.all
-    site.links.http = site.protocols.http ? await this.http.sync(siteId, filePath) : undefined
-    site.links.ipfs = site.protocols.ipfs ? await this.ipfs.sync(siteId, filePath) : undefined
-    site.links.hyper = site.protocols.hyper ? await this.hyper.sync(siteId, filePath) : undefined
+    if (this.protocols !== undefined) {
+      const site = await this.get(siteId)
+      // TODO: pipeline this with Promise.all
+      site.links.http = site.protocols.http ? await this.protocols.http.sync(siteId, filePath) : undefined
+      site.links.ipfs = site.protocols.ipfs ? await this.protocols.ipfs.sync(siteId, filePath) : undefined
+      site.links.hyper = site.protocols.hyper ? await this.protocols.hyper.sync(siteId, filePath) : undefined
+    }
   }
 
   /// Updates status of protocols for a given site
@@ -52,20 +48,23 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
   }
 
   async delete (id: string): Promise<void> {
-    const site = await this.get(id)
+    if (this.protocols !== undefined) {
+      const site = await this.get(id)
 
-    const promises = []
-    if (site.links.http != null) {
-      promises.push(this.http.unsync(site.links.http))
-    }
-    if (site.links.ipfs != null) {
-      promises.push(this.ipfs.unsync(site.links.ipfs))
-    }
-    if (site.links.hyper != null) {
-      promises.push(this.hyper.unsync(site.links.hyper))
+      const promises = []
+      if (site.links.http != null) {
+        promises.push(this.protocols.http.unsync(id, site.links.http))
+      }
+      if (site.links.ipfs != null) {
+        promises.push(this.protocols.ipfs.unsync(id, site.links.ipfs))
+      }
+      if (site.links.hyper != null) {
+        promises.push(this.protocols.hyper.unsync(id, site.links.hyper))
+      }
+
+      await Promise.all(promises)
     }
 
-    await Promise.all(promises)
     await this.db.del(id)
   }
 }

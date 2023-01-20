@@ -2,7 +2,14 @@ import Protocol, { SyncOptions } from './interfaces'
 import { Static } from '@sinclair/typebox'
 import { HTTPProtocolFields } from '../api/schemas'
 
+export interface HTTPProtocolOptions {
+  path: string
+}
+
 export class HTTPProtocol implements Protocol<Static<typeof HTTPProtocolFields>> {
+  constructor (_options: HTTPProtocolOptions) {
+  }
+
   async load (): Promise<void> {
     // TODO(protocol): stub
     return await Promise.resolve()
@@ -16,7 +23,7 @@ export class HTTPProtocol implements Protocol<Static<typeof HTTPProtocolFields>>
     }
   }
 
-  async unsync (site: Static<typeof HTTPProtocolFields>): Promise<void> {
+  async unsync (id: string, site: Static<typeof HTTPProtocolFields>): Promise<void> {
     return await Promise.resolve()
   }
 }

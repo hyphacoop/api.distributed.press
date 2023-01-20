@@ -56,9 +56,6 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
       await store.publisher.registerSiteToPublisher(token.issuedTo, site.id)
     }
 
-    // sync files with protocols
-    const path = store.fs.getPath(site.id)
-    await store.sites.sync(site.id, path)
     return await reply.send(site)
   })
 

@@ -8,6 +8,7 @@ import { RevocationStore } from './revocations.js'
 import { SiteConfigStore } from './sites.js'
 import { nanoid } from 'nanoid'
 import path from 'path'
+import { ProtocolManager } from '../protocols/index.js'
 
 const paths = envPaths('distributed-press')
 
@@ -29,11 +30,27 @@ export default class Store implements StoreI {
 
   constructor (cfg: APIConfig, db: AbstractLevel<any, string, any>) {
     this.db = db
-    const storagePath = cfg.storage ?? path.join(paths.temp, nanoid())
-    this.fs = new SiteFileSystem(storagePath)
+
+    const basePath = cfg.storage ?? path.join(paths.temp, nanoid())
+    const siteStoragePath = path.join(basePath, 'sites')
+    const protocolStoragePath = path.join(basePath, 'protocols')
+    const protocols = new ProtocolManager({
+      ipfs: {
+        path: path.join(protocolStoragePath, 'ipfs'),
+        provider: cfg.ipfsProvider
+      },
+      hyper: {
+        path: path.join(protocolStoragePath, 'hyper')
+      },
+      http: {
+        path: path.join(protocolStoragePath, 'http')
+      }
+    })
+
+    this.fs = new SiteFileSystem(siteStoragePath)
     this.admin = new AdminStore(this.db.sublevel('admin', { valueEncoding: 'json' }))
     this.publisher = new PublisherStore(this.db.sublevel('publisher', { valueEncoding: 'json' }))
-    this.sites = new SiteConfigStore(this.db.sublevel('sites', { valueEncoding: 'json' }))
+    this.sites = new SiteConfigStore(this.db.sublevel('sites', { valueEncoding: 'json' }), protocols)
     this.revocations = new RevocationStore(this.db.sublevel('revocations', { valueEncoding: 'json' }))
   }
 }
