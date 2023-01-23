@@ -5,7 +5,7 @@ import path from 'path'
 import { APIConfig, FastifyTypebox } from '../api/index.js'
 import { CAPABILITIES, JWTPayload, JWTPayloadT, subset } from './jwt.js'
 import { FastifyRequest, FastifyReply } from 'fastify'
-import { Value } from '@sinclair/typebox/value/index.js'
+import { Value } from '@sinclair/typebox/value'
 import { StoreI } from '../config/index.js'
 
 function printCapabilities (capabilities: CAPABILITIES[]): string {

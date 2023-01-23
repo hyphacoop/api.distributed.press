@@ -61,9 +61,6 @@ test('revocation works', async t => {
     url: `/v1/auth/revoke/${tokenToBeRevoked.tokenId}`,
     headers: {
       authorization: `Bearer ${signedToken}`
-    },
-    payload: {
-      capabilities: [CAPABILITIES.PUBLISHER, CAPABILITIES.REFRESH]
     }
   })
   t.is(revokeResponse.statusCode, 200, 'revocation of another token works (should return 200)')
@@ -73,12 +70,49 @@ test('revocation works', async t => {
     url: `/v1/auth/revoke/${token.tokenId}`,
     headers: {
       authorization: `Bearer ${signedTokenToBeRevoked}`
-    },
-    payload: {
-      capabilities: [CAPABILITIES.PUBLISHER, CAPABILITIES.REFRESH]
     }
   })
   t.is(failingRevokeResponse.statusCode, 401, 'trying to revoke the original token using the revoked token should no longer work')
+})
+
+test('revoking a tokens removes all tokens derived from that token', async t => {
+  const server = await spawnTestServer()
+  // first token
+  const tokenBody = makeJWTToken({ isAdmin: true, isRefresh: true })
+  const token = server.jwt.sign(tokenBody)
+  const response = await server.inject({
+    method: 'POST',
+    url: '/v1/auth/exchange',
+    headers: {
+      authorization: `Bearer ${token}`
+    },
+    payload: {
+      capabilities: [CAPABILITIES.ADMIN, CAPABILITIES.PUBLISHER, CAPABILITIES.REFRESH]
+    }
+  })
+  t.is(response.statusCode, 200, 'publisher refreshing their own token works')
+
+  const refreshedToken = response.body
+  const revokeResponse = await server.inject({
+    method: 'DELETE',
+    url: `/v1/auth/revoke/${tokenBody.tokenId}`,
+    headers: {
+      authorization: `Bearer ${refreshedToken}`
+    }
+  })
+  t.is(revokeResponse.statusCode, 200, 'revoking original token should work')
+
+  const newPublisherResponse = await server.inject({
+    method: 'POST',
+    url: '/v1/publisher',
+    headers: {
+      authorization: `Bearer ${refreshedToken}`
+    },
+    payload: {
+      name: 'malicious new publisher'
+    }
+  })
+  t.is(newPublisherResponse.statusCode, 401, 'operations with token derived from original token should also fail')
 })
 
 test('requesting new token with superset of permissions (publisher -> admin) should fail', async t => {
@@ -113,18 +147,3 @@ test('requesting new token with subset of permissions (admin -> publisher) shoul
   t.is(response.statusCode, 200)
 })
 
-test('trying to create new refresh tokens as a publisher should fail', async t => {
-  const server = await spawnTestServer()
-  const token = server.jwt.sign(makeJWTToken({ isAdmin: false, isRefresh: true }))
-  const response = await server.inject({
-    method: 'POST',
-    url: '/v1/auth/exchange',
-    headers: {
-      authorization: `Bearer ${token}`
-    },
-    payload: {
-      capabilities: [CAPABILITIES.PUBLISHER, CAPABILITIES.REFRESH]
-    }
-  })
-  t.is(response.statusCode, 401)
-})
