@@ -4,16 +4,16 @@ import { JsIpfs } from '../protocols/ipfs.js'
 import makeDir from 'make-dir'
 import fs from 'fs'
 import { generateKeyPair } from '../authorization/jwt.js'
-import apiBuilder from '../api/index.js'
+import apiBuilder, { FastifyTypebox } from '../api/index.js'
 
 const paths = envPaths('distributed-press')
-export function spawnTestServer() {
+export async function spawnTestServer (): Promise<FastifyTypebox> {
   const storagePath = path.join(paths.temp, 'tests')
   const { privateKey, publicKey } = generateKeyPair()
   makeDir.sync(path.join(storagePath, 'keys'))
   fs.writeFileSync(path.join(storagePath, 'keys', 'private.key'), privateKey)
   fs.writeFileSync(path.join(storagePath, 'keys', 'public.key'), publicKey)
-  return apiBuilder({
+  return await apiBuilder({
     useMemoryBackedDB: true,
     port: 8080,
     host: 'localhost',

@@ -3,12 +3,12 @@ import auth from '@fastify/auth'
 import { readFileSync } from 'fs'
 import path from 'path'
 import { APIConfig, FastifyTypebox } from '../api/index.js'
-import { CAPABILITIES, generateKeyPair, JWTPayload, JWTPayloadT, subset } from './jwt.js'
+import { CAPABILITIES, JWTPayload, JWTPayloadT, subset } from './jwt.js'
 import { FastifyRequest, FastifyReply } from 'fastify'
 import { Value } from '@sinclair/typebox/value/index.js'
 import { StoreI } from '../config/index.js'
 
-function printCapabilities(capabilities: CAPABILITIES[]): string {
+function printCapabilities (capabilities: CAPABILITIES[]): string {
   return capabilities.map(cap => cap.toString()).join(', ')
 }
 
