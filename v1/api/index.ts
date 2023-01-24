@@ -37,7 +37,7 @@ async function apiBuilder (cfg: APIConfig): Promise<FastifyTypebox> {
 
   const server = fastify({ logger: cfg.useLogging }).withTypeProvider<TypeBoxTypeProvider>()
   await registerAuth(cfg, server, store)
-  await server.register(multipart, { attachFieldsToBody: 'keyValues' })
+  await server.register(multipart)
 
   server.get('/healthz', () => {
     return 'ok\n'

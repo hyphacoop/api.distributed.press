@@ -151,12 +151,6 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
       description: 'Upload content to the site. Body must be a `tar.gz` file which will get extracted out and served. Any files missing from the tarball that are on disk, will be deleted from disk and the p2p archives.',
       tags: ['site'],
       consumes: ['multipart/form-data'],
-      body: {
-        type: 'object',
-        properties: {
-          file: { type: 'string', format: 'binary' }
-        }
-      },
       security: [{ jwt: [] }]
     },
     preHandler: server.auth([server.verifyPublisher, server.verifyAdmin])
@@ -187,12 +181,6 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
       description: 'Upload a patch with just the files you want added. This will only do a diff on the files in the tarball and will not delete any missing files.',
       tags: ['site'],
       consumes: ['multipart/form-data'],
-      body: {
-        type: 'object',
-        properties: {
-          file: { type: 'string', format: 'binary' }
-        }
-      },
       security: [{ jwt: [] }]
     },
     preHandler: server.auth([server.verifyPublisher])
