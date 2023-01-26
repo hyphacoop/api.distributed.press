@@ -1,18 +1,33 @@
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox'
-import fastify, { FastifyBaseLogger, RawReplyDefaultExpression, RawRequestDefaultExpression, RawServerDefault, FastifyInstance } from 'fastify'
+
+import fastify, {
+  FastifyBaseLogger,
+  RawReplyDefaultExpression,
+  RawRequestDefaultExpression,
+  RawServerDefault,
+  FastifyInstance
+} from 'fastify'
 import multipart from '@fastify/multipart'
 import swagger from '@fastify/swagger'
 import swagger_ui from '@fastify/swagger-ui'
 import metrics from 'fastify-metrics'
+
+import path from 'node:path'
+
+import envPaths from 'env-paths'
+import { Level } from 'level'
+import { MemoryLevel } from 'memory-level'
+
 import { siteRoutes } from './sites.js'
 import { adminRoutes } from './admin.js'
 import { publisherRoutes } from './publisher.js'
 import Store, { StoreI } from '../config/index.js'
 import { registerAuth } from '../authorization/cfg.js'
-import { MemoryLevel } from 'memory-level'
 import { authRoutes } from './auth.js'
 import { ServerI } from '../index.js'
-import { Level } from 'level'
+import { ProtocolManager } from '../protocols/index.js'
+
+const paths = envPaths('distributed-press')
 
 export type FastifyTypebox = FastifyInstance<
 RawServerDefault,
@@ -33,7 +48,27 @@ async function apiBuilder (cfg: APIConfig): Promise<FastifyTypebox> {
   const db = cfg.useMemoryBackedDB === true
     ? new MemoryLevel({ valueEncoding: 'json' })
     : new Level('store', { valueEncoding: 'json' })
-  const store = new Store(cfg, db)
+
+  const basePath = cfg.storage ?? paths.data
+
+  const protocolStoragePath = path.join(basePath, 'protocols')
+
+  const protocols = new ProtocolManager({
+    ipfs: {
+      path: path.join(protocolStoragePath, 'ipfs'),
+      provider: cfg.ipfsProvider
+    },
+    hyper: {
+      path: path.join(protocolStoragePath, 'hyper')
+    },
+    http: {
+      path: path.join(protocolStoragePath, 'http')
+    }
+  })
+
+  await protocols.load()
+
+  const store = new Store(cfg, db, protocols)
 
   const server = fastify({ logger: cfg.useLogging }).withTypeProvider<TypeBoxTypeProvider>()
   await registerAuth(cfg, server, store)

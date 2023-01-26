@@ -14,7 +14,7 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
   }
 
   async create (cfg: Static<typeof NewSite>): Promise<Static<typeof Site>> {
-    const id = nanoid()
+    const id = cfg.domain
     const obj: Static<typeof Site> = {
       ...cfg,
       id,
@@ -26,10 +26,23 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
   async sync (siteId: string, filePath: string): Promise<void> {
     if (this.protocols !== undefined) {
       const site = await this.get(siteId)
-      // TODO: pipeline this with Promise.all
-      site.links.http = site.protocols.http ? await this.protocols.http.sync(siteId, filePath) : undefined
-      site.links.ipfs = site.protocols.ipfs ? await this.protocols.ipfs.sync(siteId, filePath) : undefined
-      site.links.hyper = site.protocols.hyper ? await this.protocols.hyper.sync(siteId, filePath) : undefined
+
+      const types = ['http', 'ipfs', 'hyper']
+      const promises = []
+
+      for (const protocol of types) {
+        if (site.protocols[protocol] === true) {
+          const promise = this.protocols[protocol]
+            .sync(siteId, filePath)
+            .then((protocolLinks) => {
+              site.links[protocol] = protocolLinks
+            })
+
+          promises.push(promise)
+        }
+      }
+
+      await Promise.all(promises)
     }
   }
 

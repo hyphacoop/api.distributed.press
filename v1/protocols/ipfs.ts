@@ -46,7 +46,17 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       })
     } else {
       // path for initializing a js-ipfs instance
-      this.ipfs = await IPFS.create({ repo: this.options.path })
+      this.ipfs = await IPFS.create({
+        repo: this.options.path,
+        EXPERIMENTAL: {
+          ipnsPubsub: true
+        },
+        config: {
+          Routing: {
+            Type: 'dht'
+          }
+        }
+      })
     }
 
     this.mfsSync = new MFSSync(this.ipfs)
@@ -64,9 +74,15 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       noDelete: options?.ignoreDeletes ?? false
     }
 
-    if (this.mfsSync === null) {
+    if (this.mfsSync === null || this.ipfs === null) {
       return await Promise.reject(new Error('MFS must be initialized using load() before calling sync()'))
     }
+
+    await this.ipfs.files.mkdir(mfsLocation, {
+      parents: true,
+      flush: true,
+      cidVersion: 1
+    })
 
     for await (const change of this.mfsSync.fromFSToMFS(folderPath, mfsLocation, mfsSyncOptions)) {
       // TODO: add better logging to protocols
@@ -97,15 +113,21 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     const mfsLocation = path.posix.join(MFS_ROOT, id)
     const name = `dp-site-${id}`
     const key = await makeOrGetKey(this.ipfs, name)
-
+    console.log('Generated key', key)
     const statResult = await this.ipfs.files.stat(mfsLocation, {
       hash: true
     })
 
     const cid = statResult.cid
+    console.log('Got root CID', cid)
+
+    console.log('Performing IPNS publish')
+
     const publishResult = await this.ipfs.name.publish(cid, {
       key: key.name
     })
+
+    console.log('Published!', publishResult)
 
     return {
       publishKey: publishResult.name,

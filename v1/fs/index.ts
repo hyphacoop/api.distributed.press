@@ -32,7 +32,7 @@ export class SiteFileSystem {
         writable: false
       })
     )
-    await rimraf(tarballPath)
+    // await rimraf(tarballPath)
     return sitePath
   }
 }

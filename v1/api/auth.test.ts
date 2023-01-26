@@ -146,4 +146,3 @@ test('requesting new token with subset of permissions (admin -> publisher) shoul
   })
   t.is(response.statusCode, 200)
 })
-

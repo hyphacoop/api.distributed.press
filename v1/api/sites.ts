@@ -8,6 +8,7 @@ import { CAPABILITIES, JWTPayloadT } from '../authorization/jwt.js'
 export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Promise<void> => {
   async function processRequestFiles (request: FastifyRequest, reply: FastifyReply, fn: (filePath: string) => Promise<void>): Promise<void> {
     try {
+      request.log.info('Downloading tarfile for site')
       const files = await request.saveRequestFiles({
         limits: {
           files: 1,
@@ -15,11 +16,16 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
         }
       })
       const tarballPath = files[0].filepath
+      request.log.info('Processing tarball')
       await fn(tarballPath)
       return await reply.code(200).send()
     } catch (error) {
       if (error instanceof server.multipartErrors.RequestFileTooLargeError) {
         return await reply.code(400).send('tarball too large (limit 1GB)')
+      }
+      if (error instanceof Error) {
+        request.log.error(error)
+        return await reply.code(500).send(error.stack)
       }
       return await reply.code(500).send()
     }
@@ -162,12 +168,17 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
     }
     return await processRequestFiles(request, reply, async (tarballPath) => {
       // delete old files, extract new ones
+      request.log.info('Deleting old files')
       await store.fs.clear(id)
+      request.log.info('Extracting tarball ' + tarballPath)
       await store.fs.extract(tarballPath, id)
 
       // sync to protocols
       const path = store.fs.getPath(id)
+
+      request.log.info('Performing sync with site')
       await store.sites.sync(id, path)
+      request.log.info('Finished sync')
     })
   })
 
