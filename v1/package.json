@@ -52,7 +52,7 @@
     "fastify-plugin": "^4.4.0",
     "fs": "0.0.1-security",
     "gunzip-maybe": "^1.4.2",
-    "hyper-sdk": "^4.2.0",
+    "hyper-sdk": "^4.2.1",
     "ipfs-core": "^0.18.0",
     "ipfs-http-client": "^60.0.0",
     "ipfs-mfs-sync": "^1.0.3",

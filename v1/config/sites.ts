@@ -27,19 +27,34 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
     if (this.protocols !== undefined) {
       const site = await this.get(siteId)
 
-      const types = ['http', 'ipfs', 'hyper']
       const promises = []
 
-      for (const protocol of types) {
-        if (site.protocols[protocol] === true) {
-          const promise = this.protocols[protocol]
-            .sync(siteId, filePath)
-            .then((protocolLinks) => {
-              site.links[protocol] = protocolLinks
-            })
+      if (site.protocols.http) {
+        const promise = this.protocols.http
+          .sync(siteId, filePath)
+          .then((protocolLinks) => {
+            site.links.http = protocolLinks
+          })
 
-          promises.push(promise)
-        }
+        promises.push(promise)
+      }
+      if (site.protocols.hyper) {
+        const promise = this.protocols.hyper
+          .sync(siteId, filePath)
+          .then((protocolLinks) => {
+            site.links.hyper = protocolLinks
+          })
+
+        promises.push(promise)
+      }
+      if (site.protocols.ipfs) {
+        const promise = this.protocols.ipfs
+          .sync(siteId, filePath)
+          .then((protocolLinks) => {
+            site.links.ipfs = protocolLinks
+          })
+
+        promises.push(promise)
       }
 
       await Promise.all(promises)
