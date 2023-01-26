@@ -55,7 +55,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         const ipfsBin = GoIPFS.path()
 
         const ipfsOptions = {
-            repo: this.options.path
+          repo: this.options.path
         }
 
         const ipfsdOpts = {

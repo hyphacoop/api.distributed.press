@@ -1,7 +1,6 @@
 import { NewSite, ProtocolStatus, Site } from '../api/schemas'
 import { Static } from '@sinclair/typebox'
 import { Config } from './store.js'
-import { nanoid } from 'nanoid'
 import { AbstractLevel } from 'abstract-level'
 import { ProtocolManager } from '../protocols/index.js'
 
@@ -28,7 +27,6 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
       const site = await this.get(siteId)
 
       const promises = []
-
       if (site.protocols.http) {
         const promise = this.protocols.http
           .sync(siteId, filePath)
@@ -38,6 +36,7 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
 
         promises.push(promise)
       }
+
       if (site.protocols.hyper) {
         const promise = this.protocols.hyper
           .sync(siteId, filePath)
@@ -47,6 +46,7 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
 
         promises.push(promise)
       }
+
       if (site.protocols.ipfs) {
         const promise = this.protocols.ipfs
           .sync(siteId, filePath)
