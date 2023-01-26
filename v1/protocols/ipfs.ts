@@ -1,21 +1,30 @@
 import { Static } from '@sinclair/typebox'
+
 import * as IPFS from 'ipfs-core'
 import * as IPFSHTTPClient from 'ipfs-http-client'
+import * as GoIPFS from 'go-ipfs'
+import Ctl from 'ipfsd-ctl'
+import { Key } from 'ipfs-core-types/src/key/index.js'
 import MFSSync from 'ipfs-mfs-sync'
+
 import path from 'node:path'
+
 import Protocol, { SyncOptions } from './interfaces.js'
 import { IPFSProtocolFields } from '../api/schemas.js'
-import { Key } from 'ipfs-core-types/src/key/index.js'
 
 // TODO: Make this configurable
 const MFS_ROOT = '/distributed-press/'
 
 export const JsIpfs = 'js-ipfs' as const
 export const Kubo = 'kubo' as const
-export type IPFSProvider = typeof JsIpfs | typeof Kubo
+export const Builtin = 'builtin' as const
+export type IPFSProvider = typeof JsIpfs | typeof Kubo | typeof Builtin
+
 export interface IPFSProtocolOptions {
   path: string
   provider: IPFSProvider
+  ipfs?: IPFS.IPFS
+  mfsRoot?: string
 }
 
 export interface PublishResult {
@@ -29,34 +38,64 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
   options: IPFSProtocolOptions
   onCleanup: CleanupCallback[]
   ipfs: IPFS.IPFS | null
+  mfsRoot: string
   mfsSync: MFSSync | null
 
   constructor (options: IPFSProtocolOptions) {
     this.options = options
     this.onCleanup = []
-    this.ipfs = null
+    this.ipfs = options.ipfs ?? null
+    this.mfsRoot = options.mfsRoot ?? MFS_ROOT
     this.mfsSync = null
   }
 
   async load (): Promise<void> {
-    if (this.options.provider === Kubo) {
-      // rpcURL is for connecting to a Kubo Go-IPFS node
-      this.ipfs = IPFSHTTPClient.create({
-        url: this.options.path
-      })
-    } else {
-      // path for initializing a js-ipfs instance
-      this.ipfs = await IPFS.create({
-        repo: this.options.path,
-        EXPERIMENTAL: {
-          ipnsPubsub: true
-        },
-        config: {
-          Routing: {
-            Type: 'dht'
-          }
+    if (this.ipfs === null) {
+      if (this.options.provider === Builtin) {
+        const ipfsBin = GoIPFS.path()
+
+        const ipfsOptions = {
+            repo: this.options.path
         }
-      })
+
+        const ipfsdOpts = {
+          type: 'go',
+          disposable: false,
+          test: false,
+          remote: false,
+          ipfsOptions,
+          ipfsHttpModule: IPFSHTTPClient,
+          ipfsBin
+        }
+        const ipfsd = await Ctl.createController(ipfsdOpts)
+
+        await ipfsd.init({ ipfsOptions })
+
+        await ipfsd.start()
+        await ipfsd.api.id()
+        this.ipfs = ipfsd.api
+        this.onCleanup.push(async () => {
+          await ipfsd.stop()
+        })
+      } else if (this.options.provider === Kubo) {
+      // rpcURL is for connecting to a Kubo Go-IPFS node
+        this.ipfs = IPFSHTTPClient.create({
+          url: this.options.path
+        })
+      } else {
+      // path for initializing a js-ipfs instance
+        this.ipfs = await IPFS.create({
+          repo: this.options.path,
+          EXPERIMENTAL: {
+            ipnsPubsub: true
+          },
+          config: {
+            Routing: {
+              Type: 'dht'
+            }
+          }
+        })
+      }
     }
 
     this.mfsSync = new MFSSync(this.ipfs)
@@ -69,7 +108,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
   }
 
   async sync (id: string, folderPath: string, options?: SyncOptions): Promise<Static<typeof IPFSProtocolFields>> {
-    const mfsLocation = path.posix.join(MFS_ROOT, id)
+    const mfsLocation = path.posix.join(this.mfsRoot, id)
     const mfsSyncOptions = {
       noDelete: options?.ignoreDeletes ?? false
     }
@@ -110,7 +149,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       return await Promise.reject(new Error('IPFS must be initialized using load() before calling sync()'))
     }
 
-    const mfsLocation = path.posix.join(MFS_ROOT, id)
+    const mfsLocation = path.posix.join(this.mfsRoot, id)
     const name = `dp-site-${id}`
     const key = await makeOrGetKey(this.ipfs, name)
     console.log('Generated key', key)
@@ -140,7 +179,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       return await Promise.reject(new Error('IPFS must be initialized using load() before calling sync()'))
     }
 
-    const mfsLocation = path.posix.join(MFS_ROOT, id)
+    const mfsLocation = path.posix.join(this.mfsRoot, id)
 
     await this.ipfs.files.rm(mfsLocation, {
       recursive: true,
