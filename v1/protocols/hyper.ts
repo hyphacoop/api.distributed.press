@@ -46,7 +46,7 @@ export class HyperProtocol implements Protocol<Static<typeof HyperProtocolFields
   }
 
   async sync (id: string, folderPath: string, options?: SyncOptions): Promise<Static<typeof HyperProtocolFields>> {
-    process.stdout.write('Hyper Sync Start')
+    console.log('Hyper: Sync Start')
     const drive = await this.getDrive(id)
     const fs = new LocalDrive(folderPath)
 
@@ -59,7 +59,8 @@ export class HyperProtocol implements Protocol<Static<typeof HyperProtocolFields
     const link = raw
     // TODO: Pass in the gateway URL in the config first
     const gateway = 'oops'
-    process.stdout.write('Hyper Sync Finish')
+
+    console.log('Hyper: Published', link)
 
     return {
       enabled: true,

@@ -51,7 +51,7 @@
     "fastify-metrics": "^10.0.0",
     "fastify-plugin": "^4.4.0",
     "fs": "0.0.1-security",
-    "go-ipfs": "^0.18.0",
+    "go-ipfs": "^0.17.0",
     "gunzip-maybe": "^1.4.2",
     "hyper-sdk": "^4.2.1",
     "ipfs-core": "^0.18.0",

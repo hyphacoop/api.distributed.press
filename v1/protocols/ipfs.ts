@@ -3,7 +3,7 @@ import { Static } from '@sinclair/typebox'
 import * as IPFS from 'ipfs-core'
 import * as IPFSHTTPClient from 'ipfs-http-client'
 import * as GoIPFS from 'go-ipfs'
-import Ctl from 'ipfsd-ctl'
+import { ControllerType, createController } from 'ipfsd-ctl'
 import { Key } from 'ipfs-core-types/src/key/index.js'
 import MFSSync from 'ipfs-mfs-sync'
 
@@ -59,7 +59,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         }
 
         const ipfsdOpts = {
-          type: 'go',
+          type: 'go' as ControllerType,
           disposable: false,
           test: false,
           remote: false,
@@ -67,33 +67,36 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           ipfsHttpModule: IPFSHTTPClient,
           ipfsBin
         }
-        const ipfsd = await Ctl.createController(ipfsdOpts)
 
-        await ipfsd.init({ ipfsOptions })
+        const ipfsd = await createController(ipfsdOpts)
+
+        await ipfsd.init()
 
         await ipfsd.start()
+
         await ipfsd.api.id()
+
         this.ipfs = ipfsd.api
         this.onCleanup.push(async () => {
           await ipfsd.stop()
         })
       } else if (this.options.provider === Kubo) {
-      // rpcURL is for connecting to a Kubo Go-IPFS node
+        // rpcURL is for connecting to a Kubo Go-IPFS node
         this.ipfs = IPFSHTTPClient.create({
           url: this.options.path
         })
       } else {
-      // path for initializing a js-ipfs instance
+        // path for initializing a js-ipfs instance
         this.ipfs = await IPFS.create({
-          repo: this.options.path,
-          EXPERIMENTAL: {
+          repo: this.options.path
+          /* EXPERIMENTAL: {
             ipnsPubsub: true
           },
           config: {
             Routing: {
               Type: 'dht'
             }
-          }
+          } */
         })
       }
     }
@@ -199,6 +202,6 @@ async function makeOrGetKey (ipfs: IPFS.IPFS, name: string): Promise<Key> {
     }
   }
 
-  const key = await ipfs.key.gen(name, { type: 'Ed25519' })
+  const key = await ipfs.key.gen(name)
   return key
 }
