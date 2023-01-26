@@ -8,6 +8,7 @@ import { Key } from 'ipfs-core-types/src/key/index.js'
 import MFSSync from 'ipfs-mfs-sync'
 
 import path from 'node:path'
+import * as fs from 'node:fs/promises'
 
 import Protocol, { SyncOptions } from './interfaces.js'
 import { IPFSProtocolFields } from '../api/schemas.js'
@@ -68,13 +69,29 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           ipfsBin
         }
 
-        const ipfsd = await createController(ipfsdOpts)
+        let ipfsd = await createController(ipfsdOpts)
 
         await ipfsd.init()
 
-        await ipfsd.start()
-
-        await ipfsd.api.id()
+        try {
+          await ipfsd.start()
+          await ipfsd.api.id()
+        } catch (e) {
+          const lockFile = path.join(this.options.path, 'repo.lock')
+          const apiFile = path.join(this.options.path, 'api')
+          try {
+            await Promise.all([
+              fs.rm(lockFile),
+              fs.rm(apiFile)
+            ])
+            ipfsd = await createController(ipfsdOpts)
+            await ipfsd.start()
+            await ipfsd.api.id()
+          } catch (cause) {
+            const message = `Unable to start daemon due to extra lockfile. Please clear your ipfs folder at ${this.options.path} and try again.`
+            throw new Error(message, { cause })
+          }
+        }
 
         this.ipfs = ipfsd.api
         this.onCleanup.push(async () => {
@@ -202,6 +219,9 @@ async function makeOrGetKey (ipfs: IPFS.IPFS, name: string): Promise<Key> {
     }
   }
 
-  const key = await ipfs.key.gen(name)
+  // js-ipfs uses uppercase, but kubo expects lowercase
+  // @ts-expect-error
+  const key = await ipfs.key.gen(name, { type: 'ed25519' })
+
   return key
 }
