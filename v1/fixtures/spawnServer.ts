@@ -1,6 +1,6 @@
 import envPaths from 'env-paths'
 import path from 'path'
-import { JsIpfs } from '../protocols/ipfs.js'
+import { JSIPFS } from '../protocols/ipfs.js'
 import makeDir from 'make-dir'
 import fs from 'fs'
 import { generateKeyPair } from '../authorization/jwt.js'
@@ -18,7 +18,7 @@ export async function spawnTestServer (): Promise<FastifyTypebox> {
     port: 8080,
     host: 'localhost',
     storage: storagePath,
-    ipfsProvider: JsIpfs,
+    ipfsProvider: JSIPFS,
     dns: {
       server: '127.0.0.1:53',
       domains: []

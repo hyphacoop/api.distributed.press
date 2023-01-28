@@ -21,7 +21,7 @@ export class SiteFileSystem {
   }
 
   /// Reads a .tar or .tar.gz from given `tarballPath` and extracts it to
-  /// the target directory. Deletes original tarball when done
+  /// the target directory
   async extract (tarballPath: string, siteId: string): Promise<string> {
     const sitePath = this.getPath(siteId)
     await pipeline(
@@ -32,7 +32,6 @@ export class SiteFileSystem {
         writable: false
       })
     )
-    // await rimraf(tarballPath)
     return sitePath
   }
 }

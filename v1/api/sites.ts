@@ -16,7 +16,7 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
         }
       })
       const tarballPath = files[0].filepath
-      request.log.info('Processing tarball')
+      request.log.info(`Processing tarball: ${tarballPath}`)
       await fn(tarballPath)
       return await reply.code(200).send()
     } catch (error) {
@@ -24,7 +24,6 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
         return await reply.code(400).send('tarball too large (limit 1GB)')
       }
       if (error instanceof Error) {
-        request.log.error(error)
         return await reply.code(500).send(error.stack)
       }
       return await reply.code(500).send()
@@ -170,14 +169,15 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
       // delete old files, extract new ones
       request.log.info('Deleting old files')
       await store.fs.clear(id)
-      request.log.info('Extracting tarball ' + tarballPath)
+
+      request.log.info('Extracting tarball')
       await store.fs.extract(tarballPath, id)
 
       // sync to protocols
       const path = store.fs.getPath(id)
-
       request.log.info('Performing sync with site')
       await store.sites.sync(id, path)
+
       request.log.info('Finished sync')
     })
   })

@@ -58,7 +58,6 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
       }
 
       await Promise.all(promises)
-
       await this.db.put(siteId, site)
     }
   }

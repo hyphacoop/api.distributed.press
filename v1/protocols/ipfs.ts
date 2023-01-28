@@ -1,14 +1,14 @@
 import { Static } from '@sinclair/typebox'
 
-import * as IPFS from 'ipfs-core'
-import * as IPFSHTTPClient from 'ipfs-http-client'
-import * as GoIPFS from 'go-ipfs'
+import IPFS from 'ipfs-core'
+import IPFSHTTPClient from 'ipfs-http-client'
+import GoIPFS from 'go-ipfs'
 import { ControllerType, createController } from 'ipfsd-ctl'
 import { Key } from 'ipfs-core-types/src/key/index.js'
 import MFSSync from 'ipfs-mfs-sync'
 
 import path from 'node:path'
-import * as fs from 'node:fs/promises'
+import fs from 'node:fs/promises'
 
 import Protocol, { SyncOptions } from './interfaces.js'
 import { IPFSProtocolFields } from '../api/schemas.js'
@@ -16,10 +16,10 @@ import { IPFSProtocolFields } from '../api/schemas.js'
 // TODO: Make this configurable
 const MFS_ROOT = '/distributed-press/'
 
-export const JsIpfs = 'js-ipfs' as const
-export const Kubo = 'kubo' as const
-export const Builtin = 'builtin' as const
-export type IPFSProvider = typeof JsIpfs | typeof Kubo | typeof Builtin
+export const JSIPFS = 'js-ipfs' as const
+export const KUBO = 'kubo' as const
+export const BUILTIN = 'builtin' as const
+export type IPFSProvider = typeof JSIPFS | typeof KUBO | typeof BUILTIN
 
 export interface IPFSProtocolOptions {
   path: string
@@ -52,7 +52,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
   async load (): Promise<void> {
     if (this.ipfs === null) {
-      if (this.options.provider === Builtin) {
+      if (this.options.provider === BUILTIN) {
         const ipfsBin = GoIPFS.path()
 
         const ipfsOptions = {
@@ -97,7 +97,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         this.onCleanup.push(async () => {
           await ipfsd.stop()
         })
-      } else if (this.options.provider === Kubo) {
+      } else if (this.options.provider === KUBO) {
         // rpcURL is for connecting to a Kubo Go-IPFS node
         this.ipfs = IPFSHTTPClient.create({
           url: this.options.path
