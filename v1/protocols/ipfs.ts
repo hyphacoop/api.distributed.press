@@ -1,21 +1,19 @@
 import { Static } from '@sinclair/typebox'
-
-import IPFS from 'ipfs-core'
-import IPFSHTTPClient from 'ipfs-http-client'
-import GoIPFS from 'go-ipfs'
+import * as IPFS from 'ipfs-core'
+import * as IPFSHTTPClient from 'ipfs-http-client'
+import * as GoIPFS from 'go-ipfs'
 import { ControllerType, createController } from 'ipfsd-ctl'
 import { Key } from 'ipfs-core-types/src/key/index.js'
 import MFSSync from 'ipfs-mfs-sync'
-
 import path from 'node:path'
 import fs from 'node:fs/promises'
-
-import Protocol, { SyncOptions } from './interfaces.js'
+import Protocol, { Ctx, SyncOptions } from './interfaces.js'
 import { IPFSProtocolFields } from '../api/schemas.js'
 
 // TODO: Make this configurable
 const MFS_ROOT = '/distributed-press/'
 
+// TODO(docs): clarify what these actually do
 export const JSIPFS = 'js-ipfs' as const
 export const KUBO = 'kubo' as const
 export const BUILTIN = 'builtin' as const
@@ -53,30 +51,28 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
   async load (): Promise<void> {
     if (this.ipfs === null) {
       if (this.options.provider === BUILTIN) {
-        const ipfsBin = GoIPFS.path()
-
-        const ipfsOptions = {
-          repo: this.options.path
-        }
-
         const ipfsdOpts = {
           type: 'go' as ControllerType,
           disposable: false,
           test: false,
           remote: false,
-          ipfsOptions,
+          ipfsOptions: {
+            repo: this.options.path
+          },
           ipfsHttpModule: IPFSHTTPClient,
-          ipfsBin
+          ipfsBin: GoIPFS.path()
         }
 
+        // TODO(@jackyzha0): refactor this with backoff/retry
+        // ask @rangermauve why this exists
         let ipfsd = await createController(ipfsdOpts)
-
         await ipfsd.init()
 
         try {
           await ipfsd.start()
           await ipfsd.api.id()
         } catch (e) {
+          console.log(e)
           const lockFile = path.join(this.options.path, 'repo.lock')
           const apiFile = path.join(this.options.path, 'api')
           try {
@@ -127,66 +123,62 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     }
   }
 
-  async sync (id: string, folderPath: string, options?: SyncOptions): Promise<Static<typeof IPFSProtocolFields>> {
+  async sync (id: string, folderPath: string, options?: SyncOptions, ctx?: Ctx): Promise<Static<typeof IPFSProtocolFields>> {
     const mfsLocation = path.posix.join(this.mfsRoot, id)
     const mfsSyncOptions = {
       noDelete: options?.ignoreDeletes ?? false
     }
-
     if (this.mfsSync === null || this.ipfs === null) {
       return await Promise.reject(new Error('MFS must be initialized using load() before calling sync()'))
     }
 
+    // Make a folder in MFS
     await this.ipfs.files.mkdir(mfsLocation, {
       parents: true,
       flush: true,
       cidVersion: 1
     })
 
+    // Sync local disk files to MFS
     for await (const change of this.mfsSync.fromFSToMFS(folderPath, mfsLocation, mfsSyncOptions)) {
-      // TODO: add better logging to protocols
-      console.log(change)
+      ctx?.logger.debug(change)
     }
 
-    const { publishKey, cid } = await this.publishSite(id)
-
+    // Publish site and return meta
+    const { publishKey, cid } = await this.publishSite(id, ctx)
     const pubKey = `ipns://${publishKey}/`
-    // TODO: Pass in gateway parameters in options (DP domain name?)
-    const gateway = `https://gateway.ipfs.io/ipns/${publishKey}/`
-    const link = pubKey
-
     return {
       enabled: true,
-      link,
-      gateway,
+      link: pubKey,
+      // TODO: Pass in gateway parameters in options (DP domain name?)
+      gateway: `https://gateway.ipfs.io/ipns/${publishKey}/`,
       cid,
       pubKey
     }
   }
 
-  async publishSite (id: string): Promise<PublishResult> {
+  async publishSite (id: string, ctx?: Ctx): Promise<PublishResult> {
     if (this.ipfs === null) {
       return await Promise.reject(new Error('IPFS must be initialized using load() before calling sync()'))
     }
 
+    ctx?.logger.info('[ipfs] Sync start')
     const mfsLocation = path.posix.join(this.mfsRoot, id)
     const name = `dp-site-${id}`
     const key = await makeOrGetKey(this.ipfs, name)
-    console.log('Generated key', key)
+
+    ctx?.logger.info(`[ipfs] Generated key: ${key.id}`)
     const statResult = await this.ipfs.files.stat(mfsLocation, {
       hash: true
     })
 
     const cid = statResult.cid
-    console.log('Got root CID', cid)
-
-    console.log('Performing IPNS publish')
-
+    ctx?.logger.info(`[ipfs] Got root CID: ${cid.toString()}, performing IPNS publish...`)
     const publishResult = await this.ipfs.name.publish(cid, {
       key: key.name
     })
 
-    console.log('Published!', publishResult)
+    ctx?.logger.info(`[ipfs] Published to IPFS under ${publishResult.name}: ${publishResult.value}`)
 
     return {
       publishKey: publishResult.name,
@@ -194,7 +186,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     }
   }
 
-  async unsync (id: string, _site: Static<typeof IPFSProtocolFields>): Promise<void> {
+  async unsync (id: string, _site: Static<typeof IPFSProtocolFields>, ctx?: Ctx): Promise<void> {
     if (this.ipfs === null) {
       return await Promise.reject(new Error('IPFS must be initialized using load() before calling sync()'))
     }
@@ -206,7 +198,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       cidVersion: 1
     })
 
-    await this.publishSite(id)
+    await this.publishSite(id, ctx)
   }
 }
 
@@ -221,7 +213,5 @@ async function makeOrGetKey (ipfs: IPFS.IPFS, name: string): Promise<Key> {
 
   // js-ipfs uses uppercase, but kubo expects lowercase
   // @ts-expect-error
-  const key = await ipfs.key.gen(name, { type: 'ed25519' })
-
-  return key
+  return await ipfs.key.gen(name, { type: 'ed25519' })
 }

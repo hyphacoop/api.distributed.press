@@ -48,6 +48,7 @@
     "express": "^4.17.1",
     "fast-jwt": "^2.0.2",
     "fastify": "^4.10.2",
+    "fastify-graceful-shutdown": "^3.4.0",
     "fastify-metrics": "^10.0.0",
     "fastify-plugin": "^4.4.0",
     "fs": "0.0.1-security",

@@ -1,9 +1,7 @@
 import * as SDK from 'hyper-sdk'
 import LocalDrive from 'localdrive'
-
 import { Static } from '@sinclair/typebox'
-
-import Protocol, { SyncOptions } from './interfaces'
+import Protocol, { Ctx, SyncOptions } from './interfaces'
 import { HyperProtocolFields } from '../api/schemas'
 
 export interface HyperProtocolOptions {
@@ -22,9 +20,12 @@ export class HyperProtocol implements Protocol<Static<typeof HyperProtocolFields
   }
 
   async load (): Promise<void> {
-    const { path: storage } = this.options
-    // TODO: Where do we signal to load up all the initial sites?
-    this.sdk = await SDK.create({ storage })
+    const { path } = this.options
+    this.sdk = await SDK.create({ storage: path })
+  }
+
+  async unload (): Promise<void> {
+    return await Promise.resolve()
   }
 
   async getDrive (id: string): Promise<SDK.Hyperdrive> {
@@ -45,8 +46,8 @@ export class HyperProtocol implements Protocol<Static<typeof HyperProtocolFields
     return drive
   }
 
-  async sync (id: string, folderPath: string, options?: SyncOptions): Promise<Static<typeof HyperProtocolFields>> {
-    console.log('Hyper: Sync Start')
+  async sync (id: string, folderPath: string, options?: SyncOptions, ctx?: Ctx): Promise<Static<typeof HyperProtocolFields>> {
+    ctx?.logger.info('[hyper] Sync Start')
     const drive = await this.getDrive(id)
     const fs = new LocalDrive(folderPath)
 
@@ -60,7 +61,7 @@ export class HyperProtocol implements Protocol<Static<typeof HyperProtocolFields
     // TODO: Pass in the gateway URL in the config first
     const gateway = 'oops'
 
-    console.log('Hyper: Published', link)
+    ctx?.logger.info(`[hyper] Published: ${link}`)
 
     return {
       enabled: true,
@@ -70,8 +71,9 @@ export class HyperProtocol implements Protocol<Static<typeof HyperProtocolFields
     }
   }
 
-  async unsync (id: string, _site: Static<typeof HyperProtocolFields>): Promise<void> {
+  async unsync (id: string, _site: Static<typeof HyperProtocolFields>, ctx?: Ctx): Promise<void> {
     const drive = await this.getDrive(id)
+
     // TODO: Should we also clear the stored data?
     await drive.close()
   }

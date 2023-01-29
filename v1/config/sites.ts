@@ -3,6 +3,7 @@ import { Static } from '@sinclair/typebox'
 import { Config } from './store.js'
 import { AbstractLevel } from 'abstract-level'
 import { ProtocolManager } from '../protocols/index.js'
+import { Ctx } from '../protocols/interfaces'
 
 export class SiteConfigStore extends Config<Static<typeof Site>> {
   protocols?: ProtocolManager
@@ -22,14 +23,14 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
     return await this.db.put(id, obj).then(() => obj)
   }
 
-  async sync (siteId: string, filePath: string): Promise<void> {
+  async sync (siteId: string, filePath: string, ctx: Ctx): Promise<void> {
     if (this.protocols !== undefined) {
       const site = await this.get(siteId)
 
       const promises = []
       if (site.protocols.http) {
         const promise = this.protocols.http
-          .sync(siteId, filePath)
+          .sync(siteId, filePath, undefined, ctx)
           .then((protocolLinks) => {
             site.links.http = protocolLinks
           })
@@ -39,7 +40,7 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
 
       if (site.protocols.hyper) {
         const promise = this.protocols.hyper
-          .sync(siteId, filePath)
+          .sync(siteId, filePath, undefined, ctx)
           .then((protocolLinks) => {
             site.links.hyper = protocolLinks
           })
@@ -49,7 +50,7 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
 
       if (site.protocols.ipfs) {
         const promise = this.protocols.ipfs
-          .sync(siteId, filePath)
+          .sync(siteId, filePath, undefined, ctx)
           .then((protocolLinks) => {
             site.links.ipfs = protocolLinks
           })
@@ -76,19 +77,19 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
     return await this.db.get(id)
   }
 
-  async delete (id: string): Promise<void> {
+  async delete (id: string, ctx: Ctx): Promise<void> {
     if (this.protocols !== undefined) {
       const site = await this.get(id)
 
       const promises = []
       if (site.links.http != null) {
-        promises.push(this.protocols.http.unsync(id, site.links.http))
+        promises.push(this.protocols.http.unsync(id, site.links.http, ctx))
       }
       if (site.links.ipfs != null) {
-        promises.push(this.protocols.ipfs.unsync(id, site.links.ipfs))
+        promises.push(this.protocols.ipfs.unsync(id, site.links.ipfs, ctx))
       }
       if (site.links.hyper != null) {
-        promises.push(this.protocols.hyper.unsync(id, site.links.hyper))
+        promises.push(this.protocols.hyper.unsync(id, site.links.hyper, ctx))
       }
 
       await Promise.all(promises)

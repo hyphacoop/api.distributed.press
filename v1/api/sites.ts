@@ -108,7 +108,7 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
       return await reply.status(401).send('You must either own the site or be an admin to modify this resource')
     }
 
-    await store.sites.delete(id)
+    await store.sites.delete(id, { logger: request.log })
     await store.publisher.unregisterSiteFromAllPublishers(id)
     await store.fs.clear(id)
     return await reply.send()
@@ -142,7 +142,7 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
 
     // sync files with protocols
     const path = store.fs.getPath(id)
-    await store.sites.sync(id, path)
+    await store.sites.sync(id, path, { logger: request.log })
     return await reply.code(200).send()
   })
 
@@ -166,17 +166,15 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
       return await reply.status(401).send('You must either own the site or be an admin to modify this resource')
     }
     return await processRequestFiles(request, reply, async (tarballPath) => {
-      // delete old files, extract new ones
       request.log.info('Deleting old files')
       await store.fs.clear(id)
 
       request.log.info('Extracting tarball')
       await store.fs.extract(tarballPath, id)
 
-      // sync to protocols
       const path = store.fs.getPath(id)
       request.log.info('Performing sync with site')
-      await store.sites.sync(id, path)
+      await store.sites.sync(id, path, { logger: request.log })
 
       request.log.info('Finished sync')
     })
@@ -207,7 +205,7 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
 
       // sync to protocols
       const path = store.fs.getPath(id)
-      await store.sites.sync(id, path)
+      await store.sites.sync(id, path, { logger: request.log })
     })
   })
 }

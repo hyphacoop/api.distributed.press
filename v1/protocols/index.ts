@@ -22,7 +22,17 @@ export class ProtocolManager {
   async load (): Promise<void> {
     const promises = [
       this.ipfs.load(),
-      this.hyper.load()
+      this.hyper.load(),
+      this.http.load()
+    ]
+    await Promise.all(promises)
+  }
+
+  async unload (): Promise<void> {
+    const promises = [
+      this.ipfs.unload(),
+      this.hyper.unload(),
+      this.http.unload()
     ]
     await Promise.all(promises)
   }

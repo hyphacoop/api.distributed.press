@@ -1,5 +1,4 @@
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox'
-
 import fastify, {
   FastifyBaseLogger,
   RawReplyDefaultExpression,
@@ -11,13 +10,10 @@ import multipart from '@fastify/multipart'
 import swagger from '@fastify/swagger'
 import swagger_ui from '@fastify/swagger-ui'
 import metrics from 'fastify-metrics'
-
 import path from 'node:path'
-
 import envPaths from 'env-paths'
 import { Level } from 'level'
 import { MemoryLevel } from 'memory-level'
-
 import { siteRoutes } from './sites.js'
 import { adminRoutes } from './admin.js'
 import { publisherRoutes } from './publisher.js'
@@ -26,6 +22,7 @@ import { registerAuth } from '../authorization/cfg.js'
 import { authRoutes } from './auth.js'
 import { ServerI } from '../index.js'
 import { ProtocolManager } from '../protocols/index.js'
+import gracefulShutdown from 'fastify-graceful-shutdown'
 
 const paths = envPaths('distributed-press')
 
@@ -67,12 +64,32 @@ async function apiBuilder (cfg: APIConfig): Promise<FastifyTypebox> {
   })
 
   await protocols.load()
-
   const store = new Store(cfg, db, protocols)
 
   const server = fastify({ logger: cfg.useLogging }).withTypeProvider<TypeBoxTypeProvider>()
   await registerAuth(cfg, server, store)
   await server.register(multipart)
+  await server.register(gracefulShutdown)
+  
+  // pre-sync all sites
+  for (const siteId of await store.sites.keys()) {
+    const fp = store.fs.getPath(siteId)
+    await store.sites.sync(siteId, fp, { logger: server.log })
+  }
+
+  // handle cleanup on shutdown
+  server.gracefulShutdown((signal, next) => {
+    server.log.warn(`Gracefully shutting down after receiving ${signal}. Unloading protocols...`)
+    protocols.unload()
+      .then(() => {
+        server.log.info('Done')
+        next()
+      })
+      .catch(err => {
+        server.log.fatal(err)
+        next()
+      })
+  })
 
   server.get('/healthz', () => {
     return 'ok\n'
