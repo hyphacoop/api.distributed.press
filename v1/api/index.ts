@@ -22,7 +22,6 @@ import { registerAuth } from '../authorization/cfg.js'
 import { authRoutes } from './auth.js'
 import { ServerI } from '../index.js'
 import { ProtocolManager } from '../protocols/index.js'
-import gracefulShutdown from 'fastify-graceful-shutdown'
 
 const paths = envPaths('distributed-press')
 
@@ -42,14 +41,13 @@ export type APIConfig = Partial<{
 }> & ServerI
 
 async function apiBuilder (cfg: APIConfig): Promise<FastifyTypebox> {
+  const basePath = cfg.storage ?? paths.data
+  const cfgStoragePath = path.join(basePath, 'cfg')
   const db = cfg.useMemoryBackedDB === true
     ? new MemoryLevel({ valueEncoding: 'json' })
-    : new Level('store', { valueEncoding: 'json' })
-
-  const basePath = cfg.storage ?? paths.data
+    : new Level(cfgStoragePath, { valueEncoding: 'json' })
 
   const protocolStoragePath = path.join(basePath, 'protocols')
-
   const protocols = new ProtocolManager({
     ipfs: {
       path: path.join(protocolStoragePath, 'ipfs'),
@@ -63,32 +61,39 @@ async function apiBuilder (cfg: APIConfig): Promise<FastifyTypebox> {
     }
   })
 
+  const server = fastify({ logger: cfg.useLogging }).withTypeProvider<TypeBoxTypeProvider>()
+  server.log.info('Initializing protocols')
   await protocols.load()
   const store = new Store(cfg, db, protocols)
-
-  const server = fastify({ logger: cfg.useLogging }).withTypeProvider<TypeBoxTypeProvider>()
+  server.log.info('Done')
   await registerAuth(cfg, server, store)
   await server.register(multipart)
-  await server.register(gracefulShutdown)
-  
+
   // pre-sync all sites
   for (const siteId of await store.sites.keys()) {
+    server.log.info(`Presyncing site: ${siteId}`)
     const fp = store.fs.getPath(siteId)
     await store.sites.sync(siteId, fp, { logger: server.log })
   }
 
   // handle cleanup on shutdown
-  server.gracefulShutdown((signal, next) => {
-    server.log.warn(`Gracefully shutting down after receiving ${signal}. Unloading protocols...`)
-    protocols.unload()
+  server.addHook('onClose', async server => {
+    server.log.info('Begin shutdown, unloading protocols...')
+    await protocols.unload()
       .then(() => {
         server.log.info('Done')
-        next()
       })
       .catch(err => {
         server.log.fatal(err)
-        next()
       })
+  })
+
+  // catch SIGINTs
+  process.on('SIGINT', () => {
+    server.log.warn('Caught SIGINT')
+    server.close(() => {
+      process.exit()
+    })
   })
 
   server.get('/healthz', () => {

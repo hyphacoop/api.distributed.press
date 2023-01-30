@@ -23,7 +23,7 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
     return await this.db.put(id, obj).then(() => obj)
   }
 
-  async sync (siteId: string, filePath: string, ctx: Ctx): Promise<void> {
+  async sync (siteId: string, filePath: string, ctx?: Ctx): Promise<void> {
     if (this.protocols !== undefined) {
       const site = await this.get(siteId)
 
@@ -77,7 +77,7 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
     return await this.db.get(id)
   }
 
-  async delete (id: string, ctx: Ctx): Promise<void> {
+  async delete (id: string, ctx?: Ctx): Promise<void> {
     if (this.protocols !== undefined) {
       const site = await this.get(id)
 

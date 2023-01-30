@@ -1,21 +1,5 @@
 import test from 'ava'
-import { SiteConfigStore } from './sites.js'
-import { MemoryLevel } from 'memory-level'
-import { NewSite } from '../api/schemas.js'
-import { Static } from '@sinclair/typebox'
-
-function newSiteConfigStore (): SiteConfigStore {
-  return new SiteConfigStore(new MemoryLevel({ valueEncoding: 'json' }))
-}
-
-export const exampleSiteConfig: Static<typeof NewSite> = {
-  domain: 'https://example.com',
-  protocols: {
-    http: true,
-    ipfs: false,
-    hyper: false
-  }
-}
+import { exampleSiteConfig, newSiteConfigStore } from '../fixtures/siteConfig.js'
 
 test('create new siteconfig', async t => {
   const cfg = newSiteConfigStore()

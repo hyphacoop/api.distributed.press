@@ -6,9 +6,9 @@ import { ControllerType, createController } from 'ipfsd-ctl'
 import { Key } from 'ipfs-core-types/src/key/index.js'
 import MFSSync from 'ipfs-mfs-sync'
 import path from 'node:path'
-import fs from 'node:fs/promises'
 import Protocol, { Ctx, SyncOptions } from './interfaces.js'
 import { IPFSProtocolFields } from '../api/schemas.js'
+import getPort from 'get-port'
 
 // TODO: Make this configurable
 const MFS_ROOT = '/distributed-press/'
@@ -51,42 +51,39 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
   async load (): Promise<void> {
     if (this.ipfs === null) {
       if (this.options.provider === BUILTIN) {
+        const apiPort = await getPort()
+        const gatewayPort = await getPort()
+        const swarmPort = await getPort()
         const ipfsdOpts = {
           type: 'go' as ControllerType,
-          disposable: false,
-          test: false,
           remote: false,
           ipfsOptions: {
-            repo: this.options.path
+            // repo: this.options.path,
+            config: {
+              Addresses: {
+                API: `/ip4/127.0.0.1/tcp/${apiPort}`,
+                Gateway: `/ip4/127.0.0.1/tcp/${gatewayPort}`,
+                Swarm: [
+                  `/ip4/0.0.0.0/tcp/${swarmPort}`,
+                  `/ip6/::/tcp/${swarmPort}`,
+                  `/ip4/0.0.0.0/udp/${swarmPort}/quic`,
+                  `/ip6/::/udp/${swarmPort}/quic`
+                ]
+              }
+            }
           },
           ipfsHttpModule: IPFSHTTPClient,
           ipfsBin: GoIPFS.path()
         }
 
-        // TODO(@jackyzha0): refactor this with backoff/retry
-        // ask @rangermauve why this exists
-        let ipfsd = await createController(ipfsdOpts)
-        await ipfsd.init()
-
+        const ipfsd = await createController(ipfsdOpts)
         try {
+          await ipfsd.init()
           await ipfsd.start()
           await ipfsd.api.id()
-        } catch (e) {
-          console.log(e)
-          const lockFile = path.join(this.options.path, 'repo.lock')
-          const apiFile = path.join(this.options.path, 'api')
-          try {
-            await Promise.all([
-              fs.rm(lockFile),
-              fs.rm(apiFile)
-            ])
-            ipfsd = await createController(ipfsdOpts)
-            await ipfsd.start()
-            await ipfsd.api.id()
-          } catch (cause) {
-            const message = `Unable to start daemon due to extra lockfile. Please clear your ipfs folder at ${this.options.path} and try again.`
-            throw new Error(message, { cause })
-          }
+        } catch (cause) {
+          const message = 'Unable to start IPFS daemon'
+          throw new Error(message, { cause })
         }
 
         this.ipfs = ipfsd.api
@@ -124,6 +121,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
   }
 
   async sync (id: string, folderPath: string, options?: SyncOptions, ctx?: Ctx): Promise<Static<typeof IPFSProtocolFields>> {
+    ctx?.logger.info('[ipfs] Sync Start')
     const mfsLocation = path.posix.join(this.mfsRoot, id)
     const mfsSyncOptions = {
       noDelete: options?.ignoreDeletes ?? false
@@ -173,7 +171,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     })
 
     const cid = statResult.cid
-    ctx?.logger.info(`[ipfs] Got root CID: ${cid.toString()}, performing IPNS publish...`)
+    ctx?.logger.info(`[ipfs] Got root CID: ${cid.toString()}, performing IPNS publish (this may take a while)...`)
     const publishResult = await this.ipfs.name.publish(cid, {
       key: key.name
     })

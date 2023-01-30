@@ -1,6 +1,6 @@
 import test from 'ava'
 import { CAPABILITIES, makeJWTToken } from '../authorization/jwt.js'
-import { exampleSiteConfig } from '../config/sites.test.js'
+import { exampleSiteConfig } from '../fixtures/siteConfig.js'
 import { spawnTestServer } from '../fixtures/spawnServer.js'
 
 test('health check /healthz', async t => {

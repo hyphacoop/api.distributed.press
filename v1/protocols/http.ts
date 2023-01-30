@@ -7,7 +7,9 @@ export interface HTTPProtocolOptions {
 }
 
 export class HTTPProtocol implements Protocol<Static<typeof HTTPProtocolFields>> {
-  constructor (_options: HTTPProtocolOptions) {
+  options: HTTPProtocolOptions
+  constructor (options: HTTPProtocolOptions) {
+    this.options = options
   }
 
   async load (): Promise<void> {

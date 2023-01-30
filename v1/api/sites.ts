@@ -61,6 +61,7 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
       await store.publisher.registerSiteToPublisher(token.issuedTo, site.id)
     }
 
+    await store.fs.makeFolder(site.id)
     return await reply.send(site)
   })
 
