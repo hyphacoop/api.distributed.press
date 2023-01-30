@@ -2,7 +2,7 @@ import { Static } from '@sinclair/typebox'
 import * as IPFS from 'ipfs-core'
 import * as IPFSHTTPClient from 'ipfs-http-client'
 import * as GoIPFS from 'go-ipfs'
-import { ControllerType, createController } from 'ipfsd-ctl'
+import { ControllerOptions, ControllerType, createController } from 'ipfsd-ctl'
 import { Key } from 'ipfs-core-types/src/key/index.js'
 import MFSSync from 'ipfs-mfs-sync'
 import path from 'node:path'
@@ -54,11 +54,11 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         const apiPort = await getPort()
         const gatewayPort = await getPort()
         const swarmPort = await getPort()
-        const ipfsdOpts = {
-          type: 'go' as ControllerType,
+        const ipfsdOpts: ControllerOptions = {
+          type: 'go',
           remote: false,
           ipfsOptions: {
-            // repo: this.options.path,
+            repo: this.options.path,
             config: {
               Addresses: {
                 API: `/ip4/127.0.0.1/tcp/${apiPort}`,
