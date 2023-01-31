@@ -7,14 +7,13 @@ import { fileURLToPath } from 'url'
 import { exampleSiteConfig } from '../fixtures/siteConfig.js'
 import fs from 'fs'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-
 const paths = envPaths('distributed-press')
-const fixturePath = path.resolve(__dirname, '..', 'fixtures', 'site.tar.gz')
-const expectedFilePath = path.join("site", "index.html")
+const filename = fileURLToPath(import.meta.url)
+const dirname = path.dirname(filename)
+const fixturePath = path.resolve(dirname, '..', 'fixtures', 'site.tar.gz')
+const expectedFilePath = path.join('site', 'index.html')
 
-function newTempTestPath() {
+function newTempTestPath (): string {
   return path.join(paths.temp, 'fs-test', nanoid())
 }
 
@@ -24,7 +23,7 @@ test('basic file system test', async t => {
   await sfs.makeFolder(exampleSiteConfig.domain)
   await sfs.extract(fixturePath, exampleSiteConfig.domain)
 
-  const fp = path.join(testPath, "sites", exampleSiteConfig.domain, expectedFilePath)
+  const fp = path.join(testPath, 'sites', exampleSiteConfig.domain, expectedFilePath)
   await t.notThrowsAsync(fs.promises.stat(fp), 'index.html exists where we expect it to')
   await sfs.clear(exampleSiteConfig.domain)
   await t.throwsAsync(fs.promises.stat(fp), undefined, 'files should not exist after clear')

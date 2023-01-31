@@ -2,7 +2,7 @@ import { Static } from '@sinclair/typebox'
 import * as IPFS from 'ipfs-core'
 import * as IPFSHTTPClient from 'ipfs-http-client'
 import * as GoIPFS from 'go-ipfs'
-import { ControllerOptions, ControllerType, createController } from 'ipfsd-ctl'
+import { ControllerOptions, createController } from 'ipfsd-ctl'
 import { Key } from 'ipfs-core-types/src/key/index.js'
 import MFSSync from 'ipfs-mfs-sync'
 import path from 'node:path'
@@ -154,7 +154,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     }
   }
 
-  async publishSite (id: string, ctx?: Ctx): Promise<PublishResult> {
+  private async publishSite (id: string, ctx?: Ctx): Promise<PublishResult> {
     if (this.ipfs === null) {
       return await Promise.reject(new Error('IPFS must be initialized using load() before calling sync()'))
     }

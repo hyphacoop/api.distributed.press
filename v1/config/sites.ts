@@ -17,7 +17,7 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
   async create (cfg: Static<typeof NewSite>): Promise<Static<typeof Site>> {
     const id = cfg.domain
     if (!isValidHostname(id)) {
-      return await Promise.reject(new Error("Invalid hostname. Please ensure you leave out the port and protocol specifiers (e.g. no https://)"))
+      return await Promise.reject(new Error('Invalid hostname. Please ensure you leave out the port and protocol specifiers (e.g. no https://)'))
     }
 
     const obj: Static<typeof Site> = {

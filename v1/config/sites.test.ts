@@ -13,11 +13,11 @@ test('create new siteconfig with bad hostname should fail', async t => {
   const cfg = newSiteConfigStore()
   await t.throwsAsync(cfg.create({
     ...exampleSiteConfig,
-    domain: "https://hashostname.com",
+    domain: 'https://hashostname.com'
   }))
   await t.throwsAsync(cfg.create({
     ...exampleSiteConfig,
-    domain: "hasport.com:3030",
+    domain: 'hasport.com:3030'
   }))
 })
 

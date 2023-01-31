@@ -21,7 +21,7 @@ export class SiteFileSystem {
     return path.join(this.path, siteId)
   }
 
-  async makeFolder(siteId: string): Promise<string> {
+  async makeFolder (siteId: string): Promise<string> {
     const sitePath = this.getPath(siteId)
     return await makeDir(sitePath)
   }
