@@ -56,7 +56,6 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         const swarmPort = await getPort()
         const ipfsdOpts: ControllerOptions = {
           type: 'go',
-          remote: false,
           ipfsOptions: {
             repo: this.options.path,
             config: {

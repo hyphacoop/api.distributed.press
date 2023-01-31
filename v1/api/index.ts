@@ -47,7 +47,7 @@ async function apiBuilder (cfg: APIConfig): Promise<FastifyTypebox> {
     ? new MemoryLevel({ valueEncoding: 'json' })
     : new Level(cfgStoragePath, { valueEncoding: 'json' })
 
-  const protocolStoragePath = path.join(paths.cache, 'protocols')
+  const protocolStoragePath = path.join(basePath, 'protocols')
   const protocols = new ProtocolManager({
     ipfs: {
       path: path.join(protocolStoragePath, 'ipfs'),

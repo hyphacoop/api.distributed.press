@@ -19,13 +19,14 @@ export class ProtocolManager {
     this.hyper = new HyperProtocol(options.hyper)
   }
 
-  async load (): Promise<void> {
+  async load (): Promise<void[]> {
     const promises = [
       this.ipfs.load(),
-      this.hyper.load(),
+      // TODO(@mauve, @jacky): figure out why this cases segfaults and uv_loop complaining about too many open handles 
+      // this.hyper.load(),
       this.http.load()
     ]
-    await Promise.all(promises)
+    return await Promise.all(promises)
   }
 
   async unload (): Promise<void> {

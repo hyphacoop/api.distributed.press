@@ -1,9 +1,10 @@
-import { NewSite, ProtocolStatus, Site } from '../api/schemas'
+import { NewSite, ProtocolStatus, Site } from '../api/schemas.js'
 import { Static } from '@sinclair/typebox'
 import { Config } from './store.js'
 import { AbstractLevel } from 'abstract-level'
 import { ProtocolManager } from '../protocols/index.js'
-import { Ctx } from '../protocols/interfaces'
+import { Ctx } from '../protocols/interfaces.js'
+import isValidHostname from 'is-valid-hostname'
 
 export class SiteConfigStore extends Config<Static<typeof Site>> {
   protocols?: ProtocolManager
@@ -15,6 +16,10 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
 
   async create (cfg: Static<typeof NewSite>): Promise<Static<typeof Site>> {
     const id = cfg.domain
+    if (!isValidHostname(id)) {
+      return await Promise.reject(new Error("Invalid hostname. Please ensure you leave out the port and protocol specifiers (e.g. no https://)"))
+    }
+
     const obj: Static<typeof Site> = {
       ...cfg,
       id,

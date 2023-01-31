@@ -12,6 +12,7 @@ export async function spawnTestServer (): Promise<FastifyTypebox> {
   const storagePath = path.join(paths.temp, 'tests', nanoid())
   const { privateKey, publicKey } = generateKeyPair()
   makeDir.sync(path.join(storagePath, 'keys'))
+  makeDir.sync(path.join(storagePath, 'protocols'))
   fs.writeFileSync(path.join(storagePath, 'keys', 'private.key'), privateKey)
   fs.writeFileSync(path.join(storagePath, 'keys', 'public.key'), publicKey)
   return await apiBuilder({

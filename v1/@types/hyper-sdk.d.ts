@@ -6,7 +6,7 @@ declare module 'hyper-sdk' {
   }
 
   export type HyperOpts = Partial<{
-    storage: string
+    storage: string | boolean
     corestoreOpts: {}
     swarmOpts: {}
   }>

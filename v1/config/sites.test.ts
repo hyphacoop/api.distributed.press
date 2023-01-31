@@ -9,6 +9,18 @@ test('create new siteconfig', async t => {
   t.is(result.domain, exampleSiteConfig.domain)
 })
 
+test('create new siteconfig with bad hostname should fail', async t => {
+  const cfg = newSiteConfigStore()
+  await t.throwsAsync(cfg.create({
+    ...exampleSiteConfig,
+    domain: "https://hashostname.com",
+  }))
+  await t.throwsAsync(cfg.create({
+    ...exampleSiteConfig,
+    domain: "hasport.com:3030",
+  }))
+})
+
 test('update siteconfig', async t => {
   const cfg = newSiteConfigStore()
   const site = await cfg.create(exampleSiteConfig)

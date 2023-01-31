@@ -8,7 +8,7 @@ export function newSiteConfigStore (): SiteConfigStore {
 }
 
 export const exampleSiteConfig: Static<typeof NewSite> = {
-  domain: 'https://example.com',
+  domain: 'example.com',
   protocols: {
     http: true,
     ipfs: false,
