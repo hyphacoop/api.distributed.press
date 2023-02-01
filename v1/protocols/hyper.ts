@@ -25,7 +25,7 @@ export class HyperProtocol implements Protocol<Static<typeof HyperProtocolFields
   }
 
   async unload (): Promise<void> {
-    return await Promise.resolve()
+    return await this.sdk?.close()
   }
 
   async getDrive (id: string): Promise<SDK.Hyperdrive> {

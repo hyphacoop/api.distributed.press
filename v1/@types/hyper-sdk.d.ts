@@ -13,6 +13,7 @@ declare module 'hyper-sdk' {
 
   export class SDK {
     getDrive (nameOrKeyOrURL: string): Promise<Hyperdrive>
+    close (): Promise<void>
   }
 
   export function create (opts?: HyperOpts): Promise<SDK>

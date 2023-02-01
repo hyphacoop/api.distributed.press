@@ -34,7 +34,13 @@ const cfg: ServerI = {
   }
 }
 
-const server = await apiBuilder({ ...cfg, useLogging: true, useSwagger: true, usePrometheus: true })
+const server = await apiBuilder({
+  ...cfg,
+  useLogging: true,
+  useSwagger: true,
+  usePrometheus: true,
+  useSigIntHandler: true
+})
 server.listen(cfg, (err, _address) => {
   if (err != null) {
     server.log.error(err)

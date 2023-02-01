@@ -26,11 +26,11 @@ import { ProtocolManager } from '../protocols/index.js'
 const paths = envPaths('distributed-press')
 
 export type FastifyTypebox = FastifyInstance<
-RawServerDefault,
-RawRequestDefaultExpression<RawServerDefault>,
-RawReplyDefaultExpression<RawServerDefault>,
-FastifyBaseLogger,
-TypeBoxTypeProvider
+  RawServerDefault,
+  RawRequestDefaultExpression<RawServerDefault>,
+  RawReplyDefaultExpression<RawServerDefault>,
+  FastifyBaseLogger,
+  TypeBoxTypeProvider
 >
 
 export type APIConfig = Partial<{
@@ -38,9 +38,10 @@ export type APIConfig = Partial<{
   useSwagger: boolean
   usePrometheus: boolean
   useMemoryBackedDB: boolean
+  useSigIntHandler: boolean
 }> & ServerI
 
-async function apiBuilder (cfg: APIConfig): Promise<FastifyTypebox> {
+async function apiBuilder(cfg: APIConfig): Promise<FastifyTypebox> {
   const basePath = cfg.storage ?? paths.data
   const cfgStoragePath = path.join(basePath, 'cfg')
   const db = cfg.useMemoryBackedDB === true
@@ -89,12 +90,14 @@ async function apiBuilder (cfg: APIConfig): Promise<FastifyTypebox> {
   })
 
   // catch SIGINTs
-  process.on('SIGINT', () => {
-    server.log.warn('Caught SIGINT')
-    server.close(() => {
-      process.exit()
+  if (cfg.useSigIntHandler === true) {
+    process.on('SIGINT', () => {
+      server.log.warn('Caught SIGINT')
+      server.close(() => {
+        process.exit()
+      })
     })
-  })
+  }
 
   server.get('/healthz', () => {
     return 'ok\n'
