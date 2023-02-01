@@ -34,12 +34,12 @@ test('ipfs: basic e2e sync', async t => {
 
 test('hyper: basic e2e sync', async t => {
   const path = await newProtocolTestPath()
-  const ipfs = new HyperProtocol({
+  const hyper = new HyperProtocol({
     path
   })
 
-  await t.notThrowsAsync(ipfs.load(), 'initializing hyper should work')
-  const links = await ipfs.sync(exampleSiteConfig.domain, fixturePath)
+  await t.notThrowsAsync(hyper.load(), 'initializing hyper should work')
+  const links = await hyper.sync(exampleSiteConfig.domain, fixturePath)
   t.is(links.enabled, true)
   t.truthy(links.link)
 })
