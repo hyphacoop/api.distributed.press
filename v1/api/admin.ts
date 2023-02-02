@@ -1,15 +1,18 @@
 import { Static, Type } from '@sinclair/typebox'
 import { StoreI } from '../config/index.js'
 import { FastifyTypebox } from './index.js'
-import { NewAdmin } from './schemas.js'
+import { Admin, NewAdmin } from './schemas.js'
 
 export const adminRoutes = (store: StoreI) => async (server: FastifyTypebox): Promise<void> => {
   server.post<{
     Body: Static<typeof NewAdmin>
-    Reply: string // id of the admin
+    Reply: Static<typeof Admin>
   }>('/admin', {
     schema: {
       body: NewAdmin,
+      response: {
+        200: Admin
+      },
       description: 'Add a new admin.',
       tags: ['admin'],
       security: [{ jwt: [] }]

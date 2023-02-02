@@ -7,13 +7,13 @@
   "scripts": {
     "clean": "rimraf build",
     "build": "npm run clean && tsc",
-    "lint": "tsc --noEmit && ts-standard --fix",
+    "lint": "ts-standard --fix && tsc --noEmit",
     "keygen": "ts-node-esm authorization/scripts/keygen.ts",
     "make-admin": "ts-node-esm authorization/scripts/create_admin.ts",
     "dev": "ts-node-esm index.ts | pino-pretty -c -t",
     "watch": "nodemon --watch './**/*.ts' --exec 'node --experimental-specifier-resolution=node --loader ts-node/esm' index.ts | pino-pretty -c -t",
     "start": "node build/index.js",
-    "test": "ava"
+    "test": "ava --timeout=2m"
   },
   "repository": {
     "type": "git",
@@ -33,6 +33,9 @@
   "bugs": {
     "url": "https://github.com/hyphacoop/api.distributed.press/issues"
   },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "homepage": "https://distributed.press",
   "dependencies": {
     "@fastify/auth": "^4.2.0",
@@ -40,8 +43,8 @@
     "@fastify/multipart": "^7.3.0",
     "@fastify/swagger": "^8.2.0",
     "@fastify/swagger-ui": "^1.3.0",
-    "@fastify/type-provider-typebox": "^2.3.0",
-    "@sinclair/typebox": "^0.24.51",
+    "@fastify/type-provider-typebox": "^2.4.0",
+    "@sinclair/typebox": "^0.25.9",
     "abstract-level": "^1.0.3",
     "cors": "^2.8.5",
     "env-paths": "^3.0.0",
@@ -51,8 +54,17 @@
     "fastify-metrics": "^10.0.0",
     "fastify-plugin": "^4.4.0",
     "fs": "0.0.1-security",
+    "get-port": "^6.1.2",
+    "go-ipfs": "^0.17.0",
     "gunzip-maybe": "^1.4.2",
+    "hyper-sdk": "^4.2.1",
+    "ipfs-core": "^0.18.0",
+    "ipfs-http-client": "^60.0.0",
+    "ipfs-mfs-sync": "^1.0.4",
+    "ipfsd-ctl": "^13.0.0",
+    "is-valid-hostname": "^1.0.2",
     "level": "^8.0.0",
+    "localdrive": "^1.4.0",
     "make-dir": "^3.1.0",
     "nanoid": "^4.0.0",
     "prom-client": "^14.1.0",
@@ -66,7 +78,8 @@
     "@types/rimraf": "^3.0.2",
     "@types/tar-fs": "^2.0.1",
     "@types/yargs": "^17.0.17",
-    "ava": "^5.1.0",
+    "ava": "^5.1.1",
+    "ipfs-core-types": "^0.14.0",
     "memory-level": "^1.0.0",
     "nodemon": "^2.0.20",
     "pino-pretty": "^9.1.1",

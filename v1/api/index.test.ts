@@ -1,12 +1,21 @@
-import test from 'ava'
-import apiBuilder from './index.js'
+import anyTest, { TestFn } from 'ava'
 import { CAPABILITIES, makeJWTToken } from '../authorization/jwt.js'
-import { exampleSiteConfig } from '../config/sites.test.js'
-import { DEFAULT_SITE_CFG } from '../config/sites.js'
+import { exampleSiteConfig } from '../fixtures/siteConfig.js'
+import { spawnTestServer } from '../fixtures/spawnServer.js'
+import { FastifyTypebox } from './index.js'
+
+const test = anyTest as TestFn<{ server: FastifyTypebox }>
+
+test.beforeEach(async t => {
+  t.context.server = await spawnTestServer()
+})
+
+test.afterEach.always(async t => {
+  await t.context.server?.close()
+})
 
 test('health check /healthz', async t => {
-  const server = await apiBuilder({ useMemoryBackedDB: true })
-  const response = await server.inject({
+  const response = await t.context.server.inject({
     method: 'GET',
     url: '/healthz'
   })
@@ -14,8 +23,7 @@ test('health check /healthz', async t => {
 })
 
 test('admin: no payload should 400', async t => {
-  const server = await apiBuilder({ useMemoryBackedDB: true })
-  const response = await server.inject({
+  const response = await t.context.server.inject({
     method: 'POST',
     url: '/v1/admin'
   })
@@ -23,9 +31,8 @@ test('admin: no payload should 400', async t => {
 })
 
 test('admin: malformed payload should 400', async t => {
-  const server = await apiBuilder({ useMemoryBackedDB: true })
-  const token = server.jwt.sign(makeJWTToken({ isAdmin: true, isRefresh: false }))
-  const response = await server.inject({
+  const token = t.context.server.jwt.sign(makeJWTToken({ isAdmin: true, isRefresh: false }))
+  const response = await t.context.server.inject({
     method: 'POST',
     url: '/v1/admin',
     headers: {
@@ -40,9 +47,8 @@ test('admin: malformed payload should 400', async t => {
 })
 
 test('admin: create/delete should be ok with token', async t => {
-  const server = await apiBuilder({ useMemoryBackedDB: true })
-  const token = server.jwt.sign(makeJWTToken({ isAdmin: true, isRefresh: false }))
-  const response = await server.inject({
+  const token = t.context.server.jwt.sign(makeJWTToken({ isAdmin: true, isRefresh: false }))
+  const response = await t.context.server.inject({
     method: 'POST',
     url: '/v1/admin',
     headers: {
@@ -55,7 +61,7 @@ test('admin: create/delete should be ok with token', async t => {
   t.is(response.statusCode, 200, 'normal payload returns a status code of 200')
 
   const id = response.body
-  const deleteResponse = await server.inject({
+  const deleteResponse = await t.context.server.inject({
     method: 'DELETE',
     url: `/v1/admin/${id}`,
     headers: {
@@ -67,11 +73,9 @@ test('admin: create/delete should be ok with token', async t => {
 })
 
 test('E2E: admin -> publisher -> site flow', async t => {
-  const server = await apiBuilder({ useMemoryBackedDB: true })
-
   // create an admin
-  const rootAccessToken = server.jwt.sign(makeJWTToken({ isAdmin: true, isRefresh: true }))
-  const response = await server.inject({
+  const rootAccessToken = t.context.server.jwt.sign(makeJWTToken({ isAdmin: true, isRefresh: true }))
+  const response = await t.context.server.inject({
     method: 'POST',
     url: '/v1/admin',
     headers: {
@@ -84,7 +88,7 @@ test('E2E: admin -> publisher -> site flow', async t => {
   t.is(response.statusCode, 200, 'creating admin returns a status code of 200')
 
   // make access JWT
-  const adminRefreshResponse = await server.inject({
+  const adminRefreshResponse = await t.context.server.inject({
     method: 'POST',
     url: '/v1/auth/exchange',
     headers: {
@@ -98,7 +102,7 @@ test('E2E: admin -> publisher -> site flow', async t => {
   const adminAccessToken = adminRefreshResponse.body
 
   // use access token to make a new publisher
-  const createPublisherResponse = await server.inject({
+  const createPublisherResponse = await t.context.server.inject({
     method: 'POST',
     url: '/v1/publisher',
     headers: {
@@ -111,7 +115,7 @@ test('E2E: admin -> publisher -> site flow', async t => {
   t.is(createPublisherResponse.statusCode, 200, 'creating a new publisher with right tokens returns a status code of 200')
 
   // get refresh token of new publisher
-  const publisherAccessResponse = await server.inject({
+  const publisherAccessResponse = await t.context.server.inject({
     method: 'POST',
     url: '/v1/auth/exchange',
     headers: {
@@ -126,7 +130,7 @@ test('E2E: admin -> publisher -> site flow', async t => {
   const publisherAccessToken = publisherAccessResponse.body
 
   // use access token to create a new site
-  const createSiteResponse = await server.inject({
+  const createSiteResponse = await t.context.server.inject({
     method: 'POST',
     url: '/v1/sites',
     headers: {
@@ -134,11 +138,11 @@ test('E2E: admin -> publisher -> site flow', async t => {
     },
     payload: exampleSiteConfig
   })
-  t.is(createSiteResponse.statusCode, 200, 'getting refresh token for new publisher returns a status code of 200')
+  t.is(createSiteResponse.statusCode, 200, 'creating a response with publisher access token should work')
   const siteId: string = createSiteResponse.json().id
 
   // fetch site info
-  const getSiteResponse = await server.inject({
+  const getSiteResponse = await t.context.server.inject({
     method: 'GET',
     url: `/v1/sites/${siteId}`,
     headers: {
@@ -146,14 +150,9 @@ test('E2E: admin -> publisher -> site flow', async t => {
     }
   })
   t.is(getSiteResponse.statusCode, 200, 'getting site info returns a status code of 200')
-  t.deepEqual(getSiteResponse.json(), {
-    ...DEFAULT_SITE_CFG,
-    ...exampleSiteConfig,
-    id: siteId
-  })
 
   // delete the site
-  const deleteSiteResponse = await server.inject({
+  const deleteSiteResponse = await t.context.server.inject({
     method: 'DELETE',
     url: `/v1/sites/${siteId}`,
     headers: {

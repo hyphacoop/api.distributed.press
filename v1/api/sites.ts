@@ -8,6 +8,7 @@ import { CAPABILITIES, JWTPayloadT } from '../authorization/jwt.js'
 export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Promise<void> => {
   async function processRequestFiles (request: FastifyRequest, reply: FastifyReply, fn: (filePath: string) => Promise<void>): Promise<void> {
     try {
+      request.log.info('Downloading tarfile for site')
       const files = await request.saveRequestFiles({
         limits: {
           files: 1,
@@ -15,11 +16,15 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
         }
       })
       const tarballPath = files[0].filepath
+      request.log.info(`Processing tarball: ${tarballPath}`)
       await fn(tarballPath)
       return await reply.code(200).send()
     } catch (error) {
       if (error instanceof server.multipartErrors.RequestFileTooLargeError) {
         return await reply.code(400).send('tarball too large (limit 1GB)')
+      }
+      if (error instanceof Error) {
+        return await reply.code(500).send(error.stack)
       }
       return await reply.code(500).send()
     }
@@ -55,6 +60,8 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
     if (!request.user.capabilities.includes(CAPABILITIES.ADMIN)) {
       await store.publisher.registerSiteToPublisher(token.issuedTo, site.id)
     }
+
+    await store.fs.makeFolder(site.id)
     return await reply.send(site)
   })
 
@@ -102,8 +109,9 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
       return await reply.status(401).send('You must either own the site or be an admin to modify this resource')
     }
 
-    await store.sites.delete(id)
+    await store.sites.delete(id, { logger: request.log })
     await store.publisher.unregisterSiteFromAllPublishers(id)
+    await store.fs.clear(id)
     return await reply.send()
   })
 
@@ -129,7 +137,13 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
     if (!await checkOwnsSite(token, id)) {
       return await reply.status(401).send('You must either own the site or be an admin to modify this resource')
     }
-    await store.sites.update(id, request.body)
+
+    // update config entry
+    await store.sites.update(id, request.body.protocols)
+
+    // sync files with protocols
+    const path = store.fs.getPath(id)
+    await store.sites.sync(id, path, { logger: request.log })
     return await reply.code(200).send()
   })
 
@@ -143,12 +157,6 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
       description: 'Upload content to the site. Body must be a `tar.gz` file which will get extracted out and served. Any files missing from the tarball that are on disk, will be deleted from disk and the p2p archives.',
       tags: ['site'],
       consumes: ['multipart/form-data'],
-      body: {
-        type: 'object',
-        properties: {
-          file: { type: 'string', format: 'binary' }
-        }
-      },
       security: [{ jwt: [] }]
     },
     preHandler: server.auth([server.verifyPublisher, server.verifyAdmin])
@@ -159,8 +167,17 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
       return await reply.status(401).send('You must either own the site or be an admin to modify this resource')
     }
     return await processRequestFiles(request, reply, async (tarballPath) => {
+      request.log.info('Deleting old files')
       await store.fs.clear(id)
+
+      request.log.info('Extracting tarball')
       await store.fs.extract(tarballPath, id)
+
+      const path = store.fs.getPath(id)
+      request.log.info('Performing sync with site')
+      await store.sites.sync(id, path, { logger: request.log })
+
+      request.log.info('Finished sync')
     })
   })
 
@@ -174,12 +191,6 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
       description: 'Upload a patch with just the files you want added. This will only do a diff on the files in the tarball and will not delete any missing files.',
       tags: ['site'],
       consumes: ['multipart/form-data'],
-      body: {
-        type: 'object',
-        properties: {
-          file: { type: 'string', format: 'binary' }
-        }
-      },
       security: [{ jwt: [] }]
     },
     preHandler: server.auth([server.verifyPublisher])
@@ -190,7 +201,12 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
       return await reply.status(401).send('You must either own the site or be an admin to modify this resource')
     }
     return await processRequestFiles(request, reply, async (tarballPath) => {
+      // extract in place to existing directory
       await store.fs.extract(tarballPath, id)
+
+      // sync to protocols
+      const path = store.fs.getPath(id)
+      await store.sites.sync(id, path, { logger: request.log })
     })
   })
 }

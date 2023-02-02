@@ -1,5 +1,5 @@
 import { Type, Static } from '@sinclair/typebox'
-import { CAPABILITIES, getExpiry, subset, NewJWTPayload } from '../authorization/jwt.js'
+import { getExpiry, subset, NewJWTPayload } from '../authorization/jwt.js'
 import { StoreI } from '../config/index.js'
 import { FastifyTypebox } from './index.js'
 
@@ -22,9 +22,6 @@ export const authRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
     const token = request.user
     if (!subset(request.body.capabilities, token.capabilities)) {
       return await reply.status(401).send('Requested more permissions than original token has')
-    }
-    if (!token.capabilities.includes(CAPABILITIES.ADMIN) && request.body.capabilities.includes(CAPABILITIES.REFRESH)) {
-      return await reply.status(401).send("Can't create new refresh tokens if you are not an admin. Please contact an administrator")
     }
     const newToken = {
       ...token,

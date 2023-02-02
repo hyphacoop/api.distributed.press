@@ -8,20 +8,20 @@ function newAdminStore (): AdminStore {
 
 test('create new admin', async t => {
   const cfg = newAdminStore()
-  const id = await cfg.create({ name: 'test_admin' })
-  const result = await cfg.get(id)
+  const admin = await cfg.create({ name: 'test_admin' })
+  const result = await cfg.get(admin.id)
   t.deepEqual(result, {
-    id,
+    id: admin.id,
     name: 'test_admin'
   })
   const keys = await cfg.keys()
-  t.deepEqual(keys, [id])
+  t.deepEqual(keys, [admin.id])
 })
 
 test('delete admin', async t => {
   const cfg = newAdminStore()
-  const id = await cfg.create({ name: 'test_admin' })
+  const admin = await cfg.create({ name: 'test_admin' })
   t.is((await cfg.keys()).length, 1)
-  await cfg.delete(id)
+  await cfg.delete(admin.id)
   t.is((await cfg.keys()).length, 0)
 })

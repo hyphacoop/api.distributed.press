@@ -1,48 +1,37 @@
 import test from 'ava'
-import { DEFAULT_SITE_CFG, SiteConfigStore } from './sites.js'
-import { MemoryLevel } from 'memory-level'
-
-function newSiteConfigStore (): SiteConfigStore {
-  return new SiteConfigStore(new MemoryLevel({ valueEncoding: 'json' }))
-}
-
-export const exampleSiteConfig = {
-  domain: 'https://example.com',
-  publication: {
-    http: {},
-    ipfs: {},
-    hyper: {}
-  }
-}
+import { exampleSiteConfig, newSiteConfigStore } from '../fixtures/siteConfig.js'
 
 test('create new siteconfig', async t => {
   const cfg = newSiteConfigStore()
   const site = await cfg.create(exampleSiteConfig)
   const result = await cfg.get(site.id)
-  t.deepEqual(result, {
-    ...DEFAULT_SITE_CFG,
+  t.deepEqual(result.protocols, exampleSiteConfig.protocols)
+  t.is(result.domain, exampleSiteConfig.domain)
+})
+
+test('create new siteconfig with bad hostname should fail', async t => {
+  const cfg = newSiteConfigStore()
+  await t.throwsAsync(cfg.create({
     ...exampleSiteConfig,
-    id: site.id
-  })
+    domain: 'https://hashostname.com'
+  }))
+  await t.throwsAsync(cfg.create({
+    ...exampleSiteConfig,
+    domain: 'hasport.com:3030'
+  }))
 })
 
 test('update siteconfig', async t => {
   const cfg = newSiteConfigStore()
   const site = await cfg.create(exampleSiteConfig)
-  const result = await cfg.get(site.id)
   const updated = {
-    ...result,
-    domain: 'https://newdomain.org',
-    publication: {
-      ...result.publication,
-      ipfs: {
-        enabled: true
-      }
-    }
+    ...site.protocols,
+    hyper: true
   }
+
   await cfg.update(site.id, updated)
   const newResult = await cfg.get(site.id)
-  t.deepEqual(newResult, updated)
+  t.is(newResult.protocols.hyper, true)
 })
 
 test('delete siteconfig', async t => {

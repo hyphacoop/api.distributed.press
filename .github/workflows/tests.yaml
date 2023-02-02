@@ -1,14 +1,10 @@
 name: Tests 
 
-on:
-  push:
-    branches: [ main, v1 ]
-  pull_request:
-    branches: [ main, v1 ]
+on: [ push, pull_request ]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     defaults:
       run:
         working-directory: v1

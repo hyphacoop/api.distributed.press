@@ -1,14 +1,16 @@
-import { Static } from '@sinclair/typebox'
-import { Site } from '../api/schemas'
+import { FastifyBaseLogger } from 'fastify'
 
-interface SyncOptions {
+export interface SyncOptions {
   ignoreDeletes: boolean
 }
 
-export default abstract class Protocol<ProtocolConfig> {
+export interface Ctx {
+  logger: FastifyBaseLogger
+}
+
+export default abstract class Protocol<ProtocolFields> {
   abstract load (): Promise<void>
-  abstract create (config: ProtocolConfig): Promise<Static<typeof Site>>
-  abstract sync (info: Static<typeof Site>, folderPath: string, options: SyncOptions): Promise<void>
-  abstract delete (info: Static<typeof Site>): Promise<void>
-  abstract delete (config: ProtocolConfig): Promise<void>
+  abstract unload (): Promise<void>
+  abstract sync (id: string, folderPath: string, options?: SyncOptions, ctx?: Ctx): Promise<ProtocolFields>
+  abstract unsync (id: string, cfg: ProtocolFields, ctx?: Ctx): Promise<void>
 }
