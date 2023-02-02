@@ -1,4 +1,4 @@
-import anyTest, {TestFn} from 'ava'
+import anyTest, { TestFn } from 'ava'
 import envPaths from 'env-paths'
 import makeDir from 'make-dir'
 import { nanoid } from 'nanoid'
@@ -20,7 +20,7 @@ async function newProtocolTestPath (): Promise<string> {
   return p
 }
 
-const test = anyTest as TestFn<{protocol: Protocol<any>}>;
+const test = anyTest as TestFn<{ protocol: Protocol<any> }>
 test.afterEach.always(async t => {
   await t.context.protocol?.unload()
 })

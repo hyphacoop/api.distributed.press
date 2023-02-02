@@ -1,9 +1,9 @@
-import anyTest, {TestFn} from 'ava'
+import anyTest, { TestFn } from 'ava'
 import { CAPABILITIES, makeJWTToken } from '../authorization/jwt.js'
 import { spawnTestServer } from '../fixtures/spawnServer.js'
 import { FastifyTypebox } from './index.js'
 
-const test = anyTest as TestFn<{server: FastifyTypebox}>
+const test = anyTest as TestFn<{ server: FastifyTypebox }>
 
 test.beforeEach(async t => {
   t.context.server = await spawnTestServer()

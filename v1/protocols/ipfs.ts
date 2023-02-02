@@ -40,7 +40,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
   mfsRoot: string
   mfsSync: MFSSync | null
 
-  constructor(options: IPFSProtocolOptions) {
+  constructor (options: IPFSProtocolOptions) {
     this.options = options
     this.onCleanup = []
     this.ipfs = options.ipfs ?? null
@@ -48,7 +48,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     this.mfsSync = null
   }
 
-  async load(): Promise<void> {
+  async load (): Promise<void> {
     if (this.ipfs === null) {
       if (this.options.provider === BUILTIN) {
         const apiPort = await getPort()
@@ -113,13 +113,13 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     this.mfsSync = new MFSSync(this.ipfs)
   }
 
-  async unload(): Promise<void> {
+  async unload (): Promise<void> {
     for (const onCleanup of this.onCleanup) {
       await onCleanup()
     }
   }
 
-  async sync(id: string, folderPath: string, options?: SyncOptions, ctx?: Ctx): Promise<Static<typeof IPFSProtocolFields>> {
+  async sync (id: string, folderPath: string, options?: SyncOptions, ctx?: Ctx): Promise<Static<typeof IPFSProtocolFields>> {
     ctx?.logger.info('[ipfs] Sync Start')
     const mfsLocation = path.posix.join(this.mfsRoot, id)
     const mfsSyncOptions = {
@@ -154,7 +154,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     }
   }
 
-  private async publishSite(id: string, ctx?: Ctx): Promise<PublishResult> {
+  private async publishSite (id: string, ctx?: Ctx): Promise<PublishResult> {
     if (this.ipfs === null) {
       return await Promise.reject(new Error('IPFS must be initialized using load() before calling sync()'))
     }
@@ -183,7 +183,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     }
   }
 
-  async unsync(id: string, _site: Static<typeof IPFSProtocolFields>, ctx?: Ctx): Promise<void> {
+  async unsync (id: string, _site: Static<typeof IPFSProtocolFields>, ctx?: Ctx): Promise<void> {
     if (this.ipfs === null) {
       return await Promise.reject(new Error('IPFS must be initialized using load() before calling sync()'))
     }
@@ -199,7 +199,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
   }
 }
 
-async function makeOrGetKey(ipfs: IPFS.IPFS, name: string): Promise<Key> {
+async function makeOrGetKey (ipfs: IPFS.IPFS, name: string): Promise<Key> {
   const list = await ipfs.key.list()
 
   for (const key of list) {

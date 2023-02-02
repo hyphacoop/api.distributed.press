@@ -26,11 +26,11 @@ import { ProtocolManager } from '../protocols/index.js'
 const paths = envPaths('distributed-press')
 
 export type FastifyTypebox = FastifyInstance<
-  RawServerDefault,
-  RawRequestDefaultExpression<RawServerDefault>,
-  RawReplyDefaultExpression<RawServerDefault>,
-  FastifyBaseLogger,
-  TypeBoxTypeProvider
+RawServerDefault,
+RawRequestDefaultExpression<RawServerDefault>,
+RawReplyDefaultExpression<RawServerDefault>,
+FastifyBaseLogger,
+TypeBoxTypeProvider
 >
 
 export type APIConfig = Partial<{
@@ -41,7 +41,7 @@ export type APIConfig = Partial<{
   useSigIntHandler: boolean
 }> & ServerI
 
-async function apiBuilder(cfg: APIConfig): Promise<FastifyTypebox> {
+async function apiBuilder (cfg: APIConfig): Promise<FastifyTypebox> {
   const basePath = cfg.storage ?? paths.data
   const cfgStoragePath = path.join(basePath, 'cfg')
   const db = cfg.useMemoryBackedDB === true
