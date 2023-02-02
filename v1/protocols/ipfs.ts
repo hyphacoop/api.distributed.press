@@ -126,7 +126,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       noDelete: options?.ignoreDeletes ?? false
     }
     if (this.mfsSync === null || this.ipfs === null) {
-      return await Promise.reject(new Error('MFS must be initialized using load() before calling sync()'))
+      throw new Error('MFS must be initialized using load() before calling sync()')
     }
 
     // Make a folder in MFS
@@ -156,7 +156,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
   private async publishSite (id: string, ctx?: Ctx): Promise<PublishResult> {
     if (this.ipfs === null) {
-      return await Promise.reject(new Error('IPFS must be initialized using load() before calling sync()'))
+      throw new Error('IPFS must be initialized using load() before calling sync()')
     }
 
     ctx?.logger.info('[ipfs] Sync start')
@@ -185,7 +185,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
   async unsync (id: string, _site: Static<typeof IPFSProtocolFields>, ctx?: Ctx): Promise<void> {
     if (this.ipfs === null) {
-      return await Promise.reject(new Error('IPFS must be initialized using load() before calling sync()'))
+      throw new Error('IPFS must be initialized using load() before calling sync()')
     }
 
     const mfsLocation = path.posix.join(this.mfsRoot, id)

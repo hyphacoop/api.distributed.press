@@ -34,7 +34,7 @@ export class HyperProtocol implements Protocol<Static<typeof HyperProtocolFields
     }
 
     if (this.sdk === null) {
-      return await Promise.reject(new Error('Hypercore SDK called before being initialized'))
+      throw new Error('Hypercore SDK called before being initialized')
     }
 
     const drive = await this.sdk.getDrive(id)
