@@ -1,0 +1,45 @@
+
+# Vars are prefixed with distributed_press_
+
+- name: Ensure user exists for DP service
+  user:
+    name: "{{distributed_press_user}}"
+    append: true
+    # TODO: is this needed?
+    groups: adm
+    shell: /bin/bash
+    comment: User for the distributed.press API server
+
+- name: "Set up node+npm"
+  include_role:
+    name: geerlingguy.nodejs
+
+- name: Clone or update DP codebase
+  git:
+    repo: "{{distributed_press_git_repo}}"
+    version: "{{distributed_press_git_branch}}"
+    dest: "{{distributed_press_source}}"
+    clone: yes
+    update: yes
+
+- name: Install NPM Dependencies
+  shell: |
+    cd {{distributed_press_source}}
+    npm install
+
+- name: Add distributed.press systemd service
+  template:
+    src: distributed.press.service.j2
+    dest: "/etc/systemd/system/{{distributed_press_service_name}}.service"
+
+- name: "Stop distributed.press service to recompile"
+  systemd:
+    state: stopped
+    name: "{{distributed_press_service_name}}"
+
+- name: "Run distributed.press service"
+  systemd:
+    daemon_reload: true
+    state: restarted
+    enabled: true
+    name: "{{distributed_press_service_name}}"
