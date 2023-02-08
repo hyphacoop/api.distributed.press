@@ -2,9 +2,9 @@
 Description=Distributed Press API Server
 After=network-online.target
 [Service]
-WorkingDirectory={{distributed_press_source}}
+WorkingDirectory={{distributed_press_source}}/v1
 User={{distributed_press_user}}
-ExecStart=npm run start -- --port {{distributed_press_port}} --host {{distributed_press_host}} --ipfs-provider {{distributed_press_ipfs_provider}}
+ExecStart=npx ts-node-esm index.ts --port {{distributed_press_port}} --host {{distributed_press_host}} --ipfs-provider {{distributed_press_ipfs_provider}}
 Restart=always
 RestartSec=3
 LimitNOFILE=4096

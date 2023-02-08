@@ -14,19 +14,6 @@
   include_role:
     name: geerlingguy.nodejs
 
-- name: Clone or update DP codebase
-  git:
-    repo: "{{distributed_press_git_repo}}"
-    version: "{{distributed_press_git_branch}}"
-    dest: "{{distributed_press_source}}"
-    clone: yes
-    update: yes
-
-- name: Install NPM Dependencies
-  shell: |
-    cd {{distributed_press_source}}
-    npm install
-
 - name: Add distributed.press systemd service
   template:
     src: distributed.press.service.j2
@@ -36,6 +23,30 @@
   systemd:
     state: stopped
     name: "{{distributed_press_service_name}}"
+
+- name: Clone or update DP codebase
+  become: yes
+  become_user: "{{distributed_press_user}}"
+  git:
+    repo: "{{distributed_press_git_repo}}"
+    version: "{{distributed_press_git_branch}}"
+    dest: "{{distributed_press_source}}"
+    clone: yes
+    update: yes
+
+- name: Install NPM Dependencies
+  become: yes
+  become_user: "{{distributed_press_user}}"
+  shell: |
+    cd {{distributed_press_source}}/v1
+    npm install
+
+#- name: Build service
+#  become: yes
+#  become_user: "{{distributed_press_user}}"
+#  shell: |
+#    cd {{distributed_press_source}}/v1
+#    npm run build
 
 - name: "Run distributed.press service"
   systemd:
