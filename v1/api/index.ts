@@ -22,6 +22,7 @@ import { registerAuth } from '../authorization/cfg.js'
 import { authRoutes } from './auth.js'
 import { ServerI } from '../index.js'
 import { ProtocolManager } from '../protocols/index.js'
+import { initDnsServer } from '../dns/index.js'
 
 const paths = envPaths('distributed-press')
 
@@ -66,6 +67,9 @@ async function apiBuilder (cfg: APIConfig): Promise<FastifyTypebox> {
   server.log.info('Initializing protocols')
   await protocols.load()
   const store = new Store(cfg, db, protocols)
+
+  const dns = await initDnsServer(store.sites, server.log) 
+
   server.log.info('Done')
   await registerAuth(cfg, server, store)
   await server.register(multipart)
@@ -80,6 +84,7 @@ async function apiBuilder (cfg: APIConfig): Promise<FastifyTypebox> {
   // handle cleanup on shutdown
   server.addHook('onClose', async server => {
     server.log.info('Begin shutdown, unloading protocols...')
+    await dns.close()
     await protocols.unload()
       .then(() => {
         server.log.info('Done')
