@@ -22,10 +22,6 @@ export async function spawnTestServer (): Promise<FastifyTypebox> {
     dnsport: await getPort(),
     host: 'localhost',
     storage: storagePath,
-    ipfsProvider: BUILTIN,
-    dns: {
-      server: '127.0.0.1:53',
-      domains: []
-    }
+    ipfsProvider: BUILTIN
   })
 }

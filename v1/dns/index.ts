@@ -2,40 +2,40 @@ import dns2 from 'dns2'
 import { FastifyBaseLogger } from 'fastify'
 import { SiteConfigStore } from '../config/sites.js'
 
-export async function initDnsServer(port: number, store: SiteConfigStore, logger: FastifyBaseLogger): Promise<ReturnType<typeof dns2.createServer>> {
+export async function initDnsServer (port: number, store: SiteConfigStore, logger: FastifyBaseLogger): Promise<ReturnType<typeof dns2.createServer>> {
   const server = dns2.createServer({
     udp: true,
-    handle: async (request, send, rinfo) => {
+    handle: (request, send, rinfo) => {
       const response = dns2.Packet.createResponseFromRequest(request)
       const [{ name }] = request.questions
       logger.info(`[dns] ${rinfo.address}:${rinfo.port} asked for ${name}`)
 
-      const trimmedName = name.replace("_dnslink.", "")
-      const { links } = await store.get(trimmedName)
-
-      // TODO(support http and hyper)
-
-      if (links.ipfs !== undefined) {
-        response.answers.push({
-          name,
-          type: dns2.Packet.TYPE.TXT,
-          class: dns2.Packet.CLASS.IN,
-          ttl: 60,
-          data: `dnslink=${links.ipfs.link}`
+      const trimmedName = name.replace('_dnslink.', '')
+      store.get(trimmedName)
+        .then(({ links }) => {
+          // TODO(support http and hyper)
+          if (links.ipfs !== undefined) {
+            response.answers.push({
+              name,
+              type: dns2.Packet.TYPE.TXT,
+              class: dns2.Packet.CLASS.IN,
+              ttl: 60,
+              data: `dnslink=${links.ipfs.link}`
+            })
+          }
+          send(response)
         })
-      }
-
-      send(response)
+        .catch((error) => logger.error(`[dns] error handling request: ${error as string}`))
     }
   })
 
   // add logging handlers
   server
     .on('requestError', (error) => {
-      logger.warn(`[dns] error handling request: ${error}`)
+      logger.error(`[dns] error handling request: ${error as string}`)
     })
     .on('listening', () => {
-      logger.info(`[dns] starting DNS server on ${port}`)
+      logger.info(`[dns] starting DNS server on port ${port}`)
     })
     .on('close', () => {
       logger.info('[dns] closing DNS server')
@@ -43,7 +43,7 @@ export async function initDnsServer(port: number, store: SiteConfigStore, logger
 
   await server.listen({
     udp: port,
-    tcp: port,
+    tcp: port
   })
 
   return server

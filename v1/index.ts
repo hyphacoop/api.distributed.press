@@ -19,10 +19,6 @@ export interface ServerI {
   host: string
   storage: string
   ipfsProvider: IPFSProvider
-  dns: {
-    server: string
-    domains: string[]
-  }
 }
 
 const cfg: ServerI = {
@@ -30,11 +26,7 @@ const cfg: ServerI = {
   dnsport: Number(argv.dnsport ?? process.env.DNSPORT ?? '53'),
   host: argv.host ?? process.env.HOST ?? 'localhost',
   storage: argv.data ?? paths.data,
-  ipfsProvider: (argv.ipfsProvider as IPFSProvider) ?? BUILTIN,
-  dns: {
-    server: '127.0.0.1:53',
-    domains: []
-  }
+  ipfsProvider: (argv.ipfsProvider as IPFSProvider) ?? BUILTIN
 }
 
 const server = await apiBuilder({
