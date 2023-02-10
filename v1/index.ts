@@ -7,6 +7,7 @@ const paths = envPaths('distributed-press')
 
 const argv = yargs(hideBin(process.argv)).options({
   port: { type: 'number' },
+  dnsport: { type: 'number' },
   host: { type: 'string' },
   data: { type: 'string' },
   ipfsProvider: { type: 'string' }
@@ -14,6 +15,7 @@ const argv = yargs(hideBin(process.argv)).options({
 
 export interface ServerI {
   port: number
+  dnsport: number
   host: string
   storage: string
   ipfsProvider: IPFSProvider
@@ -25,6 +27,7 @@ export interface ServerI {
 
 const cfg: ServerI = {
   port: Number(argv.port ?? process.env.PORT ?? '8080'),
+  dnsport: Number(argv.dnsport ?? process.env.DNSPORT ?? '53'),
   host: argv.host ?? process.env.HOST ?? 'localhost',
   storage: argv.data ?? paths.data,
   ipfsProvider: (argv.ipfsProvider as IPFSProvider) ?? BUILTIN,

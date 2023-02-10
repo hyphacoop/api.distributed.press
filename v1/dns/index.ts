@@ -1,12 +1,12 @@
-import dns2, { Packet } from 'dns2'
+import dns2 from 'dns2'
 import { FastifyBaseLogger } from 'fastify'
 import { SiteConfigStore } from '../config/sites.js'
 
-export async function initDnsServer(store: SiteConfigStore, logger: FastifyBaseLogger): Promise<ReturnType<typeof dns2.createServer>> {
+export async function initDnsServer(port: number, store: SiteConfigStore, logger: FastifyBaseLogger): Promise<ReturnType<typeof dns2.createServer>> {
   const server = dns2.createServer({
     udp: true,
     handle: async (request, send, rinfo) => {
-      const response = Packet.createResponseFromRequest(request)
+      const response = dns2.Packet.createResponseFromRequest(request)
       const [{ name }] = request.questions
       logger.info(`[dns] ${rinfo.address}:${rinfo.port} asked for ${name}`)
 
@@ -18,8 +18,8 @@ export async function initDnsServer(store: SiteConfigStore, logger: FastifyBaseL
       if (links.ipfs !== undefined) {
         response.answers.push({
           name,
-          type: Packet.TYPE.TXT,
-          class: Packet.CLASS.IN,
+          type: dns2.Packet.TYPE.TXT,
+          class: dns2.Packet.CLASS.IN,
           ttl: 60,
           data: `dnslink=${links.ipfs.link}`
         })
@@ -35,15 +35,15 @@ export async function initDnsServer(store: SiteConfigStore, logger: FastifyBaseL
       logger.warn(`[dns] error handling request: ${error}`)
     })
     .on('listening', () => {
-      logger.info('[dns] starting DNS server')
+      logger.info(`[dns] starting DNS server on ${port}`)
     })
     .on('close', () => {
       logger.info('[dns] closing DNS server')
     })
 
   await server.listen({
-    udp: 5333,
-    tcp: 5333,
+    udp: port,
+    tcp: port,
   })
 
   return server
