@@ -39,7 +39,7 @@
   become_user: "{{distributed_press_user}}"
   shell: |
     cd {{distributed_press_source}}/v1
-    npm install
+    npm ci
 
 #- name: Build service
 #  become: yes
