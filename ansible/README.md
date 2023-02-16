@@ -15,5 +15,6 @@ Dependencies:
 - `ansible-galaxy install -r ./requirements.yml`
 
 ```
+# execute the Ansible playbook with user defined variables
 ansible-playbook distributed_press.yml -i inventory.yml
 ```
