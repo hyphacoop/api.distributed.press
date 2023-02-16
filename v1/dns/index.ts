@@ -2,7 +2,12 @@ import dns2 from 'dns2'
 import { FastifyBaseLogger } from 'fastify'
 import { SiteConfigStore } from '../config/sites.js'
 
-export async function initDnsServer (port: number, store: SiteConfigStore, logger: FastifyBaseLogger): Promise<ReturnType<typeof dns2.createServer>> {
+function protocolToMultiformat(link: string): string {
+  const [protocol, path] = link.split("://")
+  return `/${protocol}/${path}`
+}
+
+export async function initDnsServer(port: number, store: SiteConfigStore, logger: FastifyBaseLogger): Promise<ReturnType<typeof dns2.createServer>> {
   const server = dns2.createServer({
     udp: true,
     handle: (request, send, rinfo) => {
@@ -13,14 +18,22 @@ export async function initDnsServer (port: number, store: SiteConfigStore, logge
       const trimmedName = name.replace('_dnslink.', '')
       store.get(trimmedName)
         .then(({ links }) => {
-          // TODO(support http and hyper)
           if (links.ipfs !== undefined) {
             response.answers.push({
               name,
               type: dns2.Packet.TYPE.TXT,
               class: dns2.Packet.CLASS.IN,
               ttl: 60,
-              data: `dnslink=${links.ipfs.link}`
+              data: `dnslink=${protocolToMultiformat(links.ipfs.pubKey)}`
+            })
+          }
+          if (links.hyper !== undefined) {
+            response.answers.push({
+              name,
+              type: dns2.Packet.TYPE.TXT,
+              class: dns2.Packet.CLASS.IN,
+              ttl: 60,
+              data: `dnslink=${protocolToMultiformat(links.hyper.link)}`
             })
           }
           send(response)

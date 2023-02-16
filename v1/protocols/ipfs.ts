@@ -146,7 +146,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     const pubKey = `ipns://${publishKey}/`
     return {
       enabled: true,
-      link: pubKey,
+      link: `_dnslink.${id}`,
       // TODO: Pass in gateway parameters in options (DP domain name?)
       gateway: `https://gateway.ipfs.io/ipns/${publishKey}/`,
       cid,
