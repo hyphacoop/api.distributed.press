@@ -8,7 +8,7 @@ This example will install distributed.press on `dp.chanterelle.xyz` listening on
 
 You can edit `inventory.yml` to specify your own domain to run the scripts on as well as any variables you wish to set.
 
-Prerequisits:
+Dependencies:
 
 - Python 3
 - Ansible
