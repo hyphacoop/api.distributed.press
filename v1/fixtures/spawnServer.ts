@@ -6,6 +6,7 @@ import { generateKeyPair } from '../authorization/jwt.js'
 import apiBuilder, { FastifyTypebox } from '../api/index.js'
 import { nanoid } from 'nanoid'
 import { BUILTIN } from '../protocols/ipfs.js'
+import getPort from 'get-port'
 
 const paths = envPaths('distributed-press')
 export async function spawnTestServer (): Promise<FastifyTypebox> {
@@ -18,12 +19,9 @@ export async function spawnTestServer (): Promise<FastifyTypebox> {
   return await apiBuilder({
     useMemoryBackedDB: true,
     port: 8080,
+    dnsport: await getPort(),
     host: 'localhost',
     storage: storagePath,
-    ipfsProvider: BUILTIN,
-    dns: {
-      server: '127.0.0.1:53',
-      domains: []
-    }
+    ipfsProvider: BUILTIN
   })
 }
