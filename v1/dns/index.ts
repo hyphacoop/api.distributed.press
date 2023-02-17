@@ -33,7 +33,7 @@ export async function initDnsServer(port: number, store: SiteConfigStore, logger
               type: dns2.Packet.TYPE.TXT,
               class: dns2.Packet.CLASS.IN,
               ttl: 60,
-              data: `dnslink=${protocolToMultiformat(links.hyper.link)}`
+              data: `dnslink=${protocolToMultiformat(links.hyper.raw)}`
             })
           }
           send(response)
