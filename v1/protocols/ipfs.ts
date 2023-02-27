@@ -138,7 +138,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
     // Sync local disk files to MFS
     for await (const change of this.mfsSync.fromFSToMFS(folderPath, mfsLocation, mfsSyncOptions)) {
-      ctx?.logger.debug(change)
+      ctx?.logger.debug(`[ipfs] ${change.op}: ${change.path}`)
     }
 
     // Publish site and return meta
