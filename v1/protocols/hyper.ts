@@ -53,7 +53,6 @@ export class HyperProtocol implements Protocol<Static<typeof HyperProtocolFields
 
     const mirror = fs.mirror(drive)
 
-    // TODO: Should we log the changes somewhere like IPFS?
     for await (const change of mirror) {
       ctx?.logger.debug(`[hyper] ${change.op}: ${change.key}`)
     }
