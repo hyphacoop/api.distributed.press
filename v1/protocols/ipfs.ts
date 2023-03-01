@@ -121,6 +121,8 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       throw new Error('IPFS must be initialized using load() before calling sync()')
     }
 
+    // By default, inline empty directory CID
+    let toPublish = '/ipfs/bafyaabakaieac/'
     let lastEntry = null
 
     const glob = IPFS.globSource(folderPath, '**/*')
@@ -135,11 +137,9 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       lastEntry = file
     }
 
-    if (lastEntry == null) {
-      throw new Error('No files found')
+    if (lastEntry !== null) {
+      toPublish = `/ipfs/${lastEntry.cid.toString()}/`
     }
-
-    const ipfsPath = `/ipfs/${lastEntry.cid.toString()}/`
 
     try {
       await this.ipfs.files.rm(mfsLocation, {
@@ -151,7 +151,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       }
     }
 
-    await this.ipfs.files.cp(ipfsPath, mfsLocation, {
+    await this.ipfs.files.cp(toPublish, mfsLocation, {
       cidVersion: 1,
       parents: true,
       flush: true
