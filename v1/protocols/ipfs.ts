@@ -121,13 +121,6 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       throw new Error('IPFS must be initialized using load() before calling sync()')
     }
 
-    // Make a folder in MFS
-    await this.ipfs.files.mkdir(mfsLocation, {
-      parents: true,
-      flush: true,
-      cidVersion: 1
-    })
-
     let lastEntry = null
 
     const glob = IPFS.globSource(folderPath, '**/*')
@@ -148,7 +141,15 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
     const ipfsPath = `/ipfs/${lastEntry.cid.toString()}/`
 
-    await this.ipfs.files.cp(ipfsPath, mfsLocation)
+    await this.ipfs.files.rm(mfsLocation, {
+      recursive: true
+    })
+
+    await this.ipfs.files.cp(ipfsPath, mfsLocation, {
+      cidVersion: 1,
+      parents: true,
+      flush: true
+    })
 
     // Publish site and return meta
     const { publishKey, cid } = await this.publishSite(id, ctx)
