@@ -61,7 +61,7 @@ export class HyperProtocol implements Protocol<Static<typeof HyperProtocolFields
     const raw = drive.url
     const link = raw
     // TODO: Pass in gateway from config
-    const gateway = 'https://hyper.hypha.coop/hyper/${drive.id}/'
+    const gateway = `https://hyper.hypha.coop/hyper/${drive.id}/`
 
     ctx?.logger.info(`[hyper] Published: ${link}`)
 

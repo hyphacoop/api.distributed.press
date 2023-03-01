@@ -4,7 +4,6 @@ import * as IPFSHTTPClient from 'ipfs-http-client'
 import * as GoIPFS from 'go-ipfs'
 import { ControllerOptions, createController } from 'ipfsd-ctl'
 import { Key } from 'ipfs-core-types/src/key/index.js'
-import MFSSync from 'ipfs-mfs-sync'
 import path from 'node:path'
 import Protocol, { Ctx, SyncOptions } from './interfaces.js'
 import { IPFSProtocolFields } from '../api/schemas.js'
@@ -38,14 +37,12 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
   onCleanup: CleanupCallback[]
   ipfs: IPFS.IPFS | null
   mfsRoot: string
-  mfsSync: MFSSync | null
 
   constructor (options: IPFSProtocolOptions) {
     this.options = options
     this.onCleanup = []
     this.ipfs = options.ipfs ?? null
     this.mfsRoot = options.mfsRoot ?? MFS_ROOT
-    this.mfsSync = null
   }
 
   async load (): Promise<void> {
@@ -109,8 +106,6 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         })
       }
     }
-
-    this.mfsSync = new MFSSync(this.ipfs)
   }
 
   async unload (): Promise<void> {
@@ -122,11 +117,8 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
   async sync (id: string, folderPath: string, options?: SyncOptions, ctx?: Ctx): Promise<Static<typeof IPFSProtocolFields>> {
     ctx?.logger.info('[ipfs] Sync Start')
     const mfsLocation = path.posix.join(this.mfsRoot, id)
-    const mfsSyncOptions = {
-      noDelete: options?.ignoreDeletes ?? false
-    }
-    if (this.mfsSync === null || this.ipfs === null) {
-      throw new Error('MFS must be initialized using load() before calling sync()')
+    if (this.ipfs === null) {
+      throw new Error('IPFS must be initialized using load() before calling sync()')
     }
 
     // Make a folder in MFS
@@ -136,10 +128,27 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       cidVersion: 1
     })
 
-    // Sync local disk files to MFS
-    for await (const change of this.mfsSync.fromFSToMFS(folderPath, mfsLocation, mfsSyncOptions)) {
-      ctx?.logger.debug(`[ipfs] ${change.op}: ${change.path}`)
+    let lastEntry = null
+
+    const glob = IPFS.globSource(folderPath, '**/*')
+    const files = this.ipfs.addAll(glob, {
+      pin: false,
+      wrapWithDirectory: true,
+      cidVersion: 1
+    })
+
+    for await (const file of files) {
+      ctx?.logger.debug(`[ipfs] added ${file.path}`)
+      lastEntry = file
     }
+
+    if (lastEntry == null) {
+      throw new Error('No files found')
+    }
+
+    const ipfsPath = `/ipfs/${lastEntry.cid.toString()}/`
+
+    await this.ipfs.files.cp(ipfsPath, mfsLocation)
 
     // Publish site and return meta
     const { publishKey, cid } = await this.publishSite(id, ctx)

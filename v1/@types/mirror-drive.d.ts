@@ -7,6 +7,6 @@ declare module 'mirror-drive' {
     constructor (drive1: DriveLike, drive2: DriveLike)
     get count (): number
     done (): Promise<void>
-    [Symbol.asyncIterator](): AsyncIterator<{op: string, key: string}>
+    [Symbol.asyncIterator] (): AsyncIterator<{ op: string, key: string }>
   }
 }
