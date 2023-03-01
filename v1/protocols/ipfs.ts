@@ -141,9 +141,15 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
     const ipfsPath = `/ipfs/${lastEntry.cid.toString()}/`
 
-    await this.ipfs.files.rm(mfsLocation, {
-      recursive: true
-    })
+    try {
+      await this.ipfs.files.rm(mfsLocation, {
+        recursive: true
+      })
+    } catch (e) {
+      if (!(e instanceof Error) || !e.message.includes('file does not exist')) {
+        throw e
+      }
+    }
 
     await this.ipfs.files.cp(ipfsPath, mfsLocation, {
       cidVersion: 1,
