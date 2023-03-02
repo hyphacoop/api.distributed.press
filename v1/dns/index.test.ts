@@ -45,7 +45,7 @@ test('basic dns resolve', async t => {
 })
 
 test('dns should not resolve unknown domains', async t => {
-  const [_, dnsServer] = await mockDnsServer()
+  const dnsServer = (await mockDnsServer())[1]
   const port = dnsServer.addresses().udp?.port as number
   const dnsClient = makeDnsClient(port)
   const response = await dnsClient.query('_dnslink.unknown.com', 'TXT')
