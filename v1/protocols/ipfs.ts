@@ -150,7 +150,8 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       // TODO: Pass in gateway parameters in options (DP domain name?)
       gateway: `https://gateway.ipfs.io/ipns/${publishKey}/`,
       cid,
-      pubKey
+      pubKey,
+      dnslink: `/ipns/${publishKey}`
     }
   }
 

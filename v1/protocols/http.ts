@@ -26,7 +26,7 @@ export class HTTPProtocol implements Protocol<Static<typeof HTTPProtocolFields>>
     // TODO(protocol): stub
     return {
       enabled: true,
-      link: 'example-link'
+      link: 'example-link',
     }
   }
 
