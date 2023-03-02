@@ -14,8 +14,6 @@ A project may use the Distributed Press API of this server to publish its websit
 The Distributed Press is in early development, and is currently used to publish the [COMPOST magazine](https://compost.digital).
 The official instance of the Distributed Press API is hosted at [api.distributed.press](https://api.distributed.press).
 
-> Please check [v0/README.md](./v0/README.md) for the v0 documentation
-
 ## Developing
 All necessary files are in `v1`. The commands in the following section will assume your current working directory is in the `v1` folder.
 
