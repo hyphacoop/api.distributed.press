@@ -2,7 +2,7 @@ import dns2 from 'dns2'
 import { FastifyBaseLogger } from 'fastify'
 import { SiteConfigStore } from '../config/sites.js'
 
-export async function initDnsServer (port: number, store: SiteConfigStore, logger?: FastifyBaseLogger): Promise<ReturnType<typeof dns2.createServer>> {
+export async function initDnsServer (port: number, store: SiteConfigStore, logger: FastifyBaseLogger): Promise<ReturnType<typeof dns2.createServer>> {
   const server = dns2.createServer({
     udp: true,
     handle: (request, send, rinfo) => {

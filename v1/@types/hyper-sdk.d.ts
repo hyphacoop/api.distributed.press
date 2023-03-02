@@ -2,6 +2,7 @@ declare module 'hyper-sdk' {
   export class Hyperdrive {
     once (evt: string, cb: () => void): void
     get url (): string
+    get id (): string
     close (): Promise<void>
   }
 

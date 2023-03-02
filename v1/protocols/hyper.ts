@@ -53,13 +53,14 @@ export class HyperProtocol implements Protocol<Static<typeof HyperProtocolFields
 
     const mirror = fs.mirror(drive)
 
-    // TODO: Should we log the changes somewhere like IPFS?
-    await mirror.done()
+    for await (const change of mirror) {
+      ctx?.logger.debug(`[hyper] ${change.op}: ${change.key}`)
+    }
 
     const raw = drive.url
     const link = raw
-    // TODO: Pass in the gateway URL in the config first
-    const gateway = 'oops'
+    // TODO: Pass in gateway from config
+    const gateway = `https://hyper.hypha.coop/hyper/${drive.id}/`
 
     ctx?.logger.info(`[hyper] Published: ${link}`)
 
