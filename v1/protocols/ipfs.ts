@@ -167,7 +167,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       gateway: `https://gateway.ipfs.io/ipns/${publishKey}/`,
       cid,
       pubKey,
-      dnslink: `/ipns/${publishKey}`
+      dnslink: `/ipns/${publishKey}/`
     }
   }
 
