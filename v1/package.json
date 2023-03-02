@@ -61,7 +61,6 @@
     "hyper-sdk": "^4.2.1",
     "ipfs-core": "^0.18.0",
     "ipfs-http-client": "^60.0.0",
-    "ipfs-mfs-sync": "^1.0.4",
     "ipfsd-ctl": "^13.0.0",
     "is-valid-hostname": "^1.0.2",
     "level": "^8.0.0",

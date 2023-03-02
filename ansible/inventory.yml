@@ -1,0 +1,10 @@
+---
+
+all:
+  # Set custom variables here, like custom ports for listening
+  vars:
+  children:
+    distributed_press:
+      hosts:
+        dp.chanterelle.xyz:
+          ansible_user: root
