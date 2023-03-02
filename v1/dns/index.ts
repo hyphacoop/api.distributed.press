@@ -10,8 +10,8 @@ export async function initDnsServer (port: number, store: SiteConfigStore, logge
       const [{ name }] = request.questions
       logger?.info(`[dns] ${rinfo.address}:${rinfo.port} asked for ${name}`)
 
-      const trimmedName = name.replace('_dnslink.', '')
-      store.get(trimmedName)
+      const cleanedName = name.toLowerCase().replace('_dnslink.', '')
+      store.get(cleanedName)
         .then(({ links }) => {
           if (links.ipfs !== undefined) {
             response.answers.push({
