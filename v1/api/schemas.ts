@@ -7,18 +7,20 @@ export const DNS = Type.Object({
 
 const AbstractProtocol = Type.Object({
   enabled: Type.Boolean(),
-  link: Type.String()
+  link: Type.String() // raw protocol specific link to the actual site
 })
 export const GenericProtocol = <T extends TObject>(type: T): TIntersect<[T, typeof AbstractProtocol]> => Type.Intersect([type, AbstractProtocol])
 export const HTTPProtocolFields = GenericProtocol(Type.Object({}))
 export const HyperProtocolFields = GenericProtocol(Type.Object({
-  gateway: Type.String(),
-  raw: Type.String()
+  gateway: Type.String(), // gateway url to enable browsers to access the site (currently hardcoded to use hypha's gateway)
+  raw: Type.String(), // raw hyperdrive url
+  dnslink: Type.String()
 }))
 export const IPFSProtocolFields = GenericProtocol(Type.Object({
-  gateway: Type.String(),
-  cid: Type.String(),
-  pubKey: Type.String()
+  gateway: Type.String(), // same as gateway in HyperProtocolFields
+  cid: Type.String(), // content id of the root of site
+  pubKey: Type.String(), // ipns://{publishKey}
+  dnslink: Type.String()
 }))
 
 export const Protocols = Type.Object({

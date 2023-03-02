@@ -1,6 +1,9 @@
 import { IPFSProtocol, IPFSProtocolOptions } from './ipfs.js'
 import { HyperProtocol, HyperProtocolOptions } from './hyper.js'
 import { HTTPProtocol, HTTPProtocolOptions } from './http.js'
+import Protocol from './interfaces.js'
+import { Static } from '@sinclair/typebox'
+import { HTTPProtocolFields, HyperProtocolFields, IPFSProtocolFields } from '../api/schemas.js'
 
 interface ProtocolOptions {
   ipfs: IPFSProtocolOptions
@@ -8,7 +11,13 @@ interface ProtocolOptions {
   http: HTTPProtocolOptions
 }
 
-export class ProtocolManager {
+export interface ProtocolManager {
+  http: Protocol<Static<typeof HTTPProtocolFields>>
+  ipfs: Protocol<Static<typeof IPFSProtocolFields>>
+  hyper: Protocol<Static<typeof HyperProtocolFields>>
+}
+
+export class ConcreteProtocolManager implements ProtocolManager {
   http: HTTPProtocol
   ipfs: IPFSProtocol
   hyper: HyperProtocol

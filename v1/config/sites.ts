@@ -7,9 +7,9 @@ import { Ctx } from '../protocols/interfaces.js'
 import isValidHostname from 'is-valid-hostname'
 
 export class SiteConfigStore extends Config<Static<typeof Site>> {
-  protocols?: ProtocolManager
+  protocols: ProtocolManager
 
-  constructor (db: AbstractLevel<any, string, any>, protocols?: ProtocolManager) {
+  constructor (db: AbstractLevel<any, string, any>, protocols: ProtocolManager) {
     super(db)
     this.protocols = protocols
   }
@@ -29,43 +29,41 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
   }
 
   async sync (siteId: string, filePath: string, ctx?: Ctx): Promise<void> {
-    if (this.protocols !== undefined) {
-      const site = await this.get(siteId)
+    const site = await this.get(siteId)
 
-      const promises = []
-      if (site.protocols.http) {
-        const promise = this.protocols.http
-          .sync(siteId, filePath, undefined, ctx)
-          .then((protocolLinks) => {
-            site.links.http = protocolLinks
-          })
+    const promises = []
+    if (site.protocols.http) {
+      const promise = this.protocols.http
+        .sync(siteId, filePath, undefined, ctx)
+        .then((protocolLinks) => {
+          site.links.http = protocolLinks
+        })
 
-        promises.push(promise)
-      }
-
-      if (site.protocols.hyper) {
-        const promise = this.protocols.hyper
-          .sync(siteId, filePath, undefined, ctx)
-          .then((protocolLinks) => {
-            site.links.hyper = protocolLinks
-          })
-
-        promises.push(promise)
-      }
-
-      if (site.protocols.ipfs) {
-        const promise = this.protocols.ipfs
-          .sync(siteId, filePath, undefined, ctx)
-          .then((protocolLinks) => {
-            site.links.ipfs = protocolLinks
-          })
-
-        promises.push(promise)
-      }
-
-      await Promise.all(promises)
-      await this.db.put(siteId, site)
+      promises.push(promise)
     }
+
+    if (site.protocols.hyper) {
+      const promise = this.protocols.hyper
+        .sync(siteId, filePath, undefined, ctx)
+        .then((protocolLinks) => {
+          site.links.hyper = protocolLinks
+        })
+
+      promises.push(promise)
+    }
+
+    if (site.protocols.ipfs) {
+      const promise = this.protocols.ipfs
+        .sync(siteId, filePath, undefined, ctx)
+        .then((protocolLinks) => {
+          site.links.ipfs = protocolLinks
+        })
+
+      promises.push(promise)
+    }
+
+    await Promise.all(promises)
+    await this.db.put(siteId, site)
   }
 
   /// Updates status of protocols for a given site
@@ -83,23 +81,20 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
   }
 
   async delete (id: string, ctx?: Ctx): Promise<void> {
-    if (this.protocols !== undefined) {
-      const site = await this.get(id)
+    const site = await this.get(id)
 
-      const promises = []
-      if (site.links.http != null) {
-        promises.push(this.protocols.http.unsync(id, site.links.http, ctx))
-      }
-      if (site.links.ipfs != null) {
-        promises.push(this.protocols.ipfs.unsync(id, site.links.ipfs, ctx))
-      }
-      if (site.links.hyper != null) {
-        promises.push(this.protocols.hyper.unsync(id, site.links.hyper, ctx))
-      }
-
-      await Promise.all(promises)
+    const promises = []
+    if (site.links.http != null) {
+      promises.push(this.protocols.http.unsync(id, site.links.http, ctx))
+    }
+    if (site.links.ipfs != null) {
+      promises.push(this.protocols.ipfs.unsync(id, site.links.ipfs, ctx))
+    }
+    if (site.links.hyper != null) {
+      promises.push(this.protocols.hyper.unsync(id, site.links.hyper, ctx))
     }
 
+    await Promise.all(promises)
     await this.db.del(id)
   }
 }

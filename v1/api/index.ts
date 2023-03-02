@@ -21,7 +21,7 @@ import Store, { StoreI } from '../config/index.js'
 import { registerAuth } from '../authorization/cfg.js'
 import { authRoutes } from './auth.js'
 import { ServerI } from '../index.js'
-import { ProtocolManager } from '../protocols/index.js'
+import { ConcreteProtocolManager } from '../protocols/index.js'
 import { initDnsServer } from '../dns/index.js'
 
 const paths = envPaths('distributed-press')
@@ -50,7 +50,7 @@ async function apiBuilder (cfg: APIConfig): Promise<FastifyTypebox> {
     : new Level(cfgStoragePath, { valueEncoding: 'json' })
 
   const protocolStoragePath = path.join(basePath, 'protocols')
-  const protocols = new ProtocolManager({
+  const protocols = new ConcreteProtocolManager({
     ipfs: {
       path: path.join(protocolStoragePath, 'ipfs'),
       provider: cfg.ipfsProvider

@@ -64,11 +64,13 @@ export class HyperProtocol implements Protocol<Static<typeof HyperProtocolFields
 
     ctx?.logger.info(`[hyper] Published: ${link}`)
 
+    const dnslink = `/hyper/${raw.substring('hyper://'.length)}/`
     return {
       enabled: true,
       link,
       gateway,
-      raw
+      raw,
+      dnslink
     }
   }
 
