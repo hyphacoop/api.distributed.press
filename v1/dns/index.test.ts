@@ -35,8 +35,8 @@ test('basic dns resolve', async t => {
       hyper: true
     }
   })
-  await store.sync(site.id, "mockPath")
-  const port = dnsServer.addresses().udp!.port
+  await store.sync(site.id, 'mockPath')
+  const port = dnsServer.addresses().udp?.port as number
   const dnsClient = makeDnsClient(port)
   const response = await dnsClient.query(`_dnslink.${site.domain}`, 'TXT')
   t.true(hasAnswer(response, 'ipns'), 'returned dns query has an ipns entry')
@@ -46,8 +46,8 @@ test('basic dns resolve', async t => {
 
 test('dns should not resolve unknown domains', async t => {
   const [_, dnsServer] = await mockDnsServer()
-  const port = dnsServer.addresses().udp!.port
+  const port = dnsServer.addresses().udp?.port as number
   const dnsClient = makeDnsClient(port)
-  const response = await dnsClient.query(`_dnslink.unknown.com`, 'TXT')
+  const response = await dnsClient.query('_dnslink.unknown.com', 'TXT')
   t.is(response.answers.length, 0, 'should not have any answers for unknown domains')
 })

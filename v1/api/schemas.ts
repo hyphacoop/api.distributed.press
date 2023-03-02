@@ -7,7 +7,7 @@ export const DNS = Type.Object({
 
 const AbstractProtocol = Type.Object({
   enabled: Type.Boolean(),
-  link: Type.String(), // raw protocol specific link to the actual site
+  link: Type.String() // raw protocol specific link to the actual site
 })
 export const GenericProtocol = <T extends TObject>(type: T): TIntersect<[T, typeof AbstractProtocol]> => Type.Intersect([type, AbstractProtocol])
 export const HTTPProtocolFields = GenericProtocol(Type.Object({}))
