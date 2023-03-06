@@ -49,9 +49,9 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     if (this.ipfs === null) {
       if (this.options.provider === BUILTIN) {
         // 4737 == IPFS on a dialpad
-        const apiPort = await getPort(4737)
+        const apiPort = await getPort({port: 4737})
         // 7976 is SWRM on a dialpad
-        const swarmPort = await getPort(7976)
+        const swarmPort = await getPort({port: 7976})
         const ipfsdOpts: ControllerOptions = {
           type: 'go',
           ipfsOptions: {
