@@ -48,23 +48,35 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
   async load (): Promise<void> {
     if (this.ipfs === null) {
       if (this.options.provider === BUILTIN) {
-        const apiPort = await getPort()
-        const gatewayPort = await getPort()
-        const swarmPort = await getPort()
+        // 4737 == IPFS on a dialpad
+        const apiPort = await getPort(4737)
+        // 7976 is SWRM on a dialpad
+        const swarmPort = await getPort(7976)
         const ipfsdOpts: ControllerOptions = {
           type: 'go',
           ipfsOptions: {
             repo: this.options.path,
             config: {
+              Gateway: null,
               Addresses: {
                 API: `/ip4/127.0.0.1/tcp/${apiPort}`,
-                Gateway: `/ip4/127.0.0.1/tcp/${gatewayPort}`,
                 Swarm: [
                   `/ip4/0.0.0.0/tcp/${swarmPort}`,
                   `/ip6/::/tcp/${swarmPort}`,
                   `/ip4/0.0.0.0/udp/${swarmPort}/quic`,
                   `/ip6/::/udp/${swarmPort}/quic`
                 ]
+              },
+              Ipns: {
+                UsePubSub: true
+              },
+              PubSub: {
+                Enabled: true
+              },
+              Swarm: {
+                ConnMgr: {
+                  HighWater: 128
+                }
               }
             }
           },
