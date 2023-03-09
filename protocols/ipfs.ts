@@ -57,6 +57,9 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           ipfsOptions: {
             repo: this.options.path,
             config: {
+              Experimental: {
+                AcceleratedDHTClient: true
+              },
               Gateway: null,
               Addresses: {
                 API: `/ip4/127.0.0.1/tcp/${apiPort}`,
@@ -75,7 +78,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
               },
               Swarm: {
                 ConnMgr: {
-                  HighWater: 128
+                  HighWater: 512
                 }
               }
             }
@@ -107,14 +110,6 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         // path for initializing a js-ipfs instance
         this.ipfs = await IPFS.create({
           repo: this.options.path
-          /* EXPERIMENTAL: {
-            ipnsPubsub: true
-          },
-          config: {
-            Routing: {
-              Type: 'dht'
-            }
-          } */
         })
       }
     }
