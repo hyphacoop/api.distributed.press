@@ -41,6 +41,16 @@
     cd {{distributed_press_source}}
     npm ci
 
+- name: Nuke cache and protocol config
+  become: yes
+  become_user: "{{distributed_press_user}}"
+  shell: |
+    cd {{distributed_press_source}}
+    npm run nuke
+
+- name: Enable Node to bind to port 53 for DNS
+  shell: setcap CAP_NET_BIND_SERVICE=+eip /usr/bin/node
+
 #- name: Build service
 #  become: yes
 #  become_user: "{{distributed_press_user}}"

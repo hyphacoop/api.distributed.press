@@ -19,7 +19,7 @@ Dependencies:
 ansible-playbook distributed_press.yml -i inventory.yml
 ```
 
-## Staging
+## Debugging Staging
 ```bash
 # ssh into staging
 ssh root@dp.chanterelle.xyz
@@ -27,5 +27,8 @@ ssh root@dp.chanterelle.xyz
 # change to press user
 su press
 cd ~/api.distributed.press
-ansible-playbook distributed_press.yml -i inventory.yml
+
+# status and logs
+systemctl status distributed.press
+journalctl -fu distributed.press
 ```
