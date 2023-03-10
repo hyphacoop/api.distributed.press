@@ -18,3 +18,14 @@ Dependencies:
 # execute the Ansible playbook with user defined variables
 ansible-playbook distributed_press.yml -i inventory.yml
 ```
+
+## Staging
+```bash
+# ssh into staging
+ssh root@dp.chanterelle.xyz
+
+# change to press user
+su press
+cd ~/api.distributed.press
+ansible-playbook distributed_press.yml -i inventory.yml
+```
