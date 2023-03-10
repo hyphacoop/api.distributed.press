@@ -34,7 +34,7 @@ export async function initDnsServer (port: number, store: SiteConfigStore, logge
           send(response)
         })
         .catch((error) => {
-          logger?.error(`[dns] error handling request: ${error as string}`)
+          logger?.error(`[dns] Error handling request: ${error as string}`)
           send(response)
         })
     }
@@ -43,13 +43,13 @@ export async function initDnsServer (port: number, store: SiteConfigStore, logge
   // add logging handlers
   server
     .on('requestError', (error) => {
-      logger?.error(`[dns] error handling request: ${error as string}`)
+      logger?.error(`[dns] Error handling request: ${error as string}`)
     })
     .on('listening', () => {
-      logger?.info(`[dns] starting DNS server on port ${port}`)
+      logger?.info(`[dns] Starting DNS server on port ${port}`)
     })
     .on('close', () => {
-      logger?.info('[dns] closing DNS server')
+      logger?.info('[dns] Closing DNS server')
     })
 
   await server.listen({

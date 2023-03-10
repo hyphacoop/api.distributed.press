@@ -28,3 +28,6 @@ All necessary files are in `v1`. The commands in the following section will assu
 
 ## Generating Clients
 Swagger specs are OASv2 compliant. Use `swagger-codegen-cli` to generate appropriate client implementations
+
+## Troubleshooting
+Try nuking the cache and protocol configs by running `npm run nuke`
