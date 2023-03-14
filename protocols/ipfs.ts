@@ -8,6 +8,7 @@ import path from 'node:path'
 import Protocol, { Ctx, SyncOptions } from './interfaces.js'
 import { IPFSProtocolFields } from '../api/schemas.js'
 import getPort from 'get-port'
+import { rm } from 'node:fs/promises'
 
 // TODO: Make this configurable
 const MFS_ROOT = '/distributed-press/'
@@ -49,52 +50,67 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     if (this.ipfs === null) {
       if (this.options.provider === BUILTIN) {
         // 4737 == IPFS on a dialpad
-        const apiPort = await getPort({port: 4737})
+        const apiPort = await getPort({ port: 4737 })
         // 7976 is SWRM on a dialpad
-        const swarmPort = await getPort({port: 7976})
-        const ipfsdOpts: ControllerOptions = {
-          type: 'go',
-          ipfsOptions: {
-            repo: this.options.path,
-            config: {
-              Experimental: {
-                AcceleratedDHTClient: true
-              },
-              Addresses: {
-                API: `/ip4/127.0.0.1/tcp/${apiPort}`,
-                Gateway: null,
-                Swarm: [
+        const swarmPort = await getPort({ port: 7976 })
+
+        const ipfsOptions = {
+          repo: this.options.path,
+          config: {
+            Experimental: {
+              AcceleratedDHTClient: true
+            },
+            Addresses: {
+              API: `/ip4/127.0.0.1/tcp/${apiPort}`,
+              Gateway: null,
+              Swarm: [
                   `/ip4/0.0.0.0/tcp/${swarmPort}`,
                   `/ip6/::/tcp/${swarmPort}`,
                   `/ip4/0.0.0.0/udp/${swarmPort}/quic`,
                   `/ip6/::/udp/${swarmPort}/quic`
-                ]
-              },
-              Ipns: {
-                UsePubSub: true
-              },
-              PubSub: {
-                Enabled: true
-              },
-              Swarm: {
-                ConnMgr: {
-                  HighWater: 512
-                }
+              ]
+            },
+            Ipns: {
+              UsePubSub: true
+            },
+            PubSub: {
+              Enabled: true
+            },
+            Swarm: {
+              ConnMgr: {
+                HighWater: 512
               }
             }
-          },
+          }
+        }
+        const ipfsdOpts: ControllerOptions = {
+          type: 'go',
+          ipfsOptions,
           ipfsHttpModule: IPFSHTTPClient,
           ipfsBin: GoIPFS.path()
         }
 
-        const ipfsd = await createController(ipfsdOpts)
+        let ipfsd = await createController(ipfsdOpts)
         try {
           await ipfsd.init()
           await ipfsd.start()
           await ipfsd.api.id()
         } catch (cause) {
-          const message = 'Unable to start IPFS daemon'
-          throw new Error(message, { cause })
+          const { repo } = ipfsOptions
+          const lockFile = path.join(repo, 'repo.lock')
+          const apiFile = path.join(repo, 'api')
+          try {
+            await Promise.all([
+              rm(lockFile),
+              rm(apiFile)
+            ])
+            ipfsd = await createController(ipfsdOpts)
+            await ipfsd.start()
+            await ipfsd.api.id()
+          } catch (cause) {
+            const message = 'Unable to start IPFS daemon'
+            throw new Error(message, { cause })
+          }
         }
 
         this.ipfs = ipfsd.api
