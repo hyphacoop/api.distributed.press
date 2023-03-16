@@ -41,15 +41,24 @@
     cd {{distributed_press_source}}
     npm ci
 
-- name: Nuke cache and protocol config
-  become: yes
-  become_user: "{{distributed_press_user}}"
-  shell: |
-    cd {{distributed_press_source}}
-    npm run nuke
+#- name: Nuke cache and protocol config
+#  become: yes
+#  become_user: "{{distributed_press_user}}"
+#  shell: |
+#    cd {{distributed_press_source}}
+#    npm run nuke
 
-- name: Enable Node to bind to port 53 for DNS
+- name: "Enable Node to bind to port 53 for DNS"
   shell: setcap CAP_NET_BIND_SERVICE=+eip /usr/bin/node
+
+- name: "Enable DNS traffic through firewall"
+  shell: "iptables -A INPUT -p udp -m udp --dport 53 -j ACCEPT"
+
+- name: "Enable libp2p udp traffic through firewall"
+  shell: "iptables -A INPUT -p udp -m udp --dport 7976 -j ACCEPT"
+
+- name: "Enable libp2p tcp traffic through firewall"
+  shell: "iptables -A INPUT -p tcp -m tcp --dport 7976 -j ACCEPT"
 
 #- name: Build service
 #  become: yes

@@ -60,6 +60,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
             Experimental: {
               AcceleratedDHTClient: true
             },
+            Gateway: null,
             Addresses: {
               API: `/ip4/127.0.0.1/tcp/${apiPort}`,
               Gateway: null,
