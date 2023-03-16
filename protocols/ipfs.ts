@@ -188,7 +188,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       enabled: true,
       link: `ipns://${id}/`,
       // TODO: Pass in gateway parameters in options (DP domain name?)
-      gateway: `https://gateway.ipfs.io/ipns/${publishKey}/`,
+      gateway: `https://${publishKey}.ipns.ipfs.hypha.coop/`,
       cid,
       pubKey,
       dnslink: `/ipns/${publishKey}/`
