@@ -59,7 +59,7 @@
     "get-port": "^6.1.2",
     "go-ipfs": "^0.18.1",
     "gunzip-maybe": "^1.4.2",
-    "hyper-sdk": "^4.2.1",
+    "hyper-sdk": "^4.2.3",
     "ipfs-core": "^0.18.0",
     "ipfs-http-client": "^60.0.0",
     "ipfsd-ctl": "^13.0.0",
