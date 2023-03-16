@@ -184,11 +184,13 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     // Publish site and return meta
     const { publishKey, cid } = await this.publishSite(id, ctx)
     const pubKey = `ipns://${publishKey}/`
+    const subdomain = id.replaceAll('-', '--').replaceAll('.', '-')
     return {
       enabled: true,
       link: `ipns://${id}/`,
       // TODO: Pass in gateway parameters in options (DP domain name?)
-      gateway: `https://${id}.ipns.ipfs.hypha.coop/`,
+      // TODO: Add "raw" gateway URLs
+      gateway: `https://${subdomain}.ipns.ipfs.hypha.coop`,
       cid,
       pubKey,
       dnslink: `/ipns/${publishKey}/`
