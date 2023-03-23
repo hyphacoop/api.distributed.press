@@ -3,8 +3,10 @@
 all:
   # Set custom variables here, like custom ports for listening
   vars:
+    distributed_press_domain: "press.mauve.moe"
+    distributed_press_letsencrypt_email: "contact@mauve.moe"
   children:
     distributed_press:
       hosts:
-        dp.chanterelle.xyz:
+        press.mauve.moe:
           ansible_user: root

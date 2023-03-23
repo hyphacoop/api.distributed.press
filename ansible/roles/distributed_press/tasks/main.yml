@@ -1,5 +1,22 @@
-
 # Vars are prefixed with distributed_press_
+
+- name: "Stop systemd-resolved if it exists to free up dns port"
+  systemd:
+    daemon_reload: true
+    state: stopped
+    name: systemd-resolved
+
+- name: Copy resolved rule to disable listening on port 53
+  template:
+    src: 10-make-dns-work.conf.j2
+    dest: "/etc/systemd/resolved.conf.d/10-make-dns-work.conf"
+
+- name: "Stop systemd-resolved if it exists to free up dns port"
+  systemd:
+    daemon_reload: true
+    state: started
+    enabled: true
+    name: systemd-resolved
 
 - name: Ensure user exists for DP service
   user:
@@ -41,31 +58,17 @@
     cd {{distributed_press_source}}
     npm ci
 
-#- name: Nuke cache and protocol config
-#  become: yes
-#  become_user: "{{distributed_press_user}}"
-#  shell: |
-#    cd {{distributed_press_source}}
-#    npm run nuke
-
 - name: "Enable Node to bind to port 53 for DNS"
   shell: setcap CAP_NET_BIND_SERVICE=+eip /usr/bin/node
 
 - name: "Enable DNS traffic through firewall"
-  shell: "iptables -A INPUT -p udp -m udp --dport 53 -j ACCEPT"
+  shell: "ufw allow in 53/udp"
 
 - name: "Enable libp2p udp traffic through firewall"
-  shell: "iptables -A INPUT -p udp -m udp --dport 7976 -j ACCEPT"
+  shell: "ufw allow in 7976/udp"
 
 - name: "Enable libp2p tcp traffic through firewall"
-  shell: "iptables -A INPUT -p tcp -m tcp --dport 7976 -j ACCEPT"
-
-#- name: Build service
-#  become: yes
-#  become_user: "{{distributed_press_user}}"
-#  shell: |
-#    cd {{distributed_press_source}}/v1
-#    npm run build
+  shell: "ufw allow in 7976/tcp"
 
 - name: "Run distributed.press service"
   systemd:
@@ -73,3 +76,30 @@
     state: restarted
     enabled: true
     name: "{{distributed_press_service_name}}"
+
+- name: "Install NGINX/Certbot"
+  apt:
+    pkg:
+      - certbot
+      - nginx
+      - python3-certbot-nginx
+    state: latest
+    update_cache: true
+
+- name: "Copy over site config"
+  template:
+    src: nginx-site.j2
+    dest: "/etc/nginx/sites-enabled/{{distributed_press_domain}}"
+
+- name: "Reload NGINX"
+  systemd:
+    daemon_reload: true
+    state: restarted
+    enabled: true
+    name: nginx
+
+- name: "Enable NGINX firewall"
+  shell: "ufw allow 'Nginx Full'"
+
+- name: "Register certbot certificate"
+  shell: "certbot --nginx -d {{distributed_press_domain}} --expand --agree-tos --no-eff-email --email {{distributed_press_letsencrypt_email}}"

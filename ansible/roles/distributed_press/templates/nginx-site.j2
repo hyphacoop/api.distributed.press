@@ -1,0 +1,25 @@
+server {
+  server_name {{distributed_press_domain}};
+
+  location / {
+    proxy_pass http://{{distributed_press_host}}:{{distributed_press_port}};
+    proxy_set_header    Host            $host;
+    proxy_set_header    X-Real-IP       $remote_addr;
+    proxy_set_header    X-Forwarded-for $remote_addr;
+    port_in_redirect    off;
+    proxy_http_version  1.1;
+    proxy_set_header    Upgrade         $http_upgrade;
+    proxy_set_header    Connection      "Upgrade";
+  }
+
+  listen 80;
+  listen [::]:80 ipv6only=on;
+
+  listen [::]:443 ssl ipv6only=on; # managed by Certbot
+  listen 443 ssl; # managed by Certbot
+  ssl_certificate /etc/letsencrypt/live/{{distributed_press_domain}}/fullchain.pem; # managed by Certbot
+  ssl_certificate_key /etc/letsencrypt/live/{{distributed_press_domain}}/privkey.pem; # managed by Certbot
+  include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+  ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+}
