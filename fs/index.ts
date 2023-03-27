@@ -14,7 +14,7 @@ export class SiteFileSystem {
 
   async clear (siteId: string): Promise<void> {
     const sitePath = this.getPath(siteId)
-    return await rimraf(sitePath)
+    await rimraf(sitePath)
   }
 
   getPath (siteId: string): string {

@@ -59,12 +59,14 @@ export class HyperProtocol implements Protocol<Static<typeof HyperProtocolFields
 
     const raw = drive.url
     const link = raw
+    const key = raw.substring('hyper://'.length)
+    const subdomain = id.replaceAll('-', '--').replaceAll('.', '-')
     // TODO: Pass in gateway from config
-    const gateway = `https://${id}.hyper.hypha.coop/`
+    const gateway = `https://${subdomain}.hyper.hypha.coop/`
 
     ctx?.logger.info(`[hyper] Published: ${link}`)
 
-    const dnslink = `/hyper/${raw.substring('hyper://'.length)}`
+    const dnslink = `/hyper/${key}`
     return {
       enabled: true,
       link,
