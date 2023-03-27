@@ -30,6 +30,8 @@
 - name: "Set up node+npm"
   include_role:
     name: geerlingguy.nodejs
+  vars:
+    nodejs_version: "18.x"
 
 - name: Add distributed.press systemd service
   template:
@@ -101,5 +103,13 @@
 - name: "Enable NGINX firewall"
   shell: "ufw allow 'Nginx Full'"
 
+
 - name: "Register certbot certificate"
-  shell: "certbot --nginx -d {{distributed_press_domain}} --expand --agree-tos --no-eff-email --email {{distributed_press_letsencrypt_email}}"
+  shell: >
+    certbot --nginx
+    -d {{distributed_press_domain}}
+    {{ distributed_press_served_sites | map('regex_replace', '^', '-d ') | join(' ') }}
+    --expand
+    --agree-tos
+    --no-eff-email
+    --email {{distributed_press_letsencrypt_email}}
