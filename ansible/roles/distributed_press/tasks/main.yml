@@ -28,8 +28,10 @@
     comment: User for the distributed.press API server
 
 - name: "Ensure nginx can access site data"
-  shell: gpasswd -a www-data {{distributed_press_user}}
-
+  user:
+    name: '{{distributed_press_user}}'
+    groups: www-data
+    append: yes
 - name: "Set up node+npm"
   include_role:
     name: geerlingguy.nodejs
