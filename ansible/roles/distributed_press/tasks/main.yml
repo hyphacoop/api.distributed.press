@@ -1,23 +1,5 @@
 # Vars are prefixed with distributed_press_
 
-- name: "Stop systemd-resolved if it exists to free up dns port"
-  systemd:
-    daemon_reload: true
-    state: stopped
-    name: systemd-resolved
-
-- name: Copy systemd-resolved rule to disable listening on port 53
-  template:
-    src: 10-make-dns-work.conf.j2
-    dest: "/etc/systemd/resolved.conf.d/10-make-dns-work.conf"
-
-- name: "Reload systemd-resolved"
-  systemd:
-    daemon_reload: true
-    state: started
-    enabled: true
-    name: systemd-resolved
-
 - name: Ensure user exists for DP service
   user:
     name: "{{distributed_press_user}}"
@@ -32,6 +14,15 @@
     name: '{{distributed_press_user}}'
     groups: www-data
     append: yes
+
+- name: "Install git and ufw"
+  apt:
+    pkg:
+      - git
+      - ufw
+    state: latest
+    update_cache: true
+
 - name: "Set up node+npm"
   include_role:
     name: geerlingguy.nodejs
@@ -77,6 +68,19 @@
 - name: "Enable libp2p tcp traffic through firewall"
   shell: "ufw allow in 7976/tcp"
 
+- name: "Check if JWT keys got generated already"
+  stat:
+    path: "{{distributed_press_data}}/keys/"
+  register: distributed_press_keys
+
+- name: "Generate keys for JWT"
+  when: not distributed_press_keys.stat.exists
+  become: yes
+  become_user: "{{distributed_press_user}}"
+  shell: |
+    cd {{distributed_press_source}}
+    npm run keygen
+
 - name: "Run distributed.press service"
   systemd:
     daemon_reload: true
@@ -93,6 +97,18 @@
     state: latest
     update_cache: true
 
+- name: "Enable NGINX firewall"
+  shell: "ufw allow 'Nginx Full'"
+
+- name: "Reload NGINX"
+  systemd:
+    daemon_reload: true
+    state: restarted
+    enabled: true
+    name: nginx
+
+- name: "Register certbot certificate"
+  shell: "certbot --nginx --non-interactive -d {{distributed_press_domain}} {{ distributed_press_served_sites | map('regex_replace', '^', '-d ') | join(' ') }} --expand --agree-tos --no-eff-email --email {{distributed_press_letsencrypt_email}}"
 
 - name: "Copy over default site config"
   template:
@@ -117,8 +133,3 @@
     enabled: true
     name: nginx
 
-- name: "Enable NGINX firewall"
-  shell: "ufw allow 'Nginx Full'"
-
-- name: "Register certbot certificate"
-  shell: "certbot --nginx --non-interactive -d {{distributed_press_domain}} {{ distributed_press_served_sites | map('regex_replace', '^', '-d ') | join(' ') }} --expand --agree-tos --no-eff-email --email {{distributed_press_letsencrypt_email}}"

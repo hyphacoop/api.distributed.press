@@ -4,7 +4,8 @@
 distributed_press_user: "press"
 distributed_press_home: "/home/{{distributed_press_user}}"
 distributed_press_service_name: "distributed.press"
-distributed_press_site_storage: "{{distributed_press_home}}/.local/share/distributed-press-nodejs/sites/sites"
+distributed_press_data: "{{distributed_press_home}}/.local/share/distributed-press-nodejs"
+distributed_press_site_storage: "{{distributed_press_data}}/sites/sites"
 
 # 3932 is DWEB on a phone number pad
 distributed_press_port: "3932"
