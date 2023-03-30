@@ -6,12 +6,12 @@
     state: stopped
     name: systemd-resolved
 
-- name: Copy resolved rule to disable listening on port 53
+- name: Copy systemd-resolved rule to disable listening on port 53
   template:
     src: 10-make-dns-work.conf.j2
     dest: "/etc/systemd/resolved.conf.d/10-make-dns-work.conf"
 
-- name: "Stop systemd-resolved if it exists to free up dns port"
+- name: "Reload systemd-resolved"
   systemd:
     daemon_reload: true
     state: started
@@ -26,6 +26,9 @@
     groups: adm
     shell: /bin/bash
     comment: User for the distributed.press API server
+
+- name: "Ensure nginx can access site data"
+  shell: gpasswd -a www-data {{distributed_press_user}}
 
 - name: "Set up node+npm"
   include_role:
@@ -88,10 +91,22 @@
     state: latest
     update_cache: true
 
+
+- name: "Copy over default site config"
+  template:
+    src: nginx-default.j2
+    dest: "/etc/nginx/sites-enabled/default"
+
 - name: "Copy over site config"
   template:
     src: nginx-site.j2
     dest: "/etc/nginx/sites-enabled/{{distributed_press_domain}}"
+
+- name: "Copy over static site configs"
+  template:
+    src: nginx-static.j2
+    dest: "/etc/nginx/sites-enabled/{{item}}"
+  loop: "{{distributed_press_served_sites}}"
 
 - name: "Reload NGINX"
   systemd:
@@ -103,13 +118,5 @@
 - name: "Enable NGINX firewall"
   shell: "ufw allow 'Nginx Full'"
 
-
 - name: "Register certbot certificate"
-  shell: >
-    certbot --nginx
-    -d {{distributed_press_domain}}
-    {{ distributed_press_served_sites | map('regex_replace', '^', '-d ') | join(' ') }}
-    --expand
-    --agree-tos
-    --no-eff-email
-    --email {{distributed_press_letsencrypt_email}}
+  shell: "certbot --nginx --non-interactive -d {{distributed_press_domain}} {{ distributed_press_served_sites | map('regex_replace', '^', '-d ') | join(' ') }} --expand --agree-tos --no-eff-email --email {{distributed_press_letsencrypt_email}}"
