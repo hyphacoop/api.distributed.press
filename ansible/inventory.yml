@@ -3,11 +3,11 @@
 all:
   # Set custom variables here, like custom ports for listening
   vars:
-    distributed_press_domain: "press.mauve.moe"
-    distributed_press_letsencrypt_email: "contact@mauve.moe"
-    distributed_press_served_sites: ["agregore.mauve.moe"]
+    distributed_press_domain: "example.com"
+    distributed_press_letsencrypt_email: "example@example.com"
+    distributed_press_served_sites: []
   children:
     distributed_press:
       hosts:
-        press.mauve.moe:
+        example.com:
           ansible_user: root
