@@ -2,6 +2,8 @@ server {
   server_name {{distributed_press_domain}};
 
   location / {
+    client_max_body_size 0;
+
     proxy_pass http://{{distributed_press_host}}:{{distributed_press_port}};
     proxy_set_header    Host            $host;
     proxy_set_header    X-Real-IP       $remote_addr;
