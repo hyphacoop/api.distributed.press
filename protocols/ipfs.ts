@@ -2,7 +2,7 @@ import { Static } from '@sinclair/typebox'
 import * as IPFS from 'ipfs-core'
 import * as IPFSHTTPClient from 'ipfs-http-client'
 import * as GoIPFS from 'go-ipfs'
-import { ControllerOptions, createController } from 'ipfsd-ctl'
+import { ControllerOptions, Controller, createController } from 'ipfsd-ctl'
 import { Key } from 'ipfs-core-types/src/key/index.js'
 import path from 'node:path'
 import Protocol, { Ctx, SyncOptions } from './interfaces.js'
@@ -91,8 +91,10 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           ipfsBin: GoIPFS.path()
         }
 
-        let ipfsd = await createController(ipfsdOpts)
+        let ipfsd: Controller | null = null
+
         try {
+          ipfsd = await createController(ipfsdOpts)
           await ipfsd.init()
           await ipfsd.start()
           await ipfsd.api.id()
@@ -116,7 +118,9 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
         this.ipfs = ipfsd.api
         this.onCleanup.push(async () => {
-          await ipfsd.stop()
+          if (ipfsd !== null) {
+            await ipfsd.stop()
+          }
         })
       } else if (this.options.provider === KUBO) {
         // rpcURL is for connecting to a Kubo Go-IPFS node
