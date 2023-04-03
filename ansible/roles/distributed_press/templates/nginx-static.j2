@@ -9,7 +9,8 @@ server {
   location / {
     # First attempt to serve request as file, then
     # as directory, then fall back to displaying a 404.
-    try_files $uri $uri/ =404;
+    # Also try loading .html/.md/.gemini/.gmi files
+    try_files $uri $uri/ $uri.html $uri.md $uri.gmi $uri.gemini =404;
   }
 
   listen 80;
