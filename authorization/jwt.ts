@@ -22,8 +22,8 @@ export function subset (arr1: CAPABILITIES[], arr2: CAPABILITIES[]): boolean {
   return arr1.every(x => arr2.includes(x))
 }
 
-// a week
-const EXPIRY_MS = 7 * 24 * 60 * 60 * 1000
+// a year
+const EXPIRY_MS = 365 * 24 * 60 * 60 * 1000
 export function getExpiry (isRefresh: boolean): number {
   return isRefresh ? -1 : (new Date()).getTime() + EXPIRY_MS
 }
