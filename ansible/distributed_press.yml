@@ -1,0 +1,5 @@
+---
+- hosts: distributed_press
+  become: true
+  roles:
+  - distributed_press

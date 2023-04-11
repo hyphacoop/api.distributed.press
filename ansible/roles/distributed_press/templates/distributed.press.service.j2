@@ -1,0 +1,13 @@
+[Unit]
+Description=Distributed Press API Server
+After=network-online.target
+[Service]
+Environment="DEBUG=*"
+WorkingDirectory={{distributed_press_source}}
+User={{distributed_press_user}}
+ExecStart=npx ts-node-esm index.ts --port {{distributed_press_port}} --host {{distributed_press_host}} --ipfs-provider {{distributed_press_ipfs_provider}}
+Restart=always
+RestartSec=3
+LimitNOFILE=4096
+[Install]
+WantedBy=multi-user.target

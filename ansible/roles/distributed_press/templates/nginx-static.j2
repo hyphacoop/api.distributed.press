@@ -1,0 +1,25 @@
+server {
+  server_name {{item}};
+
+  root {{distributed_press_site_storage}}/{{item}}/;
+
+  # P2P protocols support more types of index files than just HTML
+  index index.html index.md index.gmi index.gemini README.md;
+
+  location / {
+    # First attempt to serve request as file, then
+    # as directory, then fall back to displaying a 404.
+    # Also try loading .html/.md/.gemini/.gmi files
+    try_files $uri $uri/ $uri.html $uri.md $uri.gmi $uri.gemini =404;
+  }
+
+  listen 80;
+  listen [::]:80;
+
+  listen [::]:443 ssl; # managed by Certbot
+  listen 443 ssl; # managed by Certbot
+  ssl_certificate /etc/letsencrypt/live/{{distributed_press_domain}}/fullchain.pem; # managed by Certbot
+  ssl_certificate_key /etc/letsencrypt/live/{{distributed_press_domain}}/privkey.pem; # managed by Certbot
+  include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+  ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+}

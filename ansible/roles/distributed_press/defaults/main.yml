@@ -1,0 +1,24 @@
+---
+# Prefix with distributed_press_
+
+distributed_press_user: "press"
+distributed_press_home: "/home/{{distributed_press_user}}"
+distributed_press_service_name: "distributed.press"
+distributed_press_data: "{{distributed_press_home}}/.local/share/distributed-press-nodejs"
+distributed_press_site_storage: "{{distributed_press_data}}/sites/sites"
+
+# 3932 is DWEB on a phone number pad
+distributed_press_port: "3932"
+distributed_press_host: "localhost"
+
+distributed_press_ipfs_provider: "builtin"
+
+distributed_press_git_repo: "https://github.com/hyphacoop/api.distributed.press.git"
+distributed_press_git_branch: "v1-staging"
+distributed_press_source: "{{distributed_press_home}}/api.distributed.press"
+
+distributed_press_domain: "example.com"
+distributed_press_letsencrypt_email: "example@example.com"
+
+# These will be used to be served over nginx along with letsencrypt certs
+distributed_press_served_sites: []
