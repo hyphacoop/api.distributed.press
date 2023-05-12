@@ -21,7 +21,7 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
       return await reply.code(200).send()
     } catch (error) {
       if (error instanceof server.multipartErrors.RequestFileTooLargeError) {
-        return await reply.code(400).send('tarball too large (limit 1GB)')
+        return await reply.code(400).send('tarball too large (limit 5GB)')
       }
       if (error instanceof Error) {
         return await reply.code(500).send(error.stack)
