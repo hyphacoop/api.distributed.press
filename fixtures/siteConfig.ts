@@ -14,5 +14,6 @@ export const exampleSiteConfig: Static<typeof NewSite> = {
     http: true,
     ipfs: false,
     hyper: false
-  }
+  },
+  public: true
 }

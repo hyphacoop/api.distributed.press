@@ -1,12 +1,13 @@
 import { Type, Static } from '@sinclair/typebox'
 import { NewSite, Site, UpdateSite } from './schemas.js'
 import { StoreI } from '../config/index.js'
-import { FastifyTypebox } from './index.js'
+import { APIConfig, FastifyTypebox } from './index.js'
 import { FastifyReply, FastifyRequest } from 'fastify'
 import { CAPABILITIES, JWTPayloadT } from '../authorization/jwt.js'
+import { verifyTokenCapabilities } from '../authorization/cfg.js'
 
-export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Promise<void> => {
-  async function processRequestFiles (request: FastifyRequest, reply: FastifyReply, fn: (filePath: string) => Promise<void>): Promise<void> {
+export const siteRoutes = (cfg: APIConfig, store: StoreI) => async (server: FastifyTypebox): Promise<void> => {
+  async function processRequestFiles(request: FastifyRequest, reply: FastifyReply, fn: (filePath: string) => Promise<void>): Promise<void> {
     try {
       request.log.info('Downloading tarfile for site')
       const files = await request.saveRequestFiles({
@@ -30,7 +31,7 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
     }
   }
 
-  async function checkOwnsSite (token: JWTPayloadT, siteId: string): Promise<boolean> {
+  async function checkOwnsSite(token: JWTPayloadT, siteId: string): Promise<boolean> {
     const isAdmin = token.capabilities.includes(CAPABILITIES.ADMIN)
     const isOwnerOfSite = !isAdmin && (await store.publisher.get(token.issuedTo)).ownedSites.includes(siteId)
     return isAdmin || isOwnerOfSite
@@ -88,6 +89,24 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
     return await reply.send(await store.sites.get(id))
   })
 
+  if (cfg.useWebringDirectoryListing) {
+    server.get<{ Reply: string[] }>('/sites', {
+      schema: {
+        description: 'Returns a list of all sites on the instance'
+      },
+    }, async (request, reply) => {
+      try {
+        // admin case, safe to list all
+        await verifyTokenCapabilities(request, store, [CAPABILITIES.ADMIN])
+        return await reply.send(await store.sites.listAll(false))
+      } catch {
+        // no token
+        return await reply.send(await store.sites.listAll(true))
+      }
+    })
+  }
+
+
   server.delete<{
     Params: {
       id: string
@@ -139,7 +158,7 @@ export const siteRoutes = (store: StoreI) => async (server: FastifyTypebox): Pro
     }
 
     // update config entry
-    await store.sites.update(id, request.body.protocols)
+    await store.sites.update(id, request.body)
 
     // sync files with protocols
     const path = store.fs.getPath(id)

@@ -8,11 +8,11 @@ import { FastifyRequest, FastifyReply } from 'fastify'
 import { Value } from '@sinclair/typebox/value'
 import { StoreI } from '../config/index.js'
 
-function printCapabilities (capabilities: CAPABILITIES[]): string {
+function printCapabilities(capabilities: CAPABILITIES[]): string {
   return capabilities.map(cap => cap.toString()).join(', ')
 }
 
-const verifyTokenCapabilities = (store: StoreI, capabilities: CAPABILITIES[]) => async (request: FastifyRequest, _reply: FastifyReply) => {
+export const verifyTokenCapabilities = async (request: FastifyRequest, store: StoreI, capabilities: CAPABILITIES[]): Promise<void> => {
   if (request.raw.headers.authorization === undefined) {
     throw new Error('Missing token header')
   }
@@ -36,6 +36,11 @@ const verifyTokenCapabilities = (store: StoreI, capabilities: CAPABILITIES[]) =>
   } catch (error) {
     throw new Error(`Cannot verify access token JWT: ${error as string}`)
   }
+
+}
+
+const verifyTokenCapabilitiesHandler = (store: StoreI, capabilities: CAPABILITIES[]) => async (request: FastifyRequest, _reply: FastifyReply) => {
+  return verifyTokenCapabilities(request, store, capabilities)
 }
 
 export const registerAuth = async (cfg: APIConfig, route: FastifyTypebox, store: StoreI): Promise<void> => {
@@ -50,8 +55,8 @@ export const registerAuth = async (cfg: APIConfig, route: FastifyTypebox, store:
   })
 
   await route.register(auth)
-  route.decorate('verifyAdmin', verifyTokenCapabilities(store, [CAPABILITIES.ADMIN]))
-  route.decorate('verifyPublisher', verifyTokenCapabilities(store, [CAPABILITIES.PUBLISHER]))
-  route.decorate('verifyRefresh', verifyTokenCapabilities(store, [CAPABILITIES.REFRESH]))
+  route.decorate('verifyAdmin', verifyTokenCapabilitiesHandler(store, [CAPABILITIES.ADMIN]))
+  route.decorate('verifyPublisher', verifyTokenCapabilitiesHandler(store, [CAPABILITIES.PUBLISHER]))
+  route.decorate('verifyRefresh', verifyTokenCapabilitiesHandler(store, [CAPABILITIES.REFRESH]))
   return await route.after()
 }

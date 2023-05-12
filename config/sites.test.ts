@@ -25,13 +25,22 @@ test('update siteconfig', async t => {
   const cfg = newSiteConfigStore()
   const site = await cfg.create(exampleSiteConfig)
   const updated = {
-    ...site.protocols,
-    hyper: true
+    protocols: {
+      ...site.protocols,
+      hyper: true
+    },
   }
 
   await cfg.update(site.id, updated)
   const newResult = await cfg.get(site.id)
   t.is(newResult.protocols.hyper, true)
+  t.is(newResult.public, true)
+
+  await cfg.update(site.id, {
+    public: false
+  })
+  const newResult2 = await cfg.get(site.id)
+  t.is(newResult2.public, false)
 })
 
 test('delete siteconfig', async t => {
@@ -40,4 +49,23 @@ test('delete siteconfig', async t => {
   t.is((await cfg.keys()).length, 1)
   await cfg.delete(site.id)
   t.is((await cfg.keys()).length, 0)
+})
+
+test('listAll siteconfig', async t => {
+  const cfg = newSiteConfigStore()
+  await cfg.create({
+    ...exampleSiteConfig,
+    domain: 'site1.com'
+  })
+  await cfg.create({
+    ...exampleSiteConfig,
+    domain: 'site2.com'
+  })
+  await cfg.create({
+    ...exampleSiteConfig,
+    domain: 'site3.com',
+    public: false,
+  })
+  t.is((await cfg.listAll(true)).length, 2)
+  t.is((await cfg.listAll(false)).length, 3)
 })

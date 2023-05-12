@@ -1,9 +1,9 @@
 import { Type, Static } from '@sinclair/typebox'
 import { getExpiry, subset, NewJWTPayload } from '../authorization/jwt.js'
 import { StoreI } from '../config/index.js'
-import { FastifyTypebox } from './index.js'
+import { APIConfig, FastifyTypebox } from './index.js'
 
-export const authRoutes = (store: StoreI) => async (server: FastifyTypebox): Promise<void> => {
+export const authRoutes = (_cfg: APIConfig, store: StoreI) => async (server: FastifyTypebox): Promise<void> => {
   server.post<{
     Body: Static<typeof NewJWTPayload>
   }>('/auth/exchange', {

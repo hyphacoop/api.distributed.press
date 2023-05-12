@@ -1,4 +1,4 @@
-import { NewSite, ProtocolStatus, Site } from '../api/schemas.js'
+import { NewSite, Site, UpdateSite } from '../api/schemas.js'
 import { Static } from '@sinclair/typebox'
 import { Config } from './store.js'
 import { AbstractLevel } from 'abstract-level'
@@ -9,12 +9,12 @@ import isValidHostname from 'is-valid-hostname'
 export class SiteConfigStore extends Config<Static<typeof Site>> {
   protocols: ProtocolManager
 
-  constructor (db: AbstractLevel<any, string, any>, protocols: ProtocolManager) {
+  constructor(db: AbstractLevel<any, string, any>, protocols: ProtocolManager) {
     super(db)
     this.protocols = protocols
   }
 
-  async create (cfg: Static<typeof NewSite>): Promise<Static<typeof Site>> {
+  async create(cfg: Static<typeof NewSite>): Promise<Static<typeof Site>> {
     const id = cfg.domain
     if (!isValidHostname(id)) {
       throw new Error('Invalid hostname. Please ensure you leave out the port and protocol specifiers (e.g. no https://)')
@@ -28,7 +28,7 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
     return await this.db.put(id, obj).then(() => obj)
   }
 
-  async sync (siteId: string, filePath: string, ctx?: Ctx): Promise<void> {
+  async sync(siteId: string, filePath: string, ctx?: Ctx): Promise<void> {
     const site = await this.get(siteId)
 
     const promises = []
@@ -67,20 +67,30 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
   }
 
   /// Updates status of protocols for a given site
-  async update (id: string, cfg: Static<typeof ProtocolStatus>): Promise<void> {
+  async update(id: string, cfg: Static<typeof UpdateSite>): Promise<void> {
     const old = await this.get(id)
-    const site = {
+    const site: Static<typeof Site> = {
       ...old,
-      protocols: cfg
+      ...cfg
     }
     return await this.db.put(id, site)
   }
 
-  async get (id: string): Promise<Static<typeof Site>> {
+  async get(id: string): Promise<Static<typeof Site>> {
     return await this.db.get(id)
   }
 
-  async delete (id: string, ctx?: Ctx): Promise<void> {
+  async listAll(hidePrivate: boolean): Promise<string[]> {
+    const ids = await this.keys()
+    if (!hidePrivate) {
+      return ids
+    } else {
+      const sites = await Promise.all(ids.map(async id => await this.get(id)))
+      return sites.filter(site => site.public).map(site => site.id)
+    }
+  }
+
+  async delete(id: string, ctx?: Ctx): Promise<void> {
     const site = await this.get(id)
 
     const promises = []
