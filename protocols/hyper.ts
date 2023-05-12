@@ -58,7 +58,7 @@ export class HyperProtocol implements Protocol<Static<typeof HyperProtocolFields
     }
 
     const raw = drive.url
-    const link = raw
+    const link = `hyper://${id}`
     const key = raw.substring('hyper://'.length)
     const subdomain = id.replaceAll('-', '--').replaceAll('.', '-')
     // TODO: Pass in gateway from config
