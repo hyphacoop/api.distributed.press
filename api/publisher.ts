@@ -1,9 +1,10 @@
 import { Type, Static } from '@sinclair/typebox'
 import { FastifyInstance } from 'fastify'
 import { StoreI } from '../config/index.js'
+import { APIConfig } from './index.js'
 import { NewPublisher, Publisher } from './schemas.js'
 
-export const publisherRoutes = (store: StoreI) => async (server: FastifyInstance): Promise<void> => {
+export const publisherRoutes = (_cfg: APIConfig, store: StoreI) => async (server: FastifyInstance): Promise<void> => {
   server.post<{
     Body: Static<typeof NewPublisher>
     Reply: Static<typeof Publisher>
@@ -42,6 +43,15 @@ export const publisherRoutes = (store: StoreI) => async (server: FastifyInstance
   }, async (request, reply) => {
     const { id } = request.params
     return await reply.send(await store.publisher.get(id))
+  })
+
+  server.get<{ Reply: string[] }>('/publisher', {
+    schema: {
+      description: 'Returns a list of all publishers on the instance'
+    },
+    preHandler: server.auth([server.verifyAdmin])
+  }, async (_request, reply) => {
+    return await reply.send(await store.publisher.keys())
   })
 
   server.delete<{

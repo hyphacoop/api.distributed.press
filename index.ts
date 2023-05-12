@@ -34,7 +34,8 @@ const server = await apiBuilder({
   useLogging: true,
   useSwagger: true,
   usePrometheus: true,
-  useSigIntHandler: true
+  useSigIntHandler: true,
+  useWebringDirectoryListing: true
 })
 server.listen(cfg, (err, _address) => {
   if (err != null) {

@@ -33,12 +33,14 @@ export const Site = Type.Object({
   id: Type.String(),
   domain: Type.String(),
   protocols: ProtocolStatus,
-  links: Type.Partial(Protocols)
+  links: Type.Partial(Protocols),
+  public: Type.Boolean()
 })
 export const NewSite = Type.Omit(Site, ['id', 'links'])
-export const UpdateSite = Type.Object({
-  protocols: ProtocolStatus
-})
+export const UpdateSite = Type.Partial(Type.Object({
+  protocols: ProtocolStatus,
+  public: Type.Boolean()
+}))
 
 export const Publisher = Type.Object({
   id: Type.String(),

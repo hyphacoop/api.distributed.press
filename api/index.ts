@@ -40,6 +40,7 @@ export type APIConfig = Partial<{
   usePrometheus: boolean
   useMemoryBackedDB: boolean
   useSigIntHandler: boolean
+  useWebringDirectoryListing: boolean
 }> & ServerI
 
 async function apiBuilder (cfg: APIConfig): Promise<FastifyTypebox> {
@@ -151,10 +152,10 @@ const v1Routes = (cfg: APIConfig, store: StoreI) => async (server: FastifyTypebo
   }
 
   // Register Routes
-  await server.register(authRoutes(store))
-  await server.register(siteRoutes(store))
-  await server.register(publisherRoutes(store))
-  await server.register(adminRoutes(store))
+  await server.register(authRoutes(cfg, store))
+  await server.register(siteRoutes(cfg, store))
+  await server.register(publisherRoutes(cfg, store))
+  await server.register(adminRoutes(cfg, store))
 
   if (cfg.useSwagger ?? false) {
     server.swagger()
