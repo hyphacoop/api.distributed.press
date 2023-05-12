@@ -28,7 +28,7 @@ test('update siteconfig', async t => {
     protocols: {
       ...site.protocols,
       hyper: true
-    },
+    }
   }
 
   await cfg.update(site.id, updated)
@@ -64,7 +64,7 @@ test('listAll siteconfig', async t => {
   await cfg.create({
     ...exampleSiteConfig,
     domain: 'site3.com',
-    public: false,
+    public: false
   })
   t.is((await cfg.listAll(true)).length, 2)
   t.is((await cfg.listAll(false)).length, 3)

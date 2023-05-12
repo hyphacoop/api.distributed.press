@@ -7,7 +7,7 @@ import { CAPABILITIES, JWTPayloadT } from '../authorization/jwt.js'
 import { verifyTokenCapabilities } from '../authorization/cfg.js'
 
 export const siteRoutes = (cfg: APIConfig, store: StoreI) => async (server: FastifyTypebox): Promise<void> => {
-  async function processRequestFiles(request: FastifyRequest, reply: FastifyReply, fn: (filePath: string) => Promise<void>): Promise<void> {
+  async function processRequestFiles (request: FastifyRequest, reply: FastifyReply, fn: (filePath: string) => Promise<void>): Promise<void> {
     try {
       request.log.info('Downloading tarfile for site')
       const files = await request.saveRequestFiles({
@@ -31,7 +31,7 @@ export const siteRoutes = (cfg: APIConfig, store: StoreI) => async (server: Fast
     }
   }
 
-  async function checkOwnsSite(token: JWTPayloadT, siteId: string): Promise<boolean> {
+  async function checkOwnsSite (token: JWTPayloadT, siteId: string): Promise<boolean> {
     const isAdmin = token.capabilities.includes(CAPABILITIES.ADMIN)
     const isOwnerOfSite = !isAdmin && (await store.publisher.get(token.issuedTo)).ownedSites.includes(siteId)
     return isAdmin || isOwnerOfSite
@@ -93,7 +93,7 @@ export const siteRoutes = (cfg: APIConfig, store: StoreI) => async (server: Fast
     server.get<{ Reply: string[] }>('/sites', {
       schema: {
         description: 'Returns a list of all sites on the instance'
-      },
+      }
     }, async (request, reply) => {
       try {
         // admin case, safe to list all
@@ -105,7 +105,6 @@ export const siteRoutes = (cfg: APIConfig, store: StoreI) => async (server: Fast
       }
     })
   }
-
 
   server.delete<{
     Params: {

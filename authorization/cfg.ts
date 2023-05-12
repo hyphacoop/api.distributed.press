@@ -8,7 +8,7 @@ import { FastifyRequest, FastifyReply } from 'fastify'
 import { Value } from '@sinclair/typebox/value'
 import { StoreI } from '../config/index.js'
 
-function printCapabilities(capabilities: CAPABILITIES[]): string {
+function printCapabilities (capabilities: CAPABILITIES[]): string {
   return capabilities.map(cap => cap.toString()).join(', ')
 }
 
@@ -36,11 +36,10 @@ export const verifyTokenCapabilities = async (request: FastifyRequest, store: St
   } catch (error) {
     throw new Error(`Cannot verify access token JWT: ${error as string}`)
   }
-
 }
 
 const verifyTokenCapabilitiesHandler = (store: StoreI, capabilities: CAPABILITIES[]) => async (request: FastifyRequest, _reply: FastifyReply) => {
-  return verifyTokenCapabilities(request, store, capabilities)
+  return await verifyTokenCapabilities(request, store, capabilities)
 }
 
 export const registerAuth = async (cfg: APIConfig, route: FastifyTypebox, store: StoreI): Promise<void> => {
