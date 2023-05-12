@@ -37,7 +37,8 @@ export const publisherRoutes = (store: StoreI) => async (server: FastifyInstance
       },
       description: 'Gets information about a specific publisher',
       tags: ['publisher']
-    }
+    },
+    preHandler: server.auth([server.verifyAdmin, server.verifyPublisher])
   }, async (request, reply) => {
     const { id } = request.params
     return await reply.send(await store.publisher.get(id))
