@@ -34,7 +34,7 @@ test('basic dns resolve', async t => {
       ipfs: true,
       hyper: true
     },
-    public: true,
+    public: true
   })
   await store.sync(site.id, 'mockPath')
   const port = dnsServer.addresses().udp?.port as number

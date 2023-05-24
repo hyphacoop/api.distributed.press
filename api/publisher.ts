@@ -47,7 +47,9 @@ export const publisherRoutes = (_cfg: APIConfig, store: StoreI) => async (server
 
   server.get<{ Reply: string[] }>('/publisher', {
     schema: {
-      description: 'Returns a list of all publishers on the instance'
+      description: 'Returns a list of all publishers on the instance',
+      tags: ['publisher'],
+      security: [{ jwt: [] }]
     },
     preHandler: server.auth([server.verifyAdmin])
   }, async (_request, reply) => {

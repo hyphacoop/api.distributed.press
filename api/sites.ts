@@ -89,10 +89,12 @@ export const siteRoutes = (cfg: APIConfig, store: StoreI) => async (server: Fast
     return await reply.send(await store.sites.get(id))
   })
 
-  if (cfg.useWebringDirectoryListing) {
+  if (cfg.useWebringDirectoryListing === true) {
     server.get<{ Reply: string[] }>('/sites', {
       schema: {
-        description: 'Returns a list of all sites on the instance'
+        description: 'Returns a list of all sites on the instance',
+        tags: ['site'],
+        security: [{ jwt: [] }]
       }
     }, async (request, reply) => {
       try {
