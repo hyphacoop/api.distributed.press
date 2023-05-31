@@ -36,7 +36,12 @@ export const Site = Type.Object({
   links: Type.Partial(Protocols),
   public: Type.Boolean()
 })
-export const NewSite = Type.Omit(Site, ['id', 'links'])
+export const NewSite = Type.Object({
+  domain: Type.String(),
+  protocols: ProtocolStatus,
+  public: Type.Optional(Type.Boolean())
+})
+
 export const UpdateSite = Type.Partial(Type.Object({
   protocols: ProtocolStatus,
   public: Type.Boolean()
