@@ -53,8 +53,6 @@ export const siteRoutes = (cfg: APIConfig, store: StoreI) => async (server: Fast
     preHandler: server.auth([server.verifyPublisher, server.verifyAdmin])
   }, async (request, reply) => {
     const token = request.user
-
-    request.body.public ??= false // default public to false if not provided
     const site = await store.sites.create(request.body)
 
     // Only register site to its owner if they are not an admin
