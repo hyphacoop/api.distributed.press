@@ -6,15 +6,14 @@ server {
   # P2P protocols support more types of index files than just HTML
   index index.html index.md index.gmi index.gemini README.md;
 
+  add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+
   location / {
     # First attempt to serve request as file, then
     # as directory, then fall back to displaying a 404.
     # Also try loading .html/.md/.gemini/.gmi files
     try_files $uri $uri/ $uri.html $uri.md $uri.gmi $uri.gemini =404;
   }
-
-  listen 80;
-  listen [::]:80;
 
   listen [::]:443 ssl; # managed by Certbot
   listen 443 ssl; # managed by Certbot
@@ -23,3 +22,16 @@ server {
   include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
   ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
 }
+
+
+server {
+  server_name {{item}};
+
+  listen 80;
+  listen [::]:80;
+
+  add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+  return  301 https://{{item}}$request_uri;
+}
+
