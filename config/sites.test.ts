@@ -9,6 +9,20 @@ test('create new siteconfig', async t => {
   t.is(result.domain, exampleSiteConfig.domain)
 })
 
+test('sites are default private', async t => {
+  const cfg = newSiteConfigStore()
+  const site = await cfg.create({
+    domain: 'example.com',
+    protocols: {
+      http: true,
+      ipfs: false,
+      hyper: false
+    },
+  })
+  const result = await cfg.get(site.id)
+  t.is(result.public, false)
+})
+
 test('create new siteconfig with bad hostname should fail', async t => {
   const cfg = newSiteConfigStore()
   await t.throwsAsync(cfg.create({
