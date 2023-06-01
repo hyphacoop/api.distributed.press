@@ -17,7 +17,7 @@ test('sites are default private', async t => {
       http: true,
       ipfs: false,
       hyper: false
-    },
+    }
   })
   const result = await cfg.get(site.id)
   t.is(result.public, false)

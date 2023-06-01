@@ -34,7 +34,7 @@ export const Site = Type.Object({
   domain: Type.String(),
   protocols: ProtocolStatus,
   links: Type.Partial(Protocols),
-  public: Type.Boolean()
+  public: Type.Optional(Type.Boolean())
 })
 export const NewSite = Type.Object({
   domain: Type.String(),
