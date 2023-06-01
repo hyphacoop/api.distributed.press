@@ -1,6 +1,8 @@
 server {
   server_name {{distributed_press_domain}};
 
+  add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
   location / {
     client_max_body_size 0;
 
@@ -14,9 +16,6 @@ server {
     proxy_set_header    Connection      "Upgrade";
   }
 
-  listen 80;
-  listen [::]:80 ipv6only=on;
-
   listen [::]:443 ssl ipv6only=on; # managed by Certbot
   listen 443 ssl; # managed by Certbot
   ssl_certificate /etc/letsencrypt/live/{{distributed_press_domain}}/fullchain.pem; # managed by Certbot
@@ -24,4 +23,13 @@ server {
   include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
   ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
 
+}
+
+server {
+  server_name {{distributed_press_domain}};
+
+  listen 80;
+  listen [::]:80 ipv6only=on;
+
+  return  301 https://{{distributed_press_domain}}$request_uri;
 }
