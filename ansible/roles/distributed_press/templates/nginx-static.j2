@@ -30,8 +30,6 @@ server {
   listen 80;
   listen [::]:80;
 
-  add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
-
   return  301 https://{{item}}$request_uri;
 }
 

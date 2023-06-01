@@ -31,7 +31,5 @@ server {
   listen 80;
   listen [::]:80 ipv6only=on;
 
-  add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
-
   return  301 https://{{distributed_press_domain}}$request_uri;
 }
