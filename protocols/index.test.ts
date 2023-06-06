@@ -8,6 +8,7 @@ import { exampleSiteConfig } from '../fixtures/siteConfig.js'
 import { HyperProtocol } from './hyper.js'
 import Protocol from './interfaces.js'
 import { BUILTIN, IPFSProtocol } from './ipfs.js'
+import { BitTorrentProtocol } from './bittorrent.js'
 
 const paths = envPaths('distributed-press')
 const filename = fileURLToPath(import.meta.url)
@@ -45,6 +46,18 @@ test('hyper: basic e2e sync', async t => {
   })
 
   await t.notThrowsAsync(t.context.protocol.load(), 'initializing hyper should work')
+  const links = await t.context.protocol.sync(exampleSiteConfig.domain, fixturePath)
+  t.is(links.enabled, true)
+  t.truthy(links.link)
+})
+
+test('bittorrent: basic e2e sync', async t => {
+  const path = await newProtocolTestPath()
+  t.context.protocol = new BitTorrentProtocol({
+    path
+  })
+
+  await t.notThrowsAsync(t.context.protocol.load(), 'initializing bittorrent should work')
   const links = await t.context.protocol.sync(exampleSiteConfig.domain, fixturePath)
   t.is(links.enabled, true)
   t.truthy(links.link)

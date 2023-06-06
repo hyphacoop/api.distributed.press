@@ -59,6 +59,9 @@ async function apiBuilder (cfg: APIConfig): Promise<FastifyTypebox> {
     hyper: {
       path: path.join(protocolStoragePath, 'hyper')
     },
+    bt: {
+      path: path.join(protocolStoragePath, 'bt')
+    },
     http: {
       path: path.join(protocolStoragePath, 'http')
     }

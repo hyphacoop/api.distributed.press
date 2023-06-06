@@ -2,6 +2,9 @@
   "include": [
     "**/*.ts"
   ],
+  "exclude": [
+    "node_modules"
+  ],
   "files": ["@types/fastify.d.ts", "@types/fastify-jwt.d.ts"],
   "compilerOptions": {
     "target": "esnext",

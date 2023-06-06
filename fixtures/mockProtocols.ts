@@ -1,5 +1,5 @@
 import { Static, TSchema } from '@sinclair/typebox'
-import { HTTPProtocolFields, HyperProtocolFields, IPFSProtocolFields } from '../api/schemas.js'
+import { HTTPProtocolFields, HyperProtocolFields, IPFSProtocolFields, BitTorrentProtocolFields } from '../api/schemas.js'
 import { ProtocolManager } from '../protocols/index.js'
 import Protocol, { Ctx, SyncOptions } from '../protocols/interfaces.js'
 
@@ -7,17 +7,20 @@ export class MockProtocolManager implements ProtocolManager {
   http: MockHTTPProtocol
   ipfs: MockIPFSProtocol
   hyper: MockHyperProtocol
+  bt: MockBitTorrentProtocol
 
   constructor () {
     this.ipfs = new MockIPFSProtocol()
     this.http = new MockHTTPProtocol()
     this.hyper = new MockHyperProtocol()
+    this.bt = new MockBitTorrentProtocol()
   }
 
   async load (): Promise<void> {
     const promises = [
       this.ipfs.load(),
       this.hyper.load(),
+      this.bt.load(),
       this.http.load()
     ]
     await Promise.all(promises)
@@ -27,6 +30,7 @@ export class MockProtocolManager implements ProtocolManager {
     const promises = [
       this.ipfs.unload(),
       this.hyper.unload(),
+      this.bt.unload(),
       this.http.unload()
     ]
     await Promise.all(promises)
@@ -78,6 +82,20 @@ class MockHyperProtocol extends BaseMockProtocol<typeof HyperProtocolFields> {
       gateway: 'https://example-hyper-gateway/example-link',
       raw: 'example-raw',
       dnslink: '/hyper/example-raw'
+    }
+  }
+}
+
+class MockBitTorrentProtocol extends BaseMockProtocol<typeof BitTorrentProtocolFields> {
+  async sync (_id: string, _folderPath: string, _options?: SyncOptions, _ctx?: Ctx): Promise<Static<typeof BitTorrentProtocolFields>> {
+    return {
+      enabled: true,
+      link: 'bittorrent://example-link',
+      gateway: 'https://example-bittorrent-gateway/example-link',
+      dnslink: '/bt/example-raw',
+      infoHash: 'bittorrent://example-link-infohash',
+      pubKey: 'bittorrent://example-link-publickey',
+      magnet: 'magnet:?xt:urn:btih:example-link&xs=urn:btpk:example-link'
     }
   }
 }

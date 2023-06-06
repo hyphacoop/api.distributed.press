@@ -109,4 +109,7 @@ store
 
 *.key
 
+# Don't commit our internal ansibles!
 ansible/prod.yml
+ansible/staging.yml
+ansible/mauve.yml

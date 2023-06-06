@@ -22,11 +22,19 @@ export const IPFSProtocolFields = GenericProtocol(Type.Object({
   pubKey: Type.String(), // ipns://{publishKey}
   dnslink: Type.String()
 }))
+export const BitTorrentProtocolFields = GenericProtocol(Type.Object({
+  gateway: Type.String(), // same as gateway in HyperProtocolFields
+  magnet: Type.String(), // Used by most torrent clients. Note: Will not update in regular clients
+  infoHash: Type.String(), // Immutable link, similar to ipfs public key
+  pubKey: Type.String(), // Link to public key for BEP-46, similar to IPNS
+  dnslink: Type.String()
+}))
 
 export const Protocols = Type.Object({
   http: HTTPProtocolFields,
   hyper: HyperProtocolFields,
-  ipfs: IPFSProtocolFields
+  ipfs: IPFSProtocolFields,
+  bt: BitTorrentProtocolFields
 })
 export const ProtocolStatus = Type.Record(Type.KeyOf(Protocols), Type.Boolean())
 export const Site = Type.Object({

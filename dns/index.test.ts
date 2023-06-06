@@ -32,7 +32,8 @@ test('basic dns resolve', async t => {
     protocols: {
       http: false,
       ipfs: true,
-      hyper: true
+      hyper: true,
+      bt: false
     },
     public: true
   })
