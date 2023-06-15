@@ -92,7 +92,7 @@ class MockBitTorrentProtocol extends BaseMockProtocol<typeof BitTorrentProtocolF
       enabled: true,
       link: 'bittorrent://example-link',
       gateway: 'https://example-bittorrent-gateway/example-link',
-      dnslink: '/bt/example-raw',
+      dnslink: '/bittorrent/example-raw',
       infoHash: 'bittorrent://example-link-infohash',
       pubKey: 'bittorrent://example-link-publickey',
       magnet: 'magnet:?xt:urn:btih:example-link&xs=urn:btpk:example-link'

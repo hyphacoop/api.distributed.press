@@ -62,6 +62,16 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
       promises.push(promise)
     }
 
+    if (site.protocols.bittorrent) {
+      const promise = this.protocols.bittorrent
+        .sync(siteId, filePath, undefined, ctx)
+        .then((protocolLinks) => {
+          site.links.bittorrent = protocolLinks
+        })
+
+      promises.push(promise)
+    }
+
     await Promise.all(promises)
     await this.db.put(siteId, site)
   }
