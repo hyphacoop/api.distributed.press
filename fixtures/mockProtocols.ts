@@ -7,20 +7,20 @@ export class MockProtocolManager implements ProtocolManager {
   http: MockHTTPProtocol
   ipfs: MockIPFSProtocol
   hyper: MockHyperProtocol
-  bt: MockBitTorrentProtocol
+  bittorrent: MockBitTorrentProtocol
 
   constructor () {
     this.ipfs = new MockIPFSProtocol()
     this.http = new MockHTTPProtocol()
     this.hyper = new MockHyperProtocol()
-    this.bt = new MockBitTorrentProtocol()
+    this.bittorrent = new MockBitTorrentProtocol()
   }
 
   async load (): Promise<void> {
     const promises = [
       this.ipfs.load(),
       this.hyper.load(),
-      this.bt.load(),
+      this.bittorrent.load(),
       this.http.load()
     ]
     await Promise.all(promises)
@@ -30,7 +30,7 @@ export class MockProtocolManager implements ProtocolManager {
     const promises = [
       this.ipfs.unload(),
       this.hyper.unload(),
-      this.bt.unload(),
+      this.bittorrent.unload(),
       this.http.unload()
     ]
     await Promise.all(promises)

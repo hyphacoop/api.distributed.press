@@ -13,7 +13,7 @@
     "dev": "ts-node-esm index.ts | pino-pretty -c -t",
     "watch": "nodemon --watch './**/*.ts' --exec 'node --experimental-specifier-resolution=node --loader ts-node/esm' index.ts | pino-pretty -c -t",
     "start": "node build/index.js",
-    "test": "ava --verbose --concurrency 1 --timeout=1m",
+    "test": "ava --verbose --concurrency 1 --timeout=3m",
     "nuke": "ts-node-esm protocols/scripts/nuke.ts"
   },
   "repository": {

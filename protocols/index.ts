@@ -9,7 +9,7 @@ import { HTTPProtocolFields, HyperProtocolFields, IPFSProtocolFields, BitTorrent
 interface ProtocolOptions {
   ipfs: IPFSProtocolOptions
   hyper: HyperProtocolOptions
-  bt: BitTorrentProtocolOptions
+  bittorrent: BitTorrentProtocolOptions
   http: HTTPProtocolOptions
 }
 
@@ -17,27 +17,27 @@ export interface ProtocolManager {
   http: Protocol<Static<typeof HTTPProtocolFields>>
   ipfs: Protocol<Static<typeof IPFSProtocolFields>>
   hyper: Protocol<Static<typeof HyperProtocolFields>>
-  bt: Protocol<Static<typeof BitTorrentProtocolFields>>
+  bittorrent: Protocol<Static<typeof BitTorrentProtocolFields>>
 }
 
 export class ConcreteProtocolManager implements ProtocolManager {
   http: HTTPProtocol
   ipfs: IPFSProtocol
   hyper: HyperProtocol
-  bt: BitTorrentProtocol
+  bittorrent: BitTorrentProtocol
 
   constructor (options: ProtocolOptions) {
     this.http = new HTTPProtocol(options.http)
     this.ipfs = new IPFSProtocol(options.ipfs)
     this.hyper = new HyperProtocol(options.hyper)
-    this.bt = new BitTorrentProtocol(options.bt)
+    this.bittorrent = new BitTorrentProtocol(options.bittorrent)
   }
 
   async load (): Promise<void> {
     const promises = [
       this.ipfs.load(),
       this.hyper.load(),
-      this.bt.load(),
+      this.bittorrent.load(),
       this.http.load()
     ]
     await Promise.all(promises)
@@ -47,7 +47,7 @@ export class ConcreteProtocolManager implements ProtocolManager {
     const promises = [
       this.ipfs.unload(),
       this.hyper.unload(),
-      this.bt.unload(),
+      this.bittorrent.unload(),
       this.http.unload()
     ]
     await Promise.all(promises)

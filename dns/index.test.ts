@@ -33,7 +33,7 @@ test('basic dns resolve', async t => {
       http: false,
       ipfs: true,
       hyper: true,
-      bt: false
+      bittorrent: false
     },
     public: true
   })

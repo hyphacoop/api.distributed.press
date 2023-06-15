@@ -34,7 +34,7 @@ export const Protocols = Type.Object({
   http: HTTPProtocolFields,
   hyper: HyperProtocolFields,
   ipfs: IPFSProtocolFields,
-  bt: BitTorrentProtocolFields
+  bittorrent: BitTorrentProtocolFields
 })
 export const ProtocolStatus = Type.Record(Type.KeyOf(Protocols), Type.Boolean())
 export const Site = Type.Object({

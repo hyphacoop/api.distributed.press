@@ -14,7 +14,7 @@ export const exampleSiteConfig: Static<typeof NewSite> = {
     http: true,
     ipfs: false,
     hyper: false,
-    bt: false
+    bittorrent: false
   },
   public: true
 }
