@@ -80,6 +80,7 @@ async function apiBuilder (cfg: APIConfig): Promise<FastifyTypebox> {
   await registerAuth(cfg, server, store)
   await server.register(multipart)
 
+  /*
   // pre-sync all sites
   const allSites = await store.sites.keys()
   await pMap(allSites, async (siteId) => {
@@ -88,6 +89,7 @@ async function apiBuilder (cfg: APIConfig): Promise<FastifyTypebox> {
     await store.sites.sync(siteId, fp, { logger: server.log })
     server.log.info(`Finished presync: ${siteId}`)
   }, { concurrency: 1 })
+  */
 
   // handle cleanup on shutdown
   server.addHook('onClose', async server => {
