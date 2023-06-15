@@ -71,6 +71,12 @@ export class BitTorrentProtocol implements Protocol<Static<typeof BitTorrentProt
     // TODO: Pass in gateway from config
     const gateway = `https://${subdomain}.bt.hypha.coop/`
 
+    // https://en.wikipedia.org/wiki/Magnet_URI_scheme
+    // The `infoHash` is used in the `xt` (exact topic) section
+    // The `publicKey` is mutable and in the `xs` (eXact Source) section
+    // Most torrent clients only support the `xt` property
+    // The xs property with `urn:btpk:` comes from BEP 46
+    // http://www.bittorrent.org/beps/bep_0046.html
     const magnet = `magnet:?xt:urn:btih:${infoHash}&xs=urn:btpk:${publicKey}`
 
     const infoHashURL = `bittorrent://${infoHash}/`
