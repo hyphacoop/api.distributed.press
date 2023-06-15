@@ -43,6 +43,7 @@ export class BitTorrentProtocol implements Protocol<Static<typeof BitTorrentProt
     // Create keypair from the site ID and the seed key
     const { publicKey, secretKey } = manager.createKeypair(id)
 
+    // `id` must be used since WebTorrent uses the torrent `name` as a subfolder
     const storageFolder = path.join(this.options.path, 'data', publicKey, id)
 
     const torrentInfo = {
