@@ -10,10 +10,14 @@ import multipart from '@fastify/multipart'
 import swagger from '@fastify/swagger'
 import swagger_ui from '@fastify/swagger-ui'
 import metrics from 'fastify-metrics'
+
 import path from 'node:path'
 import envPaths from 'env-paths'
+
 import { Level } from 'level'
 import { MemoryLevel } from 'memory-level'
+import pMap from 'p-map'
+
 import { siteRoutes } from './sites.js'
 import { adminRoutes } from './admin.js'
 import { publisherRoutes } from './publisher.js'
@@ -78,11 +82,11 @@ async function apiBuilder (cfg: APIConfig): Promise<FastifyTypebox> {
 
   // pre-sync all sites
   const allSites = await store.sites.keys()
-  await Promise.all(allSites.map(async (siteId) => {
+  await pMap(allSites, async (siteId) => {
     server.log.info(`Presyncing site: ${siteId}`)
     const fp = store.fs.getPath(siteId)
     await store.sites.sync(siteId, fp, { logger: server.log })
-  }))
+  }, { concurrency: 2 })
 
   // handle cleanup on shutdown
   server.addHook('onClose', async server => {
