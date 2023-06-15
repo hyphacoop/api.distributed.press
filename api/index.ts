@@ -86,6 +86,7 @@ async function apiBuilder (cfg: APIConfig): Promise<FastifyTypebox> {
     server.log.info(`Presyncing site: ${siteId}`)
     const fp = store.fs.getPath(siteId)
     await store.sites.sync(siteId, fp, { logger: server.log })
+    server.log.info(`Finished presync: ${siteId}`)
   }, { concurrency: 2 })
 
   // handle cleanup on shutdown
