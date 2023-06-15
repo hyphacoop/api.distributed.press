@@ -84,7 +84,7 @@ export class BitTorrentProtocol implements Protocol<Static<typeof BitTorrentProt
 
     ctx?.logger.info(`[bittorrent] Published: ${link}`)
 
-    const dnslink = `/bt/${publicKey}`
+    const dnslink = `/bittorrent/${publicKey}`
     return {
       enabled: true,
       link,
