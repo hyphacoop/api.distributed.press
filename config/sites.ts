@@ -88,7 +88,19 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
   }
 
   async get (id: string): Promise<Static<typeof Site>> {
-    return await this.db.get(id)
+    const site = await this.db.get(id)
+    const TO_FILL = ['bittorrent', 'public']
+    /* eslint-disable */
+    for (const key of TO_FILL) {
+      // @ts-ignore
+      if (!site[key]) {
+        // @ts-ignore
+        site[key] = false
+      }
+    }
+    /* eslint-enable */
+
+    return site
   }
 
   async listAll (hidePrivate: boolean): Promise<string[]> {
