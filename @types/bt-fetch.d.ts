@@ -3,6 +3,7 @@ declare module 'bt-fetch' {
     folder: string
     timeout: number
     reloadInterval: number
+    torrentPort: number
   }>
 
   export interface Torrent {
