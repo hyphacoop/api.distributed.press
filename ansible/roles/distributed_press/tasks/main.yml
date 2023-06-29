@@ -68,6 +68,12 @@
 - name: "Enable libp2p tcp traffic through firewall"
   shell: "ufw allow in 7976/tcp"
 
+- name: "Enable webtorrent udp traffic through firewall"
+  shell: "ufw allow in 2867/udp"
+
+- name: "Enable webtorrent tcp traffic through firewall"
+  shell: "ufw allow in 2867/tcp"
+
 - name: "Check if JWT keys got generated already"
   stat:
     path: "{{distributed_press_data}}/keys/"

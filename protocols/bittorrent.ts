@@ -22,7 +22,11 @@ export class BitTorrentProtocol implements Protocol<Static<typeof BitTorrentProt
 
   async load (): Promise<void> {
     const folder = this.options.path
-    this.manager = new TorrentManager({ folder })
+    this.manager = new TorrentManager({
+      folder,
+      // Phone dialpad for BTOR
+      torrentPort: 2867
+    })
   }
 
   async unload (): Promise<void> {
