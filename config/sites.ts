@@ -22,6 +22,7 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
 
     const obj: Static<typeof Site> = {
       ...cfg,
+      public: cfg.public ?? false, // default public to false if not provided
       id,
       links: {}
     }
