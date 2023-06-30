@@ -81,7 +81,7 @@ export class BitTorrentProtocol implements Protocol<Static<typeof BitTorrentProt
     // Most torrent clients only support the `xt` property
     // The xs property with `urn:btpk:` comes from BEP 46
     // http://www.bittorrent.org/beps/bep_0046.html
-    const magnet = `magnet:?xt:urn:btih:${infoHash}&xs=urn:btpk:${publicKey}`
+    const magnet = `magnet:?xt=urn:btih:${infoHash}&xs=urn:btpk:${publicKey}`
 
     const infoHashURL = `bittorrent://${infoHash}/`
     const publicKeyURL = `bittorrent://${publicKey}/`
