@@ -36,7 +36,7 @@ export const Protocols = Type.Object({
   ipfs: IPFSProtocolFields,
   bittorrent: BitTorrentProtocolFields
 })
-export const ProtocolStatus = Type.Record(Type.KeyOf(Protocols), Type.Boolean())
+export const ProtocolStatus = Type.Partial(Type.Record(Type.KeyOf(Protocols), Type.Boolean()))
 export const Site = Type.Object({
   id: Type.String(),
   domain: Type.String(),

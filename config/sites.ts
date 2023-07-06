@@ -33,7 +33,7 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
     const site = await this.get(siteId)
 
     const promises = []
-    if (site.protocols.http) {
+    if (site.protocols.http === true) {
       const promise = this.protocols.http
         .sync(siteId, filePath, undefined, ctx)
         .then((protocolLinks) => {
@@ -43,7 +43,7 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
       promises.push(promise)
     }
 
-    if (site.protocols.hyper) {
+    if (site.protocols.hyper === true) {
       const promise = this.protocols.hyper
         .sync(siteId, filePath, undefined, ctx)
         .then((protocolLinks) => {
@@ -53,7 +53,7 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
       promises.push(promise)
     }
 
-    if (site.protocols.ipfs) {
+    if (site.protocols.ipfs === true) {
       const promise = this.protocols.ipfs
         .sync(siteId, filePath, undefined, ctx)
         .then((protocolLinks) => {
@@ -63,7 +63,7 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
       promises.push(promise)
     }
 
-    if (site.protocols.bittorrent) {
+    if (site.protocols.bittorrent === true) {
       const promise = this.protocols.bittorrent
         .sync(siteId, filePath, undefined, ctx)
         .then((protocolLinks) => {
