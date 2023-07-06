@@ -31,6 +31,15 @@ export async function initDnsServer (port: number, store: SiteConfigStore, logge
               data: `dnslink=${links.hyper.dnslink}`
             })
           }
+          if (links.bittorrent !== undefined) {
+            response.answers.push({
+              name,
+              type: dns2.Packet.TYPE.TXT,
+              class: dns2.Packet.CLASS.IN,
+              ttl: 60,
+              data: `dnslink=${links.bittorrent.dnslink}`
+            })
+          }
           send(response)
         })
         .catch((error) => {

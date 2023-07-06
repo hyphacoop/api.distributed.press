@@ -16,7 +16,8 @@ test('sites are default private', async t => {
     protocols: {
       http: true,
       ipfs: false,
-      hyper: false
+      hyper: false,
+      bittorrent: false
     }
   })
   const result = await cfg.get(site.id)

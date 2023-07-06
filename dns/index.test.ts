@@ -32,7 +32,8 @@ test('basic dns resolve', async t => {
     protocols: {
       http: false,
       ipfs: true,
-      hyper: true
+      hyper: true,
+      bittorrent: true
     },
     public: true
   })
@@ -42,6 +43,7 @@ test('basic dns resolve', async t => {
   const response = await dnsClient.query(`_dnslink.${site.domain}`, 'TXT')
   t.true(hasAnswer(response, 'ipns'), 'returned dns query has an ipns entry')
   t.true(hasAnswer(response, 'hyper'), 'returned dns query has a hyper entry')
+  t.true(hasAnswer(response, 'bittorrent'), 'returned dns query has a bittorrent entry')
   t.is(response.answers.filter(ans => ans.type !== DNS.Packet.TYPE.TXT).length, 0, 'should not include any non-TXT entries')
 })
 

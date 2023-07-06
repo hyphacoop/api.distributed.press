@@ -13,7 +13,8 @@ export const exampleSiteConfig: Static<typeof NewSite> = {
   protocols: {
     http: true,
     ipfs: false,
-    hyper: false
+    hyper: false,
+    bittorrent: false
   },
   public: true
 }

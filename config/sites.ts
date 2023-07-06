@@ -33,7 +33,7 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
     const site = await this.get(siteId)
 
     const promises = []
-    if (site.protocols.http) {
+    if (site.protocols.http === true) {
       const promise = this.protocols.http
         .sync(siteId, filePath, undefined, ctx)
         .then((protocolLinks) => {
@@ -43,7 +43,7 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
       promises.push(promise)
     }
 
-    if (site.protocols.hyper) {
+    if (site.protocols.hyper === true) {
       const promise = this.protocols.hyper
         .sync(siteId, filePath, undefined, ctx)
         .then((protocolLinks) => {
@@ -53,11 +53,21 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
       promises.push(promise)
     }
 
-    if (site.protocols.ipfs) {
+    if (site.protocols.ipfs === true) {
       const promise = this.protocols.ipfs
         .sync(siteId, filePath, undefined, ctx)
         .then((protocolLinks) => {
           site.links.ipfs = protocolLinks
+        })
+
+      promises.push(promise)
+    }
+
+    if (site.protocols.bittorrent === true) {
+      const promise = this.protocols.bittorrent
+        .sync(siteId, filePath, undefined, ctx)
+        .then((protocolLinks) => {
+          site.links.bittorrent = protocolLinks
         })
 
       promises.push(promise)
@@ -78,7 +88,19 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
   }
 
   async get (id: string): Promise<Static<typeof Site>> {
-    return await this.db.get(id)
+    const site = await this.db.get(id)
+    const TO_FILL = ['bittorrent', 'public']
+    /* eslint-disable */
+    for (const key of TO_FILL) {
+      // @ts-ignore
+      if (!site[key]) {
+        // @ts-ignore
+        site[key] = false
+      }
+    }
+    /* eslint-enable */
+
+    return site
   }
 
   async listAll (hidePrivate: boolean): Promise<string[]> {
