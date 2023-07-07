@@ -1,3 +1,7 @@
+types {
+  application/ld+json jsonld;
+}
+
 server {
   server_name {{item}};
 
@@ -7,6 +11,10 @@ server {
   index index.html index.md index.gmi index.gemini README.md;
 
   add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+
+  location /.well-known/webfinger {
+    default_type application/jrd+json;
+  }
 
   location / {
     # First attempt to serve request as file, then
