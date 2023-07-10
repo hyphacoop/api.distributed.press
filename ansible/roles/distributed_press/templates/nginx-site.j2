@@ -2,6 +2,11 @@ server {
   server_name {{distributed_press_domain}};
 
   add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+  add_header 'X-Frame-Options' 'ALLOW-FROM *';
+  add_header 'Access-Control-Allow-Origin' '*';
+  add_header 'Access-Control-Allow-Credentials' 'true';
+  add_header 'Access-Control-Allow-Methods' '*';
+  add_header 'Access-Control-Allow-Headers' '*';
 
   # Wait up to 4 mins for stuff to happen
   # This is mostly important for publishing

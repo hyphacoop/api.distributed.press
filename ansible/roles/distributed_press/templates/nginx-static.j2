@@ -11,6 +11,11 @@ server {
   index index.html index.md index.gmi index.gemini README.md;
 
   add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+  add_header 'X-Frame-Options' 'ALLOW-FROM *';
+  add_header 'Access-Control-Allow-Origin' '*';
+  add_header 'Access-Control-Allow-Credentials' 'true';
+  add_header 'Access-Control-Allow-Methods' '*';
+  add_header 'Access-Control-Allow-Headers' '*';
 
   location /.well-known/webfinger {
     default_type application/jrd+json;
