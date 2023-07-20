@@ -3,10 +3,10 @@ server {
 
   add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 
-  # Wait up to 4 mins for stuff to happen
+  # Wait up to 8 mins for stuff to happen
   # This is mostly important for publishing
-  client_body_timeout 240;
-  client_header_timeout 240;
+  client_body_timeout 480;
+  client_header_timeout 480;
 
   location / {
     client_max_body_size 0;
