@@ -1,9 +1,8 @@
 import { Static } from '@sinclair/typebox'
-import * as IPFS from 'ipfs-core'
 import * as IPFSHTTPClient from 'ipfs-http-client'
 import * as GoIPFS from 'go-ipfs'
 import { ControllerOptions, Controller, createController } from 'ipfsd-ctl'
-import { Key } from 'ipfs-core-types/src/key/index.js'
+import type { Key, IPFS } from 'ipfs-core-types/src/key/index.js'
 import path from 'node:path'
 import Protocol, { Ctx, SyncOptions } from './interfaces.js'
 import { IPFSProtocolFields } from '../api/schemas.js'
@@ -14,7 +13,6 @@ import { rm } from 'node:fs/promises'
 const MFS_ROOT = '/distributed-press/'
 
 // TODO(docs): clarify what these actually do
-export const JSIPFS = 'js-ipfs' as const
 export const KUBO = 'kubo' as const
 export const BUILTIN = 'builtin' as const
 export type IPFSProvider = typeof JSIPFS | typeof KUBO | typeof BUILTIN
@@ -22,7 +20,7 @@ export type IPFSProvider = typeof JSIPFS | typeof KUBO | typeof BUILTIN
 export interface IPFSProtocolOptions {
   path: string
   provider: IPFSProvider
-  ipfs?: IPFS.IPFS
+  ipfs?: IPFS
   mfsRoot?: string
 }
 
@@ -116,8 +114,24 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           }
         }
 
+        let gracefulStop = false
+
+        // When launching kubo, account for early exits
+        if (ipfsd.subprocess != null) {
+          void ipfsd.subprocess.once('exit', () => {
+            if (!gracefulStop) {
+              this.load().catch((e) => {
+                console.error('Unable to restart kubo after it died.')
+                console.error(e.stack)
+                process.exit(1)
+              })
+            }
+          })
+        }
+
         this.ipfs = ipfsd.api
         this.onCleanup.push(async () => {
+          gracefulStop = true
           if (ipfsd !== null) {
             await ipfsd.stop()
           }
@@ -128,10 +142,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           url: this.options.path
         })
       } else {
-        // path for initializing a js-ipfs instance
-        this.ipfs = await IPFS.create({
-          repo: this.options.path
-        })
+        throw new Error(`Unknown IPFS provider ${this.options.provider ?? 'undefined'}`)
       }
     }
   }
@@ -256,6 +267,5 @@ async function makeOrGetKey (ipfs: IPFS.IPFS, name: string): Promise<Key> {
   }
 
   // js-ipfs uses uppercase, but kubo expects lowercase
-  // @ts-expect-error
-  return await ipfs.key.gen(name, { type: 'ed25519' })
+  return ipfs.key.gen(name, { type: 'ed25519' })
 }
