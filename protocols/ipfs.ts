@@ -267,5 +267,5 @@ async function makeOrGetKey (ipfs: IPFS, name: string): Promise<Key> {
   }
 
   // js-ipfs uses uppercase, but kubo expects lowercase
-  return await ipfs.key.gen(name, { type: 'Ed25519' })
+  return await ipfs.key.gen(name, { type: 'ed25519' as 'Ed25519' })
 }
