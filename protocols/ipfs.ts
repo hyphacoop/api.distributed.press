@@ -2,12 +2,14 @@ import { Static } from '@sinclair/typebox'
 import * as IPFSHTTPClient from 'ipfs-http-client'
 import * as GoIPFS from 'go-ipfs'
 import { ControllerOptions, Controller, createController } from 'ipfsd-ctl'
-import type { Key, IPFS } from 'ipfs-core-types/src/key/index.js'
 import path from 'node:path'
 import Protocol, { Ctx, SyncOptions } from './interfaces.js'
 import { IPFSProtocolFields } from '../api/schemas.js'
 import getPort from 'get-port'
 import { rm } from 'node:fs/promises'
+import { globSource } from 'ipfs-http-client'
+import { IPFS } from 'ipfs-core-types'
+import { Key } from 'ipfs-core-types/dist/src/key/index.js'
 
 // TODO: Make this configurable
 const MFS_ROOT = '/distributed-press/'
@@ -15,7 +17,7 @@ const MFS_ROOT = '/distributed-press/'
 // TODO(docs): clarify what these actually do
 export const KUBO = 'kubo' as const
 export const BUILTIN = 'builtin' as const
-export type IPFSProvider = typeof JSIPFS | typeof KUBO | typeof BUILTIN
+export type IPFSProvider = typeof KUBO | typeof BUILTIN
 
 export interface IPFSProtocolOptions {
   path: string
@@ -34,7 +36,7 @@ export type CleanupCallback = () => Promise<void>
 export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>> {
   options: IPFSProtocolOptions
   onCleanup: CleanupCallback[]
-  ipfs: IPFS.IPFS | null
+  ipfs: IPFS | null
   mfsRoot: string
 
   constructor (options: IPFSProtocolOptions) {
@@ -141,8 +143,6 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         this.ipfs = IPFSHTTPClient.create({
           url: this.options.path
         })
-      } else {
-        throw new Error(`Unknown IPFS provider ${this.options.provider ?? 'undefined'}`)
       }
     }
   }
@@ -164,7 +164,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     let toPublish = '/ipfs/bafyaabakaieac/'
     let lastEntry = null
 
-    const glob = IPFS.globSource(folderPath, '**/*')
+    const glob = globSource(folderPath, '**/*')
     const files = this.ipfs.addAll(glob, {
       pin: false,
       wrapWithDirectory: true,
@@ -257,7 +257,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
   }
 }
 
-async function makeOrGetKey (ipfs: IPFS.IPFS, name: string): Promise<Key> {
+async function makeOrGetKey (ipfs: IPFS, name: string): Promise<Key> {
   const list = await ipfs.key.list()
 
   for (const key of list) {
@@ -267,5 +267,5 @@ async function makeOrGetKey (ipfs: IPFS.IPFS, name: string): Promise<Key> {
   }
 
   // js-ipfs uses uppercase, but kubo expects lowercase
-  return ipfs.key.gen(name, { type: 'ed25519' })
+  return await ipfs.key.gen(name, { type: 'Ed25519' })
 }
