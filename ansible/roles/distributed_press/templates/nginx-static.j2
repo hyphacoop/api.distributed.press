@@ -20,6 +20,9 @@ server {
   location /.well-known/webfinger {
     default_type application/jrd+json;
   }
+  location /.well-known/host-meta {
+    default_type application/xrd+xml;
+  }
 
   location / {
     # First attempt to serve request as file, then
