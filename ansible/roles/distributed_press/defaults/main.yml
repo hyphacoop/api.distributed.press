@@ -22,3 +22,19 @@ distributed_press_letsencrypt_email: "example@example.com"
 
 # These will be used to be served over nginx along with letsencrypt certs
 distributed_press_served_sites: []
+
+# Prefix with social_inbox_
+# These vars are for adding the distributed press social inbox
+social_inbox_enabled: false
+social_inbox_user: "social"
+social_inbox_home: "/home/{{social_inbox_user}}"
+social_inbox_service_name: "social.distributed.press"
+social_inbox_data: "{{social_inbox_home}}/.local/share/social.distributed.press-nodejs"
+
+social_inbox_domain: "social.example.com"
+social_inbox_host: "localhost"
+social_inbox_port: 7625 # SOCL on a phone number pad
+
+social_inbox_git_repo: "https://github.com/hyphacoop/social.distributed.press.git"
+social_inbox_git_branch: "initial"
+social_inbox_source: "{{social_inbox_home}}/social.distributed.press"
