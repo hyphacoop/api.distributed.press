@@ -2,7 +2,7 @@
 Description=Distributed Press Social Inbox Server
 After=network-online.target
 [Service]
-Environment="DEBUG=*"
+# Environment="DEBUG=*"
 WorkingDirectory={{social_inbox_source}}
 User={{social_inbox_user}}
 ExecStart=npx ts-node-esm index.ts --port {{social_inbox_port}} --host {{social_inbox_host}}
