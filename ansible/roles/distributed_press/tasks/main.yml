@@ -130,6 +130,28 @@
     cd {{social_inbox_source}}
     npm ci
 
+- name: Import blocklist for social inbox
+  when:
+    - social_inbox_enabled
+    - social_inbox_blocklist
+  become: yes
+  become_user: "{{social_inbox_user}}"
+  shell: |
+    cd {{social_inbox_source}}
+    npm run import-blocklist -- --list {{social_inbox_blocklist}}
+
+
+- name: Import admin kist for social inbox
+  when:
+    -  social_inbox_enabled
+    - social_inbox_admins is iterable
+    - social_inbox_admins | length > 0
+  become: yes
+  become_user: "{{social_inbox_user}}"
+  shell: |
+    cd {{social_inbox_source}}
+    npm run import-admins -- {{ social_inbox_admins | map('regex_replace', '^', '--list ') | join(' ') }}
+
 - name: "Run social.distributed.press service"
   when: social_inbox_enabled
   systemd:
