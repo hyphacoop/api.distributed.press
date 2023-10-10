@@ -1,0 +1,11 @@
+---
+all:
+  vars:
+    distributed_press_domain: "localhost"
+    distributed_press_served_sites: []
+  children:
+    distributed_press:
+      hosts:
+        localhost:
+          ansible_connection: local
+          ansible_user: root
