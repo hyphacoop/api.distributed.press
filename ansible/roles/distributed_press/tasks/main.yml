@@ -88,6 +88,15 @@
     enabled: true
     name: "{{distributed_press_service_name}}"
 
+- name: "Add cron job to restart api.distributed.press service every few days"
+  cron:
+    name: "Restart api.distributed.press service"
+    day: "*/3"
+    job: "/bin/systemctl restart {{ distributed_press_service_name }}"
+  become: yes
+  tags:
+    - cron
+
 - name: "Install NGINX/Certbot"
   apt:
     pkg:
