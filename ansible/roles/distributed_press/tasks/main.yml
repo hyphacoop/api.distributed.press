@@ -98,7 +98,6 @@
     enabled: true
     name: "{{distributed_press_service_name}}"
 
-
 - name: Add social.distributed.press systemd service
   when: social_inbox_enabled
   template:
@@ -141,7 +140,7 @@
     npm run import-blocklist -- --list {{social_inbox_blocklist}}
 
 
-- name: Import admin kist for social inbox
+- name: Import admin list for social inbox
   when:
     -  social_inbox_enabled
     - social_inbox_admins is iterable
@@ -159,6 +158,17 @@
     state: restarted
     enabled: true
     name: "{{social_inbox_service_name}}"
+
+- name: "Add cron job to restart api.distributed.press service every few days"
+  cron:
+    name: "Restart api.distributed.press service"
+    hour: "0"
+    minute: "0"
+    weekday: "6" # Saturday
+    job: "/bin/systemctl restart {{ distributed_press_service_name }}"
+  become: yes
+  tags:
+    - cron
 
 - name: "Install NGINX/Certbot"
   apt:

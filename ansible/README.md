@@ -38,6 +38,9 @@ all:
 ```
 # execute the Ansible playbook with user defined variables
 ansible-playbook distributed_press.yml -i inventory.yml
+
+# execute only the 'cron' related tasks of the Ansible playbook locally
+sudo ansible-playbook distributed_press.yml -i local_deploy.yml --tags cron
 ```
 
 ## Debugging Staging
