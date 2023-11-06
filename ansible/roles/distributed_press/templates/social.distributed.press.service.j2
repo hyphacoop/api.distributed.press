@@ -5,7 +5,7 @@ After=network-online.target
 # Environment="DEBUG=*"
 WorkingDirectory={{social_inbox_source}}
 User={{social_inbox_user}}
-ExecStart=npx ts-node-esm index.ts --port {{social_inbox_port}} --host {{social_inbox_host}} --publicURL https://{{social_inbox_domain}}
+ExecStart=npx ts-node-esm src/server/index.ts --port {{social_inbox_port}} --host {{social_inbox_host}} --publicURL https://{{social_inbox_domain}}
 Restart=always
 RestartSec=3
 LimitNOFILE=4096
