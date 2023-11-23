@@ -57,3 +57,17 @@ cd ~/api.distributed.press
 systemctl status distributed.press
 journalctl -fu distributed.press
 ```
+
+## Social Inbox
+
+You can deploy an instance of the [Distributed Press Social Inbox](https://github.com/hyphacoop/social.distributed.press) along side the press by toggling the `social_inbox_enabled` flag.
+
+```yaml
+---
+all:
+  vars:
+    social_inbox_enabled: true
+    social_inbox_domain: "social.example.com"
+    social_inbox_admins:
+      - "@username@yourdomain.com"
+```

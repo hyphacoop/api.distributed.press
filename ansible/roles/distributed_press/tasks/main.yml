@@ -9,6 +9,16 @@
     shell: /bin/bash
     comment: User for the distributed.press API server
 
+- name: Ensure user exists for DP service
+  when: social_inbox_enabled
+  user:
+    name: "{{social_inbox_user}}"
+    append: true
+    # TODO: is this needed?
+    groups: adm
+    shell: /bin/bash
+    comment: User for the social.distributed.press API server
+
 - name: "Ensure nginx can access site data"
   user:
     name: '{{distributed_press_user}}'
@@ -88,10 +98,73 @@
     enabled: true
     name: "{{distributed_press_service_name}}"
 
+- name: Add social.distributed.press systemd service
+  when: social_inbox_enabled
+  template:
+    src: social.distributed.press.service.j2
+    dest: "/etc/systemd/system/{{social_inbox_service_name}}.service"
+
+- name: "Stop social.distributed.press service to recompile"
+  when: social_inbox_enabled
+  systemd:
+    state: stopped
+    name: "{{social_inbox_service_name}}"
+
+- name: Clone or update Social.DP codebase
+  when: social_inbox_enabled
+  become: yes
+  become_user: "{{social_inbox_user}}"
+  git:
+    repo: "{{social_inbox_git_repo}}"
+    version: "{{social_inbox_git_branch}}"
+    dest: "{{social_inbox_source}}"
+    clone: yes
+    update: yes
+
+- name: Install NPM Dependencies for social inbox
+  when: social_inbox_enabled
+  become: yes
+  become_user: "{{social_inbox_user}}"
+  shell: |
+    cd {{social_inbox_source}}
+    npm ci
+
+- name: Import blocklist for social inbox
+  when:
+    - social_inbox_enabled
+    - social_inbox_blocklist
+  become: yes
+  become_user: "{{social_inbox_user}}"
+  shell: |
+    cd {{social_inbox_source}}
+    npm run import-blocklist -- --list {{social_inbox_blocklist}}
+
+
+- name: Import admin list for social inbox
+  when:
+    -  social_inbox_enabled
+    - social_inbox_admins is iterable
+    - social_inbox_admins | length > 0
+  become: yes
+  become_user: "{{social_inbox_user}}"
+  shell: |
+    cd {{social_inbox_source}}
+    npm run import-admins -- {{ social_inbox_admins | map('regex_replace', '^', '--list ') | join(' ') }}
+
+- name: "Run social.distributed.press service"
+  when: social_inbox_enabled
+  systemd:
+    daemon_reload: true
+    state: restarted
+    enabled: true
+    name: "{{social_inbox_service_name}}"
+
 - name: "Add cron job to restart api.distributed.press service every few days"
   cron:
     name: "Restart api.distributed.press service"
-    day: "*/3"
+    hour: "0"
+    minute: "0"
+    weekday: "6" # Saturday
     job: "/bin/systemctl restart {{ distributed_press_service_name }}"
   become: yes
   tags:
@@ -117,7 +190,7 @@
     name: nginx
 
 - name: "Register certbot certificate"
-  shell: "certbot --nginx --non-interactive -d {{distributed_press_domain}} {{ distributed_press_served_sites | map('regex_replace', '^', '-d ') | join(' ') }} --expand --agree-tos --no-eff-email --email {{distributed_press_letsencrypt_email}}"
+  shell: "certbot --nginx --non-interactive -d {{distributed_press_domain}} {{ distributed_press_served_sites | map('regex_replace', '^', '-d ') | join(' ') }} {% if (social_inbox_enabled) %} -d {{ social_inbox_domain }} {% endif %}--expand --agree-tos --no-eff-email --email {{distributed_press_letsencrypt_email}}"
 
 - name: "Copy over default site config"
   template:
@@ -128,6 +201,12 @@
   template:
     src: nginx-site.j2
     dest: "/etc/nginx/sites-enabled/{{distributed_press_domain}}"
+
+- name: "Copy over social inbox site config"
+  when: social_inbox_enabled
+  template:
+    src: nginx-social-site.j2
+    dest: "/etc/nginx/sites-enabled/{{social_inbox_domain}}"
 
 - name: "Copy over static site configs"
   template:

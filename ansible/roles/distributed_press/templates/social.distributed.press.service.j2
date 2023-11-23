@@ -1,0 +1,13 @@
+[Unit]
+Description=Distributed Press Social Inbox Server
+After=network-online.target
+[Service]
+# Environment="DEBUG=*"
+WorkingDirectory={{social_inbox_source}}
+User={{social_inbox_user}}
+ExecStart=npx ts-node-esm src/bin.ts run --port {{social_inbox_port}} --host {{social_inbox_host}} --publicURL https://{{social_inbox_domain}}
+Restart=always
+RestartSec=3
+LimitNOFILE=4096
+[Install]
+WantedBy=multi-user.target
