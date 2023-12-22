@@ -7,6 +7,7 @@ import { CAPABILITIES, JWTPayload, JWTPayloadT, subset } from './jwt.js'
 import { FastifyRequest, FastifyReply } from 'fastify'
 import { Value } from '@sinclair/typebox/value'
 import { StoreI } from '../config/index.js'
+import createError from 'http-errors'
 
 function printCapabilities (capabilities: CAPABILITIES[]): string {
   return capabilities.map(cap => cap.toString()).join(', ')
@@ -14,27 +15,31 @@ function printCapabilities (capabilities: CAPABILITIES[]): string {
 
 export const verifyTokenCapabilities = async (request: FastifyRequest, store: StoreI, capabilities: CAPABILITIES[]): Promise<void> => {
   if (request.raw.headers.authorization === undefined) {
-    throw new Error('Missing token header')
+    throw createError(401, 'Missing token header')
   }
   try {
     const decoded = await request.jwtVerify<JWTPayloadT>()
     if (!Value.Check(JWTPayload, decoded)) {
-      throw new Error('Malformed JWT Payload')
+      throw createError(400, 'Malformed JWT Payload')
     }
     if (!subset(capabilities, decoded.capabilities)) {
-      throw new Error(`Mismatched capabilities: got ${printCapabilities(decoded.capabilities)}, wanted ${printCapabilities(capabilities)}`)
+      throw createError(403, `Mismatched capabilities: got ${printCapabilities(decoded.capabilities)}, wanted ${printCapabilities(capabilities)}`)
     }
     if (decoded.expires !== -1 && decoded.expires < (new Date()).getTime()) {
-      throw new Error('JWT token has expired, please refresh it')
+      throw createError(401, 'JWT token has expired, please refresh it')
     }
     const isRevoked = await store.revocations.isRevoked(decoded)
     if (isRevoked) {
-      throw new Error('JWT token has been revoked')
+      throw createError(401, 'JWT token has been revoked')
     } else {
       return await Promise.resolve()
     }
   } catch (error) {
-    throw new Error(`Cannot verify access token JWT: ${error as string}`)
+    if (error instanceof createError.HttpError) {
+      throw createError(401, `JWT error: ${error.message}`)
+    } else {
+      throw createError(500, `Internal Server Error: ${error as string}`)
+    }
   }
 }
 

@@ -10,6 +10,7 @@ import { rm } from 'node:fs/promises'
 import { globSource } from 'ipfs-http-client'
 import { IPFS } from 'ipfs-core-types'
 import { Key } from 'ipfs-core-types/dist/src/key/index.js'
+import createError from 'http-errors'
 
 // TODO: Make this configurable
 const MFS_ROOT = '/distributed-press/'
@@ -112,7 +113,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
             await ipfsd.api.id()
           } catch (cause) {
             const message = 'Unable to start IPFS daemon'
-            throw new Error(message, { cause })
+            throw createError(500, message, { cause })
           }
         }
 
@@ -157,7 +158,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     ctx?.logger.info('[ipfs] Sync Start')
     const mfsLocation = path.posix.join(this.mfsRoot, id)
     if (this.ipfs === null) {
-      throw new Error('IPFS must be initialized using load() before calling sync()')
+      throw createError(500, 'IPFS must be initialized using load() before calling sync()')
     }
 
     // By default, inline empty directory CID
@@ -214,7 +215,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
   private async publishSite (id: string, ctx?: Ctx): Promise<PublishResult> {
     if (this.ipfs === null) {
-      throw new Error('IPFS must be initialized using load() before calling sync()')
+      throw createError(500, 'IPFS must be initialized using load() before calling sync()')
     }
 
     ctx?.logger.info('[ipfs] Sync start')
@@ -243,7 +244,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
   async unsync (id: string, _site: Static<typeof IPFSProtocolFields>, ctx?: Ctx): Promise<void> {
     if (this.ipfs === null) {
-      throw new Error('IPFS must be initialized using load() before calling sync()')
+      throw createError(500, 'IPFS must be initialized using load() before calling sync()')
     }
 
     const mfsLocation = path.posix.join(this.mfsRoot, id)
