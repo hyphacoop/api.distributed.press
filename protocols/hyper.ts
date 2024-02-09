@@ -3,6 +3,7 @@ import LocalDrive from 'localdrive'
 import { Static } from '@sinclair/typebox'
 import Protocol, { Ctx, SyncOptions } from './interfaces'
 import { HyperProtocolFields } from '../api/schemas'
+import createError from 'http-errors'
 
 export interface HyperProtocolOptions {
   path: string
@@ -34,7 +35,7 @@ export class HyperProtocol implements Protocol<Static<typeof HyperProtocolFields
     }
 
     if (this.sdk === null) {
-      throw new Error('Hypercore SDK called before being initialized')
+      throw createError(500, 'Hypercore SDK called before being initialized')
     }
 
     const drive = await this.sdk.getDrive(id)
