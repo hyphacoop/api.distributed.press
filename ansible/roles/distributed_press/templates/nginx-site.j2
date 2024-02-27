@@ -7,6 +7,7 @@ server {
   add_header 'Access-Control-Allow-Credentials' 'true';
   add_header 'Access-Control-Allow-Methods' '*';
   add_header 'Access-Control-Allow-Headers' '*';
+  add_header 'X-Ipfs-Path' '/ipns/{{ distributed_press_domain }}';
 
   # Wait up to 8 mins for stuff to happen
   # This is mostly important for publishing
