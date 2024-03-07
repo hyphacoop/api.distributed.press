@@ -37,7 +37,8 @@ export const publisherRoutes = (_cfg: APIConfig, store: StoreI) => async (server
         200: Publisher
       },
       description: 'Gets information about a specific publisher',
-      tags: ['publisher']
+      tags: ['publisher'],
+      security: [{ jwt: [] }]
     },
     preHandler: server.auth([server.verifyAdmin, server.verifyPublisher])
   }, async (request, reply) => {
