@@ -2,6 +2,8 @@ import dns2 from 'dns2'
 import { FastifyBaseLogger } from 'fastify'
 import { SiteConfigStore } from '../config/sites.js'
 
+const TTL = 604800 // 7 days ttl
+
 export async function initDnsServer (port: number, store: SiteConfigStore, logger?: FastifyBaseLogger): Promise<ReturnType<typeof dns2.createServer>> {
   const server = dns2.createServer({
     udp: true,
@@ -18,7 +20,7 @@ export async function initDnsServer (port: number, store: SiteConfigStore, logge
               name,
               type: dns2.Packet.TYPE.TXT,
               class: dns2.Packet.CLASS.IN,
-              ttl: 60,
+              ttl: TTL,
               data: `dnslink=${links.ipfs.dnslink}`
             })
           }
@@ -27,7 +29,7 @@ export async function initDnsServer (port: number, store: SiteConfigStore, logge
               name,
               type: dns2.Packet.TYPE.TXT,
               class: dns2.Packet.CLASS.IN,
-              ttl: 60,
+              ttl: TTL,
               data: `dnslink=${links.hyper.dnslink}`
             })
           }
