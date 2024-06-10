@@ -1,4 +1,4 @@
 ---
 roles:
-  - src: geerlingguy.nodejs
-    version: 6.1.1
+  - src: morgangraphics.ansible_role_nvm
+    version: v2.0.0
