@@ -33,12 +33,6 @@
     state: latest
     update_cache: true
 
-- name: "Set up node+npm"
-  include_role:
-    name: geerlingguy.nodejs
-  vars:
-    nodejs_version: "18.x"
-
 - name: Add distributed.press systemd service
   template:
     src: distributed.press.service.j2
