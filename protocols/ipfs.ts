@@ -9,7 +9,6 @@ import getPort from 'get-port'
 import { rm } from 'node:fs/promises'
 import { globSource } from 'ipfs-http-client'
 import { IPFS } from 'ipfs-core-types'
-import { Key } from 'ipfs-core-types/dist/src/key/index.js'
 import createError from 'http-errors'
 
 // TODO: Make this configurable
@@ -258,6 +257,10 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
   }
 }
 
+interface Key {
+  id: string
+  name: string
+}
 async function makeOrGetKey (ipfs: IPFS, name: string): Promise<Key> {
   const list = await ipfs.key.list()
 

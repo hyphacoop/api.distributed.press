@@ -1,4 +1,4 @@
-import { NewAdmin, Admin } from '../api/schemas'
+import { NewAdmin, Admin } from '../api/schemas.js'
 import { Static } from '@sinclair/typebox'
 import { Config } from './store.js'
 import { nanoid } from 'nanoid'

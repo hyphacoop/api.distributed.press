@@ -5,8 +5,8 @@
   "files": ["@types/fastify.d.ts", "@types/fastify-jwt.d.ts"],
   "compilerOptions": {
     "target": "esnext",
-    "module": "esnext",
-    "moduleResolution": "node",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "outDir": "./build",
     "sourceMap": true,
     "rootDir": ".",
@@ -14,7 +14,10 @@
     "strict": true,
     "esModuleInterop": true
   },
-  "ts-node": {
-    "files": true
+  "tsimp": {
+    "compilerOptions": {
+      "skipLibCheck": true,
+      "strict": false
+    }
   }
 }

@@ -1,8 +1,8 @@
 import * as SDK from 'hyper-sdk'
 import LocalDrive from 'localdrive'
 import { Static } from '@sinclair/typebox'
-import Protocol, { Ctx, SyncOptions } from './interfaces'
-import { HyperProtocolFields } from '../api/schemas'
+import Protocol, { Ctx, SyncOptions } from './interfaces.js'
+import { HyperProtocolFields } from '../api/schemas.js'
 import createError from 'http-errors'
 
 export interface HyperProtocolOptions {

@@ -110,3 +110,5 @@ store
 *.key
 
 ansible/prod.yml
+
+.tsimp
