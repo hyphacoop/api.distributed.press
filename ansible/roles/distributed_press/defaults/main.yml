@@ -36,7 +36,7 @@ social_inbox_host: "localhost"
 social_inbox_port: 7625 # SOCL on a phone number pad
 
 social_inbox_git_repo: "https://github.com/hyphacoop/social.distributed.press.git"
-social_inbox_git_branch: "v1.2.3"
+social_inbox_git_branch: "v1.2.5"
 social_inbox_source: "{{social_inbox_home}}/social.distributed.press"
 ## Set this to false to skip importing it
 social_inbox_blocklist: "https://github.com/gardenfence/blocklist/raw/main/gardenfence-mastodon.csv"
