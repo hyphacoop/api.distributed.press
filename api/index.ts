@@ -1,5 +1,6 @@
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox'
-import fastify, {
+import {
+  fastify,
   FastifyBaseLogger,
   RawReplyDefaultExpression,
   RawRequestDefaultExpression,
@@ -118,7 +119,8 @@ async function apiBuilder (cfg: APIConfig): Promise<FastifyTypebox> {
 
 const v1Routes = (cfg: APIConfig, store: StoreI) => async (server: FastifyTypebox): Promise<void> => {
   if (cfg.usePrometheus ?? false) {
-    await server.register(metrics, { endpoint: '/metrics' })
+    // https://github.com/SkeLLLa/fastify-metrics/issues/92
+    await server.register(metrics.default, { endpoint: '/metrics' })
   }
 
   if (cfg.useSwagger ?? false) {

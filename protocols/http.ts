@@ -1,6 +1,6 @@
-import Protocol, { Ctx, SyncOptions } from './interfaces'
+import Protocol, { Ctx, SyncOptions } from './interfaces.js'
 import { Static } from '@sinclair/typebox'
-import { HTTPProtocolFields } from '../api/schemas'
+import { HTTPProtocolFields } from '../api/schemas.js'
 
 export interface HTTPProtocolOptions {
   path: string

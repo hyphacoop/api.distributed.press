@@ -9,7 +9,6 @@ import getPort from 'get-port'
 import { rm } from 'node:fs/promises'
 import { globSource } from 'ipfs-http-client'
 import { IPFS } from 'ipfs-core-types'
-import { Key } from 'ipfs-core-types/dist/src/key/index.js'
 import createError from 'http-errors'
 
 // TODO: Make this configurable
@@ -98,7 +97,6 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           ipfsd = await createController(ipfsdOpts)
           await ipfsd.init()
           await ipfsd.start()
-          await ipfsd.api.id()
         } catch (cause) {
           const { repo } = ipfsOptions
           const lockFile = path.join(repo, 'repo.lock')
@@ -110,7 +108,6 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
             ])
             ipfsd = await createController(ipfsdOpts)
             await ipfsd.start()
-            await ipfsd.api.id()
           } catch (cause) {
             const message = 'Unable to start IPFS daemon'
             throw createError(500, message, { cause })
@@ -166,6 +163,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     let lastEntry = null
 
     const glob = globSource(folderPath, '**/*')
+    // @ts-expect-error we eventually have to upgrade the package, for now, this has incorrect types
     const files = this.ipfs.addAll(glob, {
       pin: false,
       wrapWithDirectory: true,
@@ -258,6 +256,10 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
   }
 }
 
+interface Key {
+  id: string
+  name: string
+}
 async function makeOrGetKey (ipfs: IPFS, name: string): Promise<Key> {
   const list = await ipfs.key.list()
 

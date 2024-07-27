@@ -2,7 +2,7 @@ import path from 'path'
 import fs from 'fs'
 import tar from 'tar-fs'
 import gunzip from 'gunzip-maybe'
-import rimraf from 'rimraf'
+import { rimraf } from 'rimraf'
 import { pipeline } from 'stream/promises'
 import makeDir from 'make-dir'
 

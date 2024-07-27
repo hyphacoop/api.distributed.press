@@ -8,13 +8,13 @@
     "clean": "rimraf build",
     "build": "npm run clean && tsc",
     "lint": "ts-standard --fix && tsc --noEmit",
-    "keygen": "ts-node-esm authorization/scripts/keygen.ts",
-    "make-admin": "ts-node-esm authorization/scripts/create_admin.ts",
-    "dev": "ts-node-esm index.ts | pino-pretty -c -t",
+    "keygen": "node --import=tsimp/import authorization/scripts/keygen.ts",
+    "make-admin": "node --import=tsimp/import authorization/scripts/create_admin.ts",
+    "dev": "node --import=tsimp/import index.ts | pino-pretty -c -t",
     "watch": "nodemon --watch './**/*.ts' --exec 'node --experimental-specifier-resolution=node --loader ts-node/esm' index.ts | pino-pretty -c -t",
     "start": "node build/index.js",
     "test": "ava --concurrency 1 --timeout=1m",
-    "nuke": "ts-node-esm protocols/scripts/nuke.ts"
+    "nuke": "node --import=tsimp/import protocols/scripts/nuke.ts"
   },
   "repository": {
     "type": "git",
@@ -40,7 +40,7 @@
   "homepage": "https://distributed.press",
   "dependencies": {
     "@fastify/auth": "^4.2.0",
-    "@fastify/jwt": "^6.5.0",
+    "@fastify/jwt": "^8.0.1",
     "@fastify/multipart": "^7.3.0",
     "@fastify/swagger": "^8.2.0",
     "@fastify/swagger-ui": "^1.3.0",
@@ -51,7 +51,7 @@
     "dns2": "^2.1.0",
     "env-paths": "^3.0.0",
     "express": "^4.17.1",
-    "fast-jwt": "^2.0.2",
+    "fast-jwt": "^4.0.1",
     "fastify": "^4.10.2",
     "fastify-metrics": "^10.0.0",
     "fastify-plugin": "^4.4.0",
@@ -82,21 +82,22 @@
     "@types/tar-fs": "^2.0.1",
     "@types/yargs": "^17.0.17",
     "ava": "^5.1.1",
-    "ipfs-core-types": "^0.14.0",
+    "ipfs-core-types": "^0.14.1",
     "memory-level": "^1.0.0",
     "nodemon": "^2.0.20",
     "pino-pretty": "^9.1.1",
     "rimraf": "^4.0.5",
     "ts-node": "^10.9.1",
-    "ts-standard": "^12.0.1",
-    "typescript": "^4.9.3"
+    "ts-standard": "^12.0.2",
+    "tsimp": "^2.0.11",
+    "typescript": "^5.5.3"
   },
   "ava": {
     "extensions": {
       "ts": "module"
     },
     "nodeArguments": [
-      "--loader=ts-node/esm",
+      "--import=tsimp/import",
       "--no-warnings"
     ]
   },
