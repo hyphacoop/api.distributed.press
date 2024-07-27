@@ -97,7 +97,6 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           ipfsd = await createController(ipfsdOpts)
           await ipfsd.init()
           await ipfsd.start()
-          await ipfsd.api.id()
         } catch (cause) {
           const { repo } = ipfsOptions
           const lockFile = path.join(repo, 'repo.lock')
@@ -109,7 +108,6 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
             ])
             ipfsd = await createController(ipfsdOpts)
             await ipfsd.start()
-            await ipfsd.api.id()
           } catch (cause) {
             const message = 'Unable to start IPFS daemon'
             throw createError(500, message, { cause })
