@@ -163,6 +163,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     let lastEntry = null
 
     const glob = globSource(folderPath, '**/*')
+    // @ts-expect-error we eventually have to upgrade the package, for now, this has incorrect types
     const files = this.ipfs.addAll(glob, {
       pin: false,
       wrapWithDirectory: true,
