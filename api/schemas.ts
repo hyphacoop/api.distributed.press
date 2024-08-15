@@ -36,6 +36,13 @@ export const Site = Type.Object({
   links: Type.Partial(Protocols),
   public: Type.Optional(Type.Boolean())
 })
+
+export const ProtocolStats = Type.Object({ peerCount: Type.Integer() })
+export const SiteStats = Type.Object({
+  hyper: ProtocolStats,
+  ipfs: ProtocolStats
+})
+
 export const NewSite = Type.Object({
   domain: Type.String(),
   protocols: ProtocolStatus,

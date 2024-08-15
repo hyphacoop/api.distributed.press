@@ -3,7 +3,7 @@ import * as IPFSHTTPClient from 'ipfs-http-client'
 import * as GoIPFS from 'go-ipfs'
 import { ControllerOptions, Controller, createController } from 'ipfsd-ctl'
 import path from 'node:path'
-import Protocol, { Ctx, SyncOptions } from './interfaces.js'
+import Protocol, { Ctx, SyncOptions, ProtocolStats } from './interfaces.js'
 import { IPFSProtocolFields } from '../api/schemas.js'
 import getPort from 'get-port'
 import { rm } from 'node:fs/promises'
@@ -66,10 +66,10 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
               API: `/ip4/127.0.0.1/tcp/${apiPort}`,
               Gateway: null,
               Swarm: [
-                  `/ip4/0.0.0.0/tcp/${swarmPort}`,
-                  `/ip6/::/tcp/${swarmPort}`,
-                  `/ip4/0.0.0.0/udp/${swarmPort}/quic`,
-                  `/ip6/::/udp/${swarmPort}/quic`
+                `/ip4/0.0.0.0/tcp/${swarmPort}`,
+                `/ip6/::/tcp/${swarmPort}`,
+                `/ip4/0.0.0.0/udp/${swarmPort}/quic`,
+                `/ip6/::/udp/${swarmPort}/quic`
               ]
             },
             Ipns: {
@@ -213,13 +213,17 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     }
   }
 
+  getMFSLocation (id: string): string {
+    return path.posix.join(this.mfsRoot, id)
+  }
+
   private async publishSite (id: string, ctx?: Ctx): Promise<PublishResult> {
     if (this.ipfs === null) {
       throw createError(500, 'IPFS must be initialized using load() before calling sync()')
     }
 
     ctx?.logger.info('[ipfs] Sync start')
-    const mfsLocation = path.posix.join(this.mfsRoot, id)
+    const mfsLocation = this.getMFSLocation(id)
     const name = `dp-site-${id}`
     const key = await makeOrGetKey(this.ipfs, name)
 
@@ -255,6 +259,28 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     })
 
     await this.publishSite(id, ctx)
+  }
+
+  async stats (id: string): Promise<ProtocolStats> {
+    if (this.ipfs === null) {
+      throw createError(500, 'IPFS must be initialized using load() before calling sync()')
+    }
+
+    const mfsLocation = this.getMFSLocation(id)
+    const statResult = await this.ipfs.files.stat(mfsLocation, {
+      hash: true
+    })
+
+    const cid = statResult.cid
+
+    let peerCount = 0
+    for await (const peer of this.ipfs?.dht.findProvs(cid)) {
+      if (peer !== null) {
+        peerCount++
+      }
+    }
+
+    return { peerCount }
   }
 }
 

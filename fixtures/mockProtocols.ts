@@ -1,7 +1,7 @@
 import { Static, TSchema } from '@sinclair/typebox'
 import { HTTPProtocolFields, HyperProtocolFields, IPFSProtocolFields } from '../api/schemas.js'
 import { ProtocolManager } from '../protocols/index.js'
-import Protocol, { Ctx, SyncOptions } from '../protocols/interfaces.js'
+import Protocol, { Ctx, SyncOptions, ProtocolStats } from '../protocols/interfaces.js'
 
 export class MockProtocolManager implements ProtocolManager {
   http: MockHTTPProtocol
@@ -45,6 +45,10 @@ abstract class BaseMockProtocol<T extends TSchema> implements Protocol<Static<T>
   abstract sync (_id: string, _folderPath: string, _options?: SyncOptions, _ctx?: Ctx): Promise<Static<T>>
   async unsync (_id: string, _site: Static<typeof HTTPProtocolFields>, _ctx?: Ctx): Promise<void> {
     return await Promise.resolve()
+  }
+
+  async stats (_id: string): Promise<ProtocolStats> {
+    return { peerCount: 0 }
   }
 }
 

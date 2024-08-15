@@ -1,4 +1,4 @@
-import Protocol, { Ctx, SyncOptions } from './interfaces'
+import Protocol, { Ctx, SyncOptions, ProtocolStats } from './interfaces'
 import { Static } from '@sinclair/typebox'
 import { HTTPProtocolFields } from '../api/schemas'
 
@@ -32,5 +32,9 @@ export class HTTPProtocol implements Protocol<Static<typeof HTTPProtocolFields>>
 
   async unsync (id: string, site: Static<typeof HTTPProtocolFields>, ctx?: Ctx): Promise<void> {
     return await Promise.resolve()
+  }
+
+  async stats (id: string): Promise<ProtocolStats> {
+    return { peerCount: 0 }
   }
 }
