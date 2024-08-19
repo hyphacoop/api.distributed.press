@@ -93,7 +93,7 @@ export const siteRoutes = (cfg: APIConfig, store: StoreI) => async (server: Fast
     Params: {
       id: string
     }
-    Reply: Static<typeof SiteStats>
+    Reply: Static<typeof SiteStats> | string
   }>('/sites/:id/stats', {
     schema: {
       params: Type.Object({
@@ -108,18 +108,12 @@ export const siteRoutes = (cfg: APIConfig, store: StoreI) => async (server: Fast
     },
     preHandler: server.auth([server.verifyPublisher, server.verifyAdmin])
   }, async (request, reply) => {
-// Logging the request initiation  
-request.log.info(`Fetching stats for site ID: ${id}`)
-  try {
+    const { id } = request.params
+    // Logging the request initiation
+    request.log.info(`Fetching stats for site ID: ${id}`)
     const stats = await store.sites.stats(id)
     // Logging the successful retrieval of stats
-    request.log.info(`Successfully retrieved stats for site ID: ${id}`, { stats })
     return await reply.send(stats)
-  } catch (error) {
-    // Logging any errors that occur during the stats retrieval
-    request.log.error(`Error fetching stats for site ID: ${id}`, { error })
-    return reply.status(500).send({ error: 'Failed to retrieve site stats' })
-  }
   })
 
   if (cfg.useWebringDirectoryListing === true) {
