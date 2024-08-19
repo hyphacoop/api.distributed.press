@@ -1,4 +1,4 @@
-import { NewSite, Site, UpdateSite } from '../api/schemas.js'
+import { NewSite, Site, UpdateSite, SiteStats } from '../api/schemas.js'
 import { Static } from '@sinclair/typebox'
 import { Config } from './store.js'
 import { AbstractLevel } from 'abstract-level'
@@ -108,5 +108,15 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
 
     await Promise.all(promises)
     await this.db.del(id)
+  }
+
+  async stats (id: string): Promise<Static<typeof SiteStats>> {
+    const hyper = await this.protocols.hyper.stats(id)
+    const ipfs = await this.protocols.ipfs.stats(id)
+
+    return {
+      hyper,
+      ipfs
+    }
   }
 }

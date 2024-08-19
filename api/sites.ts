@@ -1,5 +1,5 @@
 import { Type, Static } from '@sinclair/typebox'
-import { NewSite, Site, UpdateSite } from './schemas.js'
+import { NewSite, Site, UpdateSite, SiteStats } from './schemas.js'
 import { StoreI } from '../config/index.js'
 import { APIConfig, FastifyTypebox } from './index.js'
 import { FastifyReply, FastifyRequest } from 'fastify'
@@ -87,6 +87,33 @@ export const siteRoutes = (cfg: APIConfig, store: StoreI) => async (server: Fast
   }, async (request, reply) => {
     const { id } = request.params
     return await reply.send(await store.sites.get(id))
+  })
+
+  server.get<{
+    Params: {
+      id: string
+    }
+    Reply: Static<typeof SiteStats> | string
+  }>('/sites/:id/stats', {
+    schema: {
+      params: Type.Object({
+        id: Type.String()
+      }),
+      response: {
+        200: SiteStats
+      },
+      description: 'Returns the stats for a site',
+      tags: ['site'],
+      security: [{ jwt: [] }]
+    },
+    preHandler: server.auth([server.verifyPublisher, server.verifyAdmin])
+  }, async (request, reply) => {
+    const { id } = request.params
+    // Logging the request initiation
+    request.log.info(`Fetching stats for site ID: ${id}`)
+    const stats = await store.sites.stats(id)
+    // Logging the successful retrieval of stats
+    return await reply.send(stats)
   })
 
   if (cfg.useWebringDirectoryListing === true) {

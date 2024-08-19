@@ -3,6 +3,7 @@ declare module 'hyper-sdk' {
     once (evt: string, cb: () => void): void
     get url (): string
     get id (): string
+    get peers (): any[]
     close (): Promise<void>
   }
 

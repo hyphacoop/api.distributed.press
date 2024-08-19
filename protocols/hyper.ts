@@ -1,7 +1,7 @@
 import * as SDK from 'hyper-sdk'
 import LocalDrive from 'localdrive'
 import { Static } from '@sinclair/typebox'
-import Protocol, { Ctx, SyncOptions } from './interfaces'
+import Protocol, { Ctx, SyncOptions, ProtocolStats } from './interfaces'
 import { HyperProtocolFields } from '../api/schemas'
 import createError from 'http-errors'
 
@@ -82,5 +82,13 @@ export class HyperProtocol implements Protocol<Static<typeof HyperProtocolFields
 
     // TODO: Should we also clear the stored data?
     await drive.close()
+  }
+
+  async stats (id: string): Promise<ProtocolStats> {
+    const drive = await this.getDrive(id)
+
+    const peerCount = drive.peers.length
+
+    return { peerCount }
   }
 }
