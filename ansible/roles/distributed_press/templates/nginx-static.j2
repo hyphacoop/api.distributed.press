@@ -10,6 +10,8 @@ server {
   # P2P protocols support more types of index files than just HTML
   index index.html index.md index.gmi index.gemini README.md;
 
+  error_page 404 /404.html;
+
   add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
   add_header 'X-Frame-Options' 'ALLOW-FROM *';
   add_header 'Access-Control-Allow-Origin' '*';
