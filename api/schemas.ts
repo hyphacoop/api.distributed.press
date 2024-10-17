@@ -57,6 +57,7 @@ export const UpdateSite = Type.Partial(Type.Object({
 export const Publisher = Type.Object({
   id: Type.String(),
   name: Type.String(),
+  limited: Type.Optional(Type.Boolean()),
   ownedSites: Type.Array(Type.String()) // array of IDs of sites
 })
 export const NewPublisher = Type.Omit(Publisher, ['id', 'ownedSites'])
