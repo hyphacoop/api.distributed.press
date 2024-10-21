@@ -3,6 +3,7 @@ import { FastifyInstance } from 'fastify'
 import { StoreI } from '../config/index.js'
 import { APIConfig } from './index.js'
 import { NewPublisher, Publisher } from './schemas.js'
+import { makeJWTToken } from '../authorization/jwt.js'
 
 export const publisherRoutes = (_cfg: APIConfig, store: StoreI) => async (server: FastifyInstance): Promise<void> => {
   server.post<{
@@ -21,6 +22,29 @@ export const publisherRoutes = (_cfg: APIConfig, store: StoreI) => async (server
     preHandler: server.auth([server.verifyAdmin])
   }, async (request, reply) => {
     return await reply.send(await store.publisher.create(request.body))
+  })
+
+  server.post<{
+    Body: Static<typeof NewPublisher>
+  }>('/publisher/trial', {
+    schema: {
+      body: NewPublisher,
+      response: {
+        200: Type.String()
+      },
+      description: 'Register yourself as a new publisher',
+      tags: ['publisher'],
+      security: []
+    }
+  }, async (request, reply) => {
+    const account = await store.publisher.createTrial(request.body)
+    const newToken = makeJWTToken({
+      issuedTo: account.id,
+      isTrial: true
+    })
+    const signed = await reply.jwtSign(newToken)
+
+    return await reply.send(signed)
   })
 
   server.get<{

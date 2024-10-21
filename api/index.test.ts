@@ -161,3 +161,38 @@ test('E2E: admin -> publisher -> site flow', async t => {
   })
   t.is(deleteSiteResponse.statusCode, 200, 'deleting site returns a status code of 200')
 })
+
+test('Create trial publisher', async t => {
+  // create an admin
+  const trialResponse = await t.context.server.inject({
+    method: 'POST',
+    url: '/v1/publisher/trial',
+    payload: {
+      name: 'test@example.com'
+    }
+  })
+  t.is(trialResponse.statusCode, 200, 'creating trial returns OK')
+  const token = trialResponse.body
+
+  // use access token to create a new site
+  const createSiteResponse = await t.context.server.inject({
+    method: 'POST',
+    url: '/v1/sites',
+    headers: {
+      authorization: `Bearer ${token}`
+    },
+    payload: exampleSiteConfig
+  })
+  t.is(createSiteResponse.statusCode, 200, 'creating a site works with trial token')
+
+  // use access token to create a new site
+  const createSiteResponse2 = await t.context.server.inject({
+    method: 'POST',
+    url: '/v1/sites',
+    headers: {
+      authorization: `Bearer ${token}`
+    },
+    payload: { ...exampleSiteConfig, domain: 'example2' }
+  })
+  t.is(createSiteResponse2.statusCode, 402, 'Error when creating second site')
+})

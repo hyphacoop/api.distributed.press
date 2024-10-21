@@ -9,6 +9,7 @@ export enum CAPABILITIES {
   ADMIN = 'admin',
   PUBLISHER = 'publisher',
   REFRESH = 'refresh',
+  TRIAL = 'trial',
 }
 export const CAPABILITIES_ARRAY = Type.Array(Type.Enum(CAPABILITIES))
 
@@ -29,8 +30,9 @@ export function getExpiry (isRefresh: boolean): number {
 }
 
 interface JWTArgs {
-  isAdmin: boolean
-  isRefresh: boolean
+  isAdmin?: boolean
+  isRefresh?: boolean
+  isTrial?: boolean
   issuedTo?: string
 }
 
@@ -43,18 +45,21 @@ export const JWTPayload = Type.Object({
 
 export type JWTPayloadT = Static<typeof JWTPayload>
 
-export function makeJWTToken ({ isAdmin, isRefresh, issuedTo }: JWTArgs): JWTPayloadT {
+export function makeJWTToken ({ isAdmin, isTrial, isRefresh, issuedTo }: JWTArgs): JWTPayloadT {
   const baseCapabilities = [CAPABILITIES.PUBLISHER]
-  if (isAdmin) {
+  if (isAdmin === true) {
     baseCapabilities.push(CAPABILITIES.ADMIN)
   }
-  if (isRefresh) {
+  if (isRefresh === true) {
     baseCapabilities.push(CAPABILITIES.REFRESH)
+  }
+  if (isTrial === true) {
+    baseCapabilities.push(CAPABILITIES.TRIAL)
   }
   return {
     tokenId: nanoid(),
     issuedTo: issuedTo ?? SYSTEM,
-    expires: getExpiry(isRefresh),
+    expires: getExpiry(isRefresh === true),
     capabilities: baseCapabilities
   }
 }
