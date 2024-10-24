@@ -21,7 +21,7 @@ export const publisherRoutes = (_cfg: APIConfig, store: StoreI) => async (server
     },
     preHandler: server.auth([server.verifyAdmin])
   }, async (request, reply) => {
-    return await reply.send(await store.publisher.create(request.body))
+    return reply.send(await store.publisher.create(request.body))
   })
 
   server.post<{
@@ -44,7 +44,7 @@ export const publisherRoutes = (_cfg: APIConfig, store: StoreI) => async (server
     })
     const signed = await reply.jwtSign(newToken)
 
-    return await reply.send(signed)
+    return reply.send(signed)
   })
 
   server.get<{
@@ -67,7 +67,7 @@ export const publisherRoutes = (_cfg: APIConfig, store: StoreI) => async (server
     preHandler: server.auth([server.verifyAdmin, server.verifyPublisher])
   }, async (request, reply) => {
     const { id } = request.params
-    return await reply.send(await store.publisher.get(id))
+    return reply.send(await store.publisher.get(id))
   })
 
   server.get<{ Reply: string[] }>('/publisher', {
@@ -78,7 +78,7 @@ export const publisherRoutes = (_cfg: APIConfig, store: StoreI) => async (server
     },
     preHandler: server.auth([server.verifyAdmin])
   }, async (_request, reply) => {
-    return await reply.send(await store.publisher.keys())
+    return reply.send(await store.publisher.keys())
   })
 
   server.delete<{
@@ -95,6 +95,6 @@ export const publisherRoutes = (_cfg: APIConfig, store: StoreI) => async (server
   }, async (request, reply) => {
     const { id } = request.params
     await store.publisher.delete(id)
-    return await reply.code(200).send()
+    return reply.code(200).send()
   })
 }

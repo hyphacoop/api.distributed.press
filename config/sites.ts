@@ -6,6 +6,10 @@ import { ProtocolManager } from '../protocols/index.js'
 import { Ctx } from '../protocols/interfaces.js'
 import isValidHostname from 'is-valid-hostname'
 import createError from 'http-errors'
+import { promisify } from 'node:util'
+import child_process from 'node:child_process'
+import path from 'node:path'
+const exec = promisify(child_process.exec)
 
 export class SiteConfigStore extends Config<Static<typeof Site>> {
   protocols: ProtocolManager
@@ -28,6 +32,27 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
       links: {}
     }
     return await this.db.put(id, obj).then(() => obj)
+  }
+
+  async clone (siteId: string, filePath: string, ctx?: Ctx): Promise<void> {
+    const cwd = path.resolve(filePath, '..')
+    const destination = filePath.split(path.sep).at(-1) as string
+
+    await exec(`wget2 \
+  --random-wait \
+  --retry-on-http-error=503,504,429 \
+  --compression=identity,gzip,br \
+  --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/119.0" \
+  --mirror \
+  --page-requisites \
+  --convert-links \
+  --adjust-extension \
+  --continue \
+  --no-host-directories \
+  --directory-prefix=${destination} \
+  "https://${siteId}"`, { cwd })
+
+    await this.sync(siteId, filePath)
   }
 
   async sync (siteId: string, filePath: string, ctx?: Ctx): Promise<void> {
