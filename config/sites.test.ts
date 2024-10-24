@@ -1,5 +1,9 @@
 import test from 'ava'
 import { exampleSiteConfig, newSiteConfigStore } from '../fixtures/siteConfig.js'
+import { tmpdir } from 'node:os'
+import { readdir } from 'node:fs/promises'
+import { join } from 'node:path'
+import rimraf from 'rimraf'
 
 test('create new siteconfig', async t => {
   const cfg = newSiteConfigStore()
@@ -82,4 +86,22 @@ test('listAll siteconfig', async t => {
   })
   t.is((await cfg.listAll(true)).length, 2)
   t.is((await cfg.listAll(false)).length, 3)
+})
+
+test('clone a site', async (t) => {
+  const cfg = newSiteConfigStore()
+  const site = await cfg.create({ ...exampleSiteConfig, domain: 'staticpub.mauve.moe' })
+
+  const id = site.domain
+  const dir = join(tmpdir(), id)
+
+  try {
+    await cfg.clone(id, dir)
+
+    const files = await readdir(dir)
+
+    t.assert(files.length !== 0, 'Site got cloned')
+  } finally {
+    await rimraf(dir)
+  }
 })

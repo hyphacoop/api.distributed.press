@@ -25,6 +25,13 @@
     groups: www-data
     append: yes
 
+- name: "Install wget2"
+  apt:
+    pkg:
+      - wget2
+    state: latest
+    update_cache: true
+
 - name: "Install git and ufw"
   apt:
     pkg:
