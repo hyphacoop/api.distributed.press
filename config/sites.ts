@@ -40,7 +40,6 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
 
     await exec(`wget2 \
   --random-wait \
-  --retry-on-http-error=503,504,429 \
   --compression=identity,gzip,br \
   --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/119.0" \
   --mirror \
