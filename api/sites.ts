@@ -58,12 +58,12 @@ export const siteRoutes = (cfg: APIConfig, store: StoreI) => async (server: Fast
     // Only register site to its owner if they are not an admin
     // Publishers need to track sites they own to ensure they can only modify/delete sites they own
     // This does *not* apply to admins as they effectively have 'wildcard' access to all sites
-    if (request.user.capabilities.includes(CAPABILITIES.ADMIN) === false) {
+    if (!request.user.capabilities.includes(CAPABILITIES.ADMIN)) {
       await store.publisher.registerSiteToPublisher(token.issuedTo, site.id)
     }
 
     await store.fs.makeFolder(site.id)
-    return reply.send(site)
+    return await reply.send(site)
   })
 
   server.post<{
@@ -112,7 +112,7 @@ export const siteRoutes = (cfg: APIConfig, store: StoreI) => async (server: Fast
     preHandler: server.auth([server.verifyPublisher, server.verifyAdmin])
   }, async (request, reply) => {
     const { id } = request.params
-    return reply.send(await store.sites.get(id))
+    return await reply.send(await store.sites.get(id))
   })
 
   server.get<{
@@ -136,10 +136,10 @@ export const siteRoutes = (cfg: APIConfig, store: StoreI) => async (server: Fast
   }, async (request, reply) => {
     const { id } = request.params
     // Logging the request initiation
-    request.log.info(`Fetching stats for site ID: ${id as string}`)
+    request.log.info(`Fetching stats for site ID: ${id}`)
     const stats = await store.sites.stats(id)
     // Logging the successful retrieval of stats
-    return reply.send(stats)
+    return await reply.send(stats)
   })
 
   if (cfg.useWebringDirectoryListing === true) {
@@ -153,10 +153,10 @@ export const siteRoutes = (cfg: APIConfig, store: StoreI) => async (server: Fast
       try {
         // admin case, safe to list all
         await verifyTokenCapabilities(request, store, [CAPABILITIES.ADMIN])
-        return reply.send(await store.sites.listAll(false))
+        return await reply.send(await store.sites.listAll(false))
       } catch {
         // no token
-        return reply.send(await store.sites.listAll(true))
+        return await reply.send(await store.sites.listAll(true))
       }
     })
   }
@@ -179,13 +179,13 @@ export const siteRoutes = (cfg: APIConfig, store: StoreI) => async (server: Fast
     const { id } = request.params
     const token = request.user
     if (!await checkOwnsSite(token, id)) {
-      return reply.status(401).send('You must either own the site or be an admin to modify this resource')
+      return await reply.status(401).send('You must either own the site or be an admin to modify this resource')
     }
 
     await store.sites.delete(id, { logger: request.log })
     await store.publisher.unregisterSiteFromAllPublishers(id)
     await store.fs.clear(id)
-    return reply.send()
+    return await reply.send()
   })
 
   server.post<{
@@ -208,7 +208,7 @@ export const siteRoutes = (cfg: APIConfig, store: StoreI) => async (server: Fast
     const { id } = request.params
     const token = request.user
     if (!await checkOwnsSite(token, id)) {
-      return reply.status(401).send('You must either own the site or be an admin to modify this resource')
+      return await reply.status(401).send('You must either own the site or be an admin to modify this resource')
     }
 
     // update config entry
@@ -217,7 +217,7 @@ export const siteRoutes = (cfg: APIConfig, store: StoreI) => async (server: Fast
     // sync files with protocols
     const path = store.fs.getPath(id)
     await store.sites.sync(id, path, { logger: request.log })
-    return reply.code(200).send()
+    return await reply.code(200).send()
   })
 
   server.put<{
@@ -237,7 +237,7 @@ export const siteRoutes = (cfg: APIConfig, store: StoreI) => async (server: Fast
     const { id } = request.params
     const token = request.user
     if (!await checkOwnsSite(token, id)) {
-      return reply.status(401).send('You must either own the site or be an admin to modify this resource')
+      return await reply.status(401).send('You must either own the site or be an admin to modify this resource')
     }
     return await processRequestFiles(request, reply, async (tarballPath) => {
       request.log.info('Deleting old files')
@@ -271,7 +271,7 @@ export const siteRoutes = (cfg: APIConfig, store: StoreI) => async (server: Fast
     const { id } = request.params
     const token = request.user
     if (!await checkOwnsSite(token, id)) {
-      return reply.status(401).send('You must either own the site or be an admin to modify this resource')
+      return await reply.status(401).send('You must either own the site or be an admin to modify this resource')
     }
     return await processRequestFiles(request, reply, async (tarballPath) => {
       // extract in place to existing directory
