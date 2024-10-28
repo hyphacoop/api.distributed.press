@@ -66,6 +66,32 @@ export const siteRoutes = (cfg: APIConfig, store: StoreI) => async (server: Fast
     return await reply.send(site)
   })
 
+  server.post<{
+    Params: {
+      id: string
+    }
+    Reply: Static<typeof Site>
+  }>('/sites/:id/clone', {
+    schema: {
+      params: Type.Object({
+        id: Type.String()
+      }),
+      response: {
+        200: Site
+      },
+      description: 'Clone a website from its HTTPs version',
+      tags: ['site'],
+      security: [{ jwt: [] }]
+    },
+    preHandler: server.auth([server.verifyPublisher, server.verifyAdmin])
+  }, async (request, reply) => {
+    const { id } = request.params
+    await store.sites.get(id)
+    const path = store.fs.getPath(id)
+
+    await store.sites.clone(id, path)
+  })
+
   server.get<{
     Params: {
       id: string
