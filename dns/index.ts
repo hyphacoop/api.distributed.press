@@ -12,6 +12,15 @@ export async function initDnsServer (port: number, store: SiteConfigStore, logge
       const [{ name }] = request.questions
       logger?.info(`[dns] ${rinfo.address}:${rinfo.port} asked for ${name}`)
 
+      // TODO: Pass server from config
+      response.authorities.push({
+        name,
+        type: dns2.Packet.TYPE.NS,
+        class: dns2.Packet.CLASS.IN,
+        ttl: TTL,
+        ns: 'api.distributed.press.'
+      })
+
       const cleanedName = name.toLowerCase().replace('_dnslink.', '')
       store.get(cleanedName)
         .then(({ links }) => {
@@ -33,6 +42,7 @@ export async function initDnsServer (port: number, store: SiteConfigStore, logge
               data: `dnslink=${links.hyper.dnslink}`
             })
           }
+
           send(response)
         })
         .catch((error) => {
