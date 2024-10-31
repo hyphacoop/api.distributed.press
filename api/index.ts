@@ -160,7 +160,7 @@ const v1Routes = (cfg: APIConfig, store: StoreI) => async (server: FastifyTypebo
 
   await server.register(cors, {
     origin: true,
-    methods: ['POST'],
+    methods: ['DELETE', 'GET', 'POST', 'PUT'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
 
