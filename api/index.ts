@@ -23,6 +23,7 @@ import { authRoutes } from './auth.js'
 import { ServerI } from '../index.js'
 import { ConcreteProtocolManager } from '../protocols/index.js'
 import { initDnsServer } from '../dns/index.js'
+import cors from '@fastify/cors'
 
 const paths = envPaths('distributed-press')
 
@@ -156,6 +157,12 @@ const v1Routes = (cfg: APIConfig, store: StoreI) => async (server: FastifyTypebo
   await server.register(siteRoutes(cfg, store))
   await server.register(publisherRoutes(cfg, store))
   await server.register(adminRoutes(cfg, store))
+
+  await server.register(cors, {
+    origin: true,
+    methods: ['DELETE', 'GET', 'POST', 'PUT'],
+    allowedHeaders: ['Authorization'],
+  })
 
   if (cfg.useSwagger ?? false) {
     server.swagger()
