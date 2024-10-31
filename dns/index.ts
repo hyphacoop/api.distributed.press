@@ -4,7 +4,7 @@ import { SiteConfigStore } from '../config/sites.js'
 
 const TTL = 604800 // 7 days ttl
 
-export async function initDnsServer (port: number, store: SiteConfigStore, logger?: FastifyBaseLogger): Promise<ReturnType<typeof dns2.createServer>> {
+export async function initDnsServer (port: number, store: SiteConfigStore, logger?: FastifyBaseLogger, host?: string = 'api.distributed.press'): Promise<ReturnType<typeof dns2.createServer>> {
   const server = dns2.createServer({
     udp: true,
     handle: (request, send, rinfo) => {
@@ -18,7 +18,7 @@ export async function initDnsServer (port: number, store: SiteConfigStore, logge
         type: dns2.Packet.TYPE.NS,
         class: dns2.Packet.CLASS.IN,
         ttl: TTL,
-        ns: 'api.distributed.press.'
+        ns: `${host}.`
       })
 
       const cleanedName = name.toLowerCase().replace('_dnslink.', '')
