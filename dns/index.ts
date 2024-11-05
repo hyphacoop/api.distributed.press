@@ -12,8 +12,7 @@ export async function initDnsServer (port: number, store: SiteConfigStore, logge
       const [{ name }] = request.questions
       logger?.info(`[dns] ${rinfo.address}:${rinfo.port} asked for ${name}`)
 
-      // TODO: Pass server from config
-      response.authorities.push({
+      response.answers.push({
         name,
         type: dns2.Packet.TYPE.NS,
         class: dns2.Packet.CLASS.IN,
