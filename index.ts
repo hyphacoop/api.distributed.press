@@ -9,6 +9,7 @@ const argv = yargs(hideBin(process.argv)).options({
   port: { type: 'number' },
   dnsport: { type: 'number' },
   host: { type: 'string' },
+  domain: { type: 'string' },
   data: { type: 'string' },
   ipfsProvider: { type: 'string' }
 }).parseSync()
@@ -17,6 +18,7 @@ export interface ServerI {
   port: number
   dnsport: number
   host: string
+  domain: string
   storage: string
   ipfsProvider: IPFSProvider
 }
@@ -25,6 +27,7 @@ const cfg: ServerI = {
   port: Number(argv.port ?? process.env.PORT ?? '8080'),
   dnsport: Number(argv.dnsport ?? process.env.DNSPORT ?? '53'),
   host: argv.host ?? process.env.HOST ?? 'localhost',
+  domain: argv.domain ?? process.env.DOMAIN ?? 'localhost',
   storage: argv.data ?? paths.data,
   ipfsProvider: (argv.ipfsProvider as IPFSProvider) ?? BUILTIN
 }

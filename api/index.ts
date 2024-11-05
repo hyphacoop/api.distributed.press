@@ -71,7 +71,7 @@ async function apiBuilder (cfg: APIConfig): Promise<FastifyTypebox> {
   const store = new Store(cfg, db, protocols)
 
   server.log.info('Initializing DNS server')
-  const dns = await initDnsServer(cfg.dnsport, store.sites, server.log, cfg.host)
+  const dns = await initDnsServer(cfg.dnsport, store.sites, server.log, cfg.domain)
 
   server.log.info('Done')
   await registerAuth(cfg, server, store)

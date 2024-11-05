@@ -21,6 +21,7 @@ export async function spawnTestServer (): Promise<FastifyTypebox> {
     port: 8080,
     dnsport: await getPort(),
     host: 'localhost',
+    domain: 'example.com',
     storage: storagePath,
     ipfsProvider: BUILTIN
   })
