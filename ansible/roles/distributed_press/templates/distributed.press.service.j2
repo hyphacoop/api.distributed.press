@@ -5,7 +5,7 @@ After=network-online.target
 # Environment="DEBUG=*"
 WorkingDirectory={{distributed_press_source}}
 User={{distributed_press_user}}
-ExecStart=npx ts-node-esm index.ts --port {{distributed_press_port}} --host {{distributed_press_host}} --ipfs-provider {{distributed_press_ipfs_provider}}
+ExecStart=npx ts-node-esm index.ts --port {{distributed_press_port}} --host {{distributed_press_domain}} --ipfs-provider {{distributed_press_ipfs_provider}}
 Restart=always
 RestartSec=3
 LimitNOFILE=4096
