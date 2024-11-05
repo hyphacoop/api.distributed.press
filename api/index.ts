@@ -77,14 +77,6 @@ async function apiBuilder (cfg: APIConfig): Promise<FastifyTypebox> {
   await registerAuth(cfg, server, store)
   await server.register(multipart)
 
-  // pre-sync all sites
-  const allSites = await store.sites.keys()
-  await Promise.all(allSites.map(async (siteId) => {
-    server.log.info(`Presyncing site: ${siteId}`)
-    const fp = store.fs.getPath(siteId)
-    await store.sites.sync(siteId, fp, { logger: server.log })
-  }))
-
   // handle cleanup on shutdown
   server.addHook('onClose', async server => {
     server.log.info('Begin shutdown, unloading protocols...')
@@ -114,6 +106,15 @@ async function apiBuilder (cfg: APIConfig): Promise<FastifyTypebox> {
 
   await server.register(v1Routes(cfg, store), { prefix: '/v1' })
   await server.ready()
+
+  // pre-sync all sites
+  const allSites = await store.sites.keys()
+  await Promise.all(allSites.map(async (siteId) => {
+    server.log.info(`Presyncing site: ${siteId}`)
+    const fp = store.fs.getPath(siteId)
+    await store.sites.sync(siteId, fp, { logger: server.log })
+  }))
+
   return server
 }
 
