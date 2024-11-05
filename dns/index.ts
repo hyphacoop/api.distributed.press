@@ -12,6 +12,8 @@ export async function initDnsServer (port: number, store: SiteConfigStore, logge
       const [{ name }] = request.questions
       logger?.info(`[dns] ${rinfo.address}:${rinfo.port} asked for ${name}`)
 
+      // It will always answer with a NS record so new domains can be
+      // set up and checked.
       response.answers.push({
         name,
         type: dns2.Packet.TYPE.NS,
