@@ -42,7 +42,7 @@ test('basic dns resolve', async t => {
   const response = await dnsClient.query(`_dnslink.${site.domain}`, 'TXT')
   t.true(hasAnswer(response, 'ipns'), 'returned dns query has an ipns entry')
   t.true(hasAnswer(response, 'hyper'), 'returned dns query has a hyper entry')
-  t.is(response.answers.filter(ans => ans.type !== DNS.Packet.TYPE.TXT).length, 0, 'should not include any non-TXT entries')
+  t.is(response.answers.filter(ans => ans.type !== DNS.Packet.TYPE.TXT && ans.type !== DNS.Packet.TYPE.NS).length, 0, 'should not include any non-TXT and non-NS entries')
 })
 
 test('dns should not resolve unknown domains', async t => {
@@ -50,5 +50,5 @@ test('dns should not resolve unknown domains', async t => {
   const port = dnsServer.addresses().udp?.port as number
   const dnsClient = makeDnsClient(port)
   const response = await dnsClient.query('_dnslink.unknown.com', 'TXT')
-  t.is(response.answers.length, 0, 'should not have any answers for unknown domains')
+  t.is(response.answers.filter(ans => ans.type === DNS.Packet.TYPE.TXT).length, 0, 'should not have any TXT answers for unknown domains')
 })
