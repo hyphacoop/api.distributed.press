@@ -109,11 +109,13 @@ async function apiBuilder (cfg: APIConfig): Promise<FastifyTypebox> {
 
   // pre-sync all sites
   const allSites = await store.sites.keys()
-  await Promise.all(allSites.map(async (siteId) => {
+  Promise.all(allSites.map(async (siteId) => {
     server.log.info(`Presyncing site: ${siteId}`)
     const fp = store.fs.getPath(siteId)
     await store.sites.sync(siteId, fp, { logger: server.log })
-  }))
+  })).catch((e) => {
+    server.log.error(e)
+  })
 
   return server
 }
