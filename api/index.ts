@@ -164,7 +164,7 @@ const v1Routes = (cfg: APIConfig, store: StoreI) => async (server: FastifyTypebo
   await server.register(cors, {
     origin: true,
     methods: ['DELETE', 'GET', 'POST', 'PUT'],
-    allowedHeaders: ['Authorization']
+    allowedHeaders: ['Authorization', 'Content-Type']
   })
 
   if (cfg.useSwagger ?? false) {
