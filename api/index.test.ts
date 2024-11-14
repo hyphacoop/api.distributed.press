@@ -196,3 +196,38 @@ test('Create trial publisher', async t => {
   })
   t.is(createSiteResponse2.statusCode, 402, 'Error when creating second site')
 })
+
+test('Create trial publisher and clone', async t => {
+  const trialResponse = await t.context.server.inject({
+    method: 'POST',
+    url: '/v1/publisher/trial',
+    payload: {
+      name: 'test2@example.com'
+    }
+  })
+  t.is(trialResponse.statusCode, 200, 'creating trial returns OK')
+  const token = trialResponse.body
+
+  const domain = 'staticpub.mauve.moe'
+
+  // use access token to create a new site
+  const createSiteResponse = await t.context.server.inject({
+    method: 'POST',
+    url: '/v1/sites',
+    headers: {
+      authorization: `Bearer ${token}`
+    },
+    payload: { ...exampleSiteConfig, domain }
+  })
+  t.is(createSiteResponse.statusCode, 200, 'creating a site works with trial token')
+
+  // use access token to create a new site
+  const cloneSiteResponse = await t.context.server.inject({
+    method: 'POST',
+    url: `/v1/sites/${domain}/clone`,
+    headers: {
+      authorization: `Bearer ${token}`
+    }
+  })
+  t.is(cloneSiteResponse.statusCode, 200, 'able to clone via http API')
+})
