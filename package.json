@@ -1,6 +1,6 @@
 {
   "name": "distributed-press-api",
-  "version": "2.1.4",
+  "version": "2.1.5",
   "description": "API for the Distributed Press",
   "main": "build/index.js",
   "type": "module",
