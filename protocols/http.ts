@@ -23,10 +23,13 @@ export class HTTPProtocol implements Protocol<Static<typeof HTTPProtocolFields>>
   }
 
   async sync (id: string, folderPath: string, options?: SyncOptions, ctx?: Ctx): Promise<Static<typeof HTTPProtocolFields>> {
-    // TODO(protocol): stub
+    // Generate the actual HTTP link based on the site ID (domain)
+    const httpLink = `http://${id}`
+
+    // Return the dynamically generated HTTP link
     return {
       enabled: true,
-      link: 'example-link'
+      link: httpLink
     }
   }
 
