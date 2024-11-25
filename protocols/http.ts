@@ -24,7 +24,7 @@ export class HTTPProtocol implements Protocol<Static<typeof HTTPProtocolFields>>
 
   async sync (id: string, folderPath: string, options?: SyncOptions, ctx?: Ctx): Promise<Static<typeof HTTPProtocolFields>> {
     // Generate the actual HTTP link based on the site ID (domain)
-    const httpLink = `http://${id}`
+    const httpLink = `https://${id}`
 
     // Return the dynamically generated HTTP link
     return {
