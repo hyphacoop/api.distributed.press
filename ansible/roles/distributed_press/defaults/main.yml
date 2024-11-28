@@ -14,11 +14,12 @@ distributed_press_host: "localhost"
 distributed_press_ipfs_provider: "builtin"
 
 distributed_press_git_repo: "https://github.com/hyphacoop/api.distributed.press.git"
-distributed_press_git_branch: "v2.1.4"
+distributed_press_git_branch: "v2.1.6"
 distributed_press_source: "{{distributed_press_home}}/api.distributed.press"
 
 distributed_press_domain: "example.com"
 distributed_press_letsencrypt_email: "example@example.com"
+distributed_press_cert_name: "{{distributed_press_domain}}-0001"
 
 # These will be used to be served over nginx along with letsencrypt certs
 distributed_press_served_sites: []

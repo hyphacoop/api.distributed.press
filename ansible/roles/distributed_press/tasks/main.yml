@@ -183,6 +183,28 @@
 - name: "Enable NGINX firewall"
   shell: "ufw allow 'Nginx Full'"
 
+- name: "Copy over default site config"
+  template:
+    src: nginx-default.j2
+    dest: "/etc/nginx/sites-enabled/default"
+
+- name: "Copy over site config"
+  template:
+    src: nginx-site.j2
+    dest: "/etc/nginx/sites-enabled/{{distributed_press_domain}}"
+
+- name: "Copy over social inbox site config"
+  when: social_inbox_enabled
+  template:
+    src: nginx-social-site.j2
+    dest: "/etc/nginx/sites-enabled/{{social_inbox_domain}}"
+
+- name: "Copy over static site configs"
+  template:
+    src: nginx-static.j2
+    dest: "/etc/nginx/sites-enabled/{{item}}"
+  loop: "{{distributed_press_served_sites}}"
+
 - name: "Reload NGINX"
   systemd:
     daemon_reload: true
