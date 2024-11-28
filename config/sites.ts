@@ -47,12 +47,12 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
   --page-requisites \
   --convert-links \
   --adjust-extension \
-  --continue \
   --no-host-directories \
   --directory-prefix=${destination} \
+  --base=https://${siteId} \
   "https://${siteId}"`, { cwd })
 
-    await this.sync(siteId, filePath)
+    await this.sync(siteId, filePath, ctx)
   }
 
   async sync (siteId: string, filePath: string, ctx?: Ctx): Promise<void> {
