@@ -1,15 +1,16 @@
 import { NewSite, Site, UpdateSite, SiteStats } from '../api/schemas.js'
 import { Static } from '@sinclair/typebox'
+
 import { Config } from './store.js'
 import { AbstractLevel } from 'abstract-level'
 import { ProtocolManager } from '../protocols/index.js'
 import { Ctx } from '../protocols/interfaces.js'
+
 import isValidHostname from 'is-valid-hostname'
 import createError from 'http-errors'
-import { promisify } from 'node:util'
-import child_process from 'node:child_process'
-import path from 'node:path'
-const exec = promisify(child_process.exec)
+import scrape from 'website-scraper'
+// @ts-expect-error
+import SaveToExistingDirectoryPlugin from 'website-scraper-existing-directory'
 
 export class SiteConfigStore extends Config<Static<typeof Site>> {
   protocols: ProtocolManager
@@ -34,25 +35,19 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
     return await this.db.put(id, obj).then(() => obj)
   }
 
-  async clone (siteId: string, filePath: string, ctx?: Ctx): Promise<void> {
-    const cwd = path.resolve(filePath, '..')
-    const destination = filePath.split(path.sep).at(-1) as string
+  async clone (siteId: string, directory: string, ctx?: Ctx): Promise<void> {
+    const siteUrl = `https://${siteId}`
 
-    await exec(`wget2 \
-  --random-wait \
-  --compression=identity,gzip,br \
-  --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/119.0" \
-  --local-encoding=UTF-8 \
-  --mirror \
-  --page-requisites \
-  --convert-links \
-  --adjust-extension \
-  --no-host-directories \
-  --directory-prefix=${destination} \
-  --base=https://${siteId} \
-  "https://${siteId}"`, { cwd })
+    await scrape({
+      plugins: [new SaveToExistingDirectoryPlugin()],
+      urls: [siteUrl],
+      directory,
+      recursive: true,
+      maxRecursiveDepth: 10,
+      urlFilter: (url) => url.startsWith(siteUrl)
+    })
 
-    await this.sync(siteId, filePath, ctx)
+    await this.sync(siteId, directory, ctx)
   }
 
   async sync (siteId: string, filePath: string, ctx?: Ctx): Promise<void> {
