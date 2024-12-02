@@ -14,7 +14,7 @@ distributed_press_host: "localhost"
 distributed_press_ipfs_provider: "builtin"
 
 distributed_press_git_repo: "https://github.com/hyphacoop/api.distributed.press.git"
-distributed_press_git_branch: "v2.1.6"
+distributed_press_git_branch: "v2.2.0"
 distributed_press_source: "{{distributed_press_home}}/api.distributed.press"
 
 distributed_press_domain: "example.com"
