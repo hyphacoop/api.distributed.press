@@ -206,7 +206,11 @@
     name: nginx
 
 - name: "Register certbot certificate"
-  shell: "certbot --nginx --non-interactive -d {{distributed_press_domain}} {{ distributed_press_served_sites | map('regex_replace', '^', '-d ') | join(' ') }} {% if (social_inbox_enabled) %} -d {{ social_inbox_domain }} {% endif %}--expand --agree-tos --no-eff-email --email {{distributed_press_letsencrypt_email}}"
+  shell: "certbot --nginx --non-interactive -d {{distributed_press_domain}} {% if (social_inbox_enabled) %} -d {{ social_inbox_domain }} {% endif %}--expand --agree-tos --no-eff-email --email {{distributed_press_letsencrypt_email}}"
+
+- name: "Register certbot certificate for each site"
+  shell: "certbot --nginx --non-interactive -d {{item}} --expand --agree-tos --no-eff-email --email {{distributed_press_letsencrypt_email}}"
+  loop: "{{distributed_press_served_sites}}"
 
 - name: "Copy over default site config"
   template:
