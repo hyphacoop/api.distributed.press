@@ -38,6 +38,10 @@ server {
     location = /.well-known/host-meta {
       default_type application/xrd+xml;
     }
+
+    location = /.well-known/nodeinfo {
+      default_type "application/jrd+json";
+    }
   }
 
   listen [::]:443 ssl; # managed by Certbot
@@ -46,8 +50,12 @@ server {
   ssl_certificate_key /etc/letsencrypt/live/{{distributed_press_cert_name}}/privkey.pem; # managed by Certbot
   include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
   ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
-}
 
+  # Some Fediverse endpoints don't include an extension and we'd need to
+  # configure everything.  By adding index.json, we can serve these
+  # endpoints as directories.
+  index index.html index.json;
+}
 
 server {
   server_name {{item}};
