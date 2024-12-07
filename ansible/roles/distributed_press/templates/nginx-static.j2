@@ -12,6 +12,7 @@ server {
 
   error_page 404 /404.html;
 
+  add_header Cache-Control no-cache;
   add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
   add_header 'X-Frame-Options' 'ALLOW-FROM *';
   add_header 'Access-Control-Allow-Origin' '*';
