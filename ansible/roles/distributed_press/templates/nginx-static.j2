@@ -25,18 +25,19 @@ server {
   add_header 'Access-Control-Allow-Headers' '*';
   add_header 'X-Ipfs-Path' '/ipns/{{ item }}';
 
-  location /.well-known/webfinger {
-    default_type application/jrd+json;
-  }
-  location /.well-known/host-meta {
-    default_type application/xrd+xml;
-  }
-
   location / {
     # First attempt to serve request as file, then
     # as directory, then fall back to displaying a 404.
     # Also try loading .html/.md/.gemini/.gmi files
     try_files $uri $uri/ $uri.html $uri.md $uri.gmi $uri.gemini =404;
+
+    location = /.well-known/webfinger {
+      default_type application/jrd+json;
+    }
+
+    location = /.well-known/host-meta {
+      default_type application/xrd+xml;
+    }
   }
 
   listen [::]:443 ssl; # managed by Certbot
