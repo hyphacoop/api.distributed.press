@@ -126,7 +126,9 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
       promises.push(this.protocols.hyper.unsync(id, site.links.hyper, ctx))
     }
 
-    await Promise.all(promises)
+    await Promise.all(promises).catch((e) => {
+      ctx?.logger.warn(`Error unsyncing site ${e.stack as string}`)
+    })
     await this.db.del(id)
   }
 
