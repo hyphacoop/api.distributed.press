@@ -143,7 +143,9 @@ export const siteRoutes = (cfg: APIConfig, store: StoreI) => async (server: Fast
   })
 
   if (cfg.useWebringDirectoryListing === true) {
-    server.get<{ Reply: string[] }>('/sites', {
+    server.get<{
+      Reply: Array<Static<typeof Site>>
+    }>('/sites', {
       schema: {
         description: 'Returns a list of all sites on the instance',
         tags: ['site'],

@@ -102,13 +102,13 @@ export class SiteConfigStore extends Config<Static<typeof Site>> {
     return await this.db.get(id)
   }
 
-  async listAll (hidePrivate: boolean): Promise<string[]> {
+  async listAll (hidePrivate: boolean): Promise<Array<Static<typeof Site>>> {
     const ids = await this.keys()
+    const sites = await Promise.all(ids.map(async id => await this.get(id)))
     if (!hidePrivate) {
-      return ids
+      return sites
     } else {
-      const sites = await Promise.all(ids.map(async id => await this.get(id)))
-      return sites.filter(site => site.public).map(site => site.id)
+      return sites.filter(site => site.public)
     }
   }
 
