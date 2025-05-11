@@ -54,8 +54,7 @@ async function apiBuilder (cfg: APIConfig): Promise<FastifyTypebox> {
   const protocolStoragePath = path.join(basePath, 'protocols')
   const protocols = new ConcreteProtocolManager({
     ipfs: {
-      path: path.join(protocolStoragePath, 'ipfs'),
-      provider: cfg.ipfsProvider
+      path: path.join(protocolStoragePath, 'ipfs')
     },
     hyper: {
       path: path.join(protocolStoragePath, 'hyper')

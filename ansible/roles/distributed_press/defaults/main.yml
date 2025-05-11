@@ -11,8 +11,6 @@ distributed_press_site_storage: "{{distributed_press_data}}/sites/sites"
 distributed_press_port: "3932"
 distributed_press_host: "localhost"
 
-distributed_press_ipfs_provider: "builtin"
-
 distributed_press_git_repo: "https://github.com/hyphacoop/api.distributed.press.git"
 distributed_press_git_branch: "v3.0.0"
 distributed_press_source: "{{distributed_press_home}}/api.distributed.press"

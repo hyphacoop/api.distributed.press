@@ -2,7 +2,6 @@ import apiBuilder from './api/index.js'
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 import envPaths from 'env-paths'
-import { IPFSProvider, BUILTIN } from './protocols/ipfs.js'
 const paths = envPaths('distributed-press')
 
 const argv = yargs(hideBin(process.argv)).options({
@@ -10,8 +9,7 @@ const argv = yargs(hideBin(process.argv)).options({
   dnsport: { type: 'number' },
   host: { type: 'string' },
   domain: { type: 'string' },
-  data: { type: 'string' },
-  ipfsProvider: { type: 'string' }
+  data: { type: 'string' }
 }).parseSync()
 
 export interface ServerI {
@@ -20,7 +18,6 @@ export interface ServerI {
   host: string
   domain: string
   storage: string
-  ipfsProvider: IPFSProvider
 }
 
 const cfg: ServerI = {
@@ -28,8 +25,7 @@ const cfg: ServerI = {
   dnsport: Number(argv.dnsport ?? process.env.DNSPORT ?? '53'),
   host: argv.host ?? process.env.HOST ?? 'localhost',
   domain: argv.domain ?? process.env.DOMAIN ?? 'localhost',
-  storage: argv.data ?? paths.data,
-  ipfsProvider: (argv.ipfsProvider as IPFSProvider) ?? BUILTIN
+  storage: argv.data ?? paths.data
 }
 
 const server = await apiBuilder({
