@@ -103,7 +103,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
     return {
       enabled: true,
-      link: `ipns://${publishKey}/`,
+      link: `ipns://${id}/`,
       gateway: `https://${subdomain}.ipns.ipfs.hypha.coop`,
       cid: publishedCid,
       pubKey: `ipns://${publishKey}/`,
