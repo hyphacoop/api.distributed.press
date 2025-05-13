@@ -1,16 +1,11 @@
-import { createHelia } from 'helia'
+import { createHelia, libp2pDefaults } from 'helia'
 import { unixfs } from '@helia/unixfs'
 import { ipns } from '@helia/ipns'
 import { FsDatastore } from 'datastore-fs'
 import { FsBlockstore } from 'blockstore-fs'
-import { kadDHT } from '@libp2p/kad-dht'
 import { identify } from '@libp2p/identify'
 import { keychain } from '@libp2p/keychain'
 import { ping } from '@libp2p/ping'
-import { circuitRelayServer } from '@libp2p/circuit-relay-v2'
-import { gossipsub } from '@chainsafe/libp2p-gossipsub'
-import { uPnPNAT } from '@libp2p/upnp-nat'
-import { autoNAT } from '@libp2p/autonat'
 import {
   generateKeyPair,
   privateKeyFromProtobuf,
@@ -26,8 +21,6 @@ import createError from 'http-errors'
 import { Static } from '@sinclair/typebox'
 import Protocol, { Ctx, SyncOptions, ProtocolStats } from './interfaces.js'
 import { IPFSProtocolFields } from '../api/schemas.js'
-import { ipnsSelector } from 'ipns/selector'
-import { ipnsValidator } from 'ipns/validator'
 
 export interface IPFSProtocolOptions {
   path: string
@@ -56,27 +49,28 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
   }
 
   async load (): Promise<void> {
+    console.time('Helia Initialization') // Start timing
     const datastorePath = path.join(this.options.path, 'datastore')
     const blockstorePath = path.join(this.options.path, 'blockstore')
     const datastore = new FsDatastore(datastorePath)
     const blockstore = new FsBlockstore(blockstorePath)
 
-    const libp2pConfig = {
+    // Default libp2p config: https://github.com/ipfs/helia/blob/main/packages/helia/src/utils/libp2p-defaults.ts
+    const libp2pOptions = {
+      ...libp2pDefaults(),
       services: {
-        autoNAT: autoNAT(),
-        dht: kadDHT({ validators: { ipns: ipnsValidator }, selectors: { ipns: ipnsSelector } }),
         identify: identify(),
         keychain: keychain(),
-        ping: ping(),
-        relay: circuitRelayServer(),
-        pubsub: gossipsub({ allowPublishToZeroTopicPeers: true }),
-        upnp: uPnPNAT()
-      }
+        ping: ping()
+      },
+      peerDiscovery: [],
+      addresses: { listen: [] }
     }
 
-    this.helia = await createHelia({ datastore, blockstore, libp2p: libp2pConfig })
+    this.helia = await createHelia({ datastore, blockstore, libp2p: libp2pOptions })
     this.fs = unixfs(this.helia)
     this.ipns = ipns(this.helia)
+    console.timeEnd('Helia Initialization') // Log init time
 
     this.onCleanup.push(async () => {
       await this.helia.stop()
@@ -90,17 +84,21 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
   }
 
   async sync (id: string, folderPath: string, options?: SyncOptions, ctx?: Ctx): Promise<Static<typeof IPFSProtocolFields>> {
+    console.time('IPFS Sync') // Start total sync timer
     ctx?.logger.info('[ipfs] Sync Start')
     if (this.helia == null || this.fs == null || this.ipns == null) {
       throw createError(500, 'Helia must be initialized')
     }
 
     const cid = await this.addDirectory(folderPath, ctx)
+    console.timeLog('IPFS Sync', 'Directory Added') // Log after directory
     ctx?.logger.info(`[ipfs] Added directory with CID ${cid.toString()}`)
 
     const { publishKey, cid: publishedCid } = await this.publishSite(id, cid, ctx)
+    console.timeLog('IPFS Sync', 'Site Published') // Log after publish
     const subdomain = id.replaceAll('-', '--').replaceAll('.', '-')
 
+    console.timeEnd('IPFS Sync') // End total sync timer
     return {
       enabled: true,
       link: `ipns://${id}/`,
@@ -121,11 +119,13 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       const stat = await fs.promises.stat(fullPath)
       if (stat.isFile()) {
         const data = await fs.promises.readFile(fullPath)
+        console.log(`Content of ${file}:`, data.toString()) // Log file content
         const cid = await this.fs.addBytes(data, { cidVersion: 1 }) as CID
         entries.push({ path: file, cid })
         ctx?.logger.debug(`[ipfs] Added file ${file} => ${cid.toString()}`)
       }
     }
+    console.log('Directory Entries:', entries) // Log entries before adding
     return this.fs.addDirectory(entries, { cidVersion: 1 })
   }
 
