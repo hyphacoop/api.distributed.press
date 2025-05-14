@@ -89,7 +89,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           `/ip6/::/tcp/${wsPort}/ws`,
           '/p2p-circuit',
           `/ip4/0.0.0.0/udp/${tcpPort}/webrtc-direct`,
-          `/ip6/::/udp/${tcpPort}/webrtc-direct`,
+          `/ip6/::/udp/${tcpPort}/webrtc-direct`
         ]
       },
       transports: [
@@ -106,7 +106,8 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           selectors: {
             ipns: ipnsSelector
           },
-          clientMode: false
+          clientMode: true,
+          allowQueryWithZeroPeers: true
         }),
         identify: identify(),
         identifyPush: identifyPush(),
