@@ -39,7 +39,6 @@
   },
   "homepage": "https://distributed.press",
   "dependencies": {
-    "@chainsafe/libp2p-gossipsub": "^14.1.1",
     "@fastify/auth": "^4.2.0",
     "@fastify/jwt": "^6.5.0",
     "@fastify/multipart": "^7.3.0",
