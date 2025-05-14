@@ -13,6 +13,7 @@ import { ipnsSelector } from 'ipns/selector'
 import { ipnsValidator } from 'ipns/validator'
 import { tcp } from '@libp2p/tcp'
 import { webSockets } from '@libp2p/websockets'
+import { webRTCDirect } from '@libp2p/webrtc'
 import { bootstrap } from '@libp2p/bootstrap'
 import {
   generateKeyPair,
@@ -87,14 +88,15 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           `/ip4/0.0.0.0/tcp/${wsPort}/ws`,
           `/ip6/::/tcp/${tcpPort}`,
           `/ip6/::/tcp/${wsPort}/ws`,
-          '/p2p-circuit',
           `/ip4/0.0.0.0/udp/${tcpPort}/webrtc-direct`,
-          `/ip6/::/udp/${tcpPort}/webrtc-direct`
+          `/ip6/::/udp/${tcpPort}/webrtc-direct`,
+          '/p2p-circuit'
         ]
       },
       transports: [
         tcp(),
-        webSockets()
+        webSockets(),
+        webRTCDirect()
       ],
       services: {
         autoNAT: autoNAT(),
