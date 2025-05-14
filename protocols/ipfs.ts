@@ -5,7 +5,14 @@ import { FsDatastore } from 'datastore-fs'
 import { FsBlockstore } from 'blockstore-fs'
 import { keychain } from '@libp2p/keychain'
 import { ping } from '@libp2p/ping'
-import { identify } from '@libp2p/identify'
+import { autoTLS } from '@ipshipyard/libp2p-auto-tls'
+import { autoNAT } from '@libp2p/autonat'
+import { identify, identifyPush } from '@libp2p/identify'
+import { kadDHT } from '@libp2p/kad-dht'
+import { ipnsSelector } from 'ipns/selector'
+import { ipnsValidator } from 'ipns/validator'
+import { tcp } from '@libp2p/tcp'
+import { webSockets } from '@libp2p/websockets'
 import { bootstrap } from '@libp2p/bootstrap'
 import {
   generateKeyPair,
@@ -86,10 +93,26 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           // `/ip6/::/udp/${tcpPort}/webrtc-direct`,
         ]
       },
+      transports: [
+        tcp(),
+        webSockets()
+      ],
       services: {
+        autoNAT: autoNAT(),
+        autoTLS: autoTLS(),
+        dht: kadDHT({
+          validators: {
+            ipns: ipnsValidator
+          },
+          selectors: {
+            ipns: ipnsSelector
+          },
+          clientMode: false
+        }),
         identify: identify(),
-        keychain: keychain(),
-        ping: ping()
+        identifyPush: identifyPush(),
+        ping: ping(),
+        keychain: keychain()
       },
       peerDiscovery: [bootstrap(bootstrapConfig)]
     }
