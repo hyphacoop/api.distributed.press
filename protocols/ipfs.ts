@@ -87,10 +87,9 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           `/ip4/0.0.0.0/tcp/${wsPort}/ws`,
           `/ip6/::/tcp/${tcpPort}`,
           `/ip6/::/tcp/${wsPort}/ws`,
-          '/p2p-circuit'
-          // Uncomment below if WebRTC Direct is needed
-          // `/ip4/0.0.0.0/udp/${tcpPort}/webrtc-direct`,
-          // `/ip6/::/udp/${tcpPort}/webrtc-direct`,
+          '/p2p-circuit',
+          `/ip4/0.0.0.0/udp/${tcpPort}/webrtc-direct`,
+          `/ip6/::/udp/${tcpPort}/webrtc-direct`,
         ]
       },
       transports: [
