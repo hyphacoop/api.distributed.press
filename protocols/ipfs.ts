@@ -21,6 +21,7 @@ import createError from 'http-errors'
 import { Static } from '@sinclair/typebox'
 import Protocol, { Ctx, SyncOptions, ProtocolStats } from './interfaces.js'
 import { IPFSProtocolFields } from '../api/schemas.js'
+import getPort from 'get-port'
 
 export interface IPFSProtocolOptions {
   path: string
@@ -55,16 +56,27 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     const datastore = new FsDatastore(datastorePath)
     const blockstore = new FsBlockstore(blockstorePath)
 
+    const tcpPort = await getPort({ port: 7976 })
+    const wsPort = await getPort({ port: 7977 })
+
     // Default libp2p config: https://github.com/ipfs/helia/blob/main/packages/helia/src/utils/libp2p-defaults.ts
     const libp2pOptions = {
       ...libp2pDefaults(),
+      addresses: {
+        listen: [
+          `/ip4/0.0.0.0/tcp/${tcpPort}`,
+          `/ip4/0.0.0.0/tcp/${wsPort}/ws`,
+          `/ip6/::/tcp/${tcpPort}`,
+          `/ip6/::/tcp/${wsPort}/ws`,
+          `/p2p-circuit`
+        ]
+      },
       services: {
         identify: identify(),
         keychain: keychain(),
         ping: ping()
       },
-      peerDiscovery: [],
-      addresses: { listen: [] }
+      peerDiscovery: []
     }
 
     this.helia = await createHelia({ datastore, blockstore, libp2p: libp2pOptions })
