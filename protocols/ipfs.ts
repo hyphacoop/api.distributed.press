@@ -3,9 +3,10 @@ import { unixfs } from '@helia/unixfs'
 import { ipns } from '@helia/ipns'
 import { FsDatastore } from 'datastore-fs'
 import { FsBlockstore } from 'blockstore-fs'
-import { identify } from '@libp2p/identify'
 import { keychain } from '@libp2p/keychain'
 import { ping } from '@libp2p/ping'
+import { identify } from '@libp2p/identify'
+import { bootstrap } from '@libp2p/bootstrap'
 import {
   generateKeyPair,
   privateKeyFromProtobuf,
@@ -22,6 +23,17 @@ import { Static } from '@sinclair/typebox'
 import Protocol, { Ctx, SyncOptions, ProtocolStats } from './interfaces.js'
 import { IPFSProtocolFields } from '../api/schemas.js'
 import getPort from 'get-port'
+
+// https://github.com/ipfs/helia/blob/main/packages/helia/src/utils/bootstrappers.ts
+const bootstrapConfig = {
+  list: [
+    '/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
+    '/dnsaddr/bootstrap.libp2p.io/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
+    '/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt',
+    '/dnsaddr/va1.bootstrap.libp2p.io/p2p/12D3KooWKnDdG3iXw9eTFijk3EWSunZcFi54Zka4wmtqtt6rPxc8',
+    '/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ'
+  ]
+}
 
 export interface IPFSProtocolOptions {
   path: string
@@ -79,7 +91,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         keychain: keychain(),
         ping: ping()
       },
-      peerDiscovery: []
+      peerDiscovery: [bootstrap(bootstrapConfig)]
     }
 
     this.helia = await createHelia({ datastore, blockstore, libp2p: libp2pOptions })
