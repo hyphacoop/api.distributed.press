@@ -78,6 +78,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
     const tcpPort = await getPort({ port: 7976 })
     const wsPort = await getPort({ port: 7977 })
+    const webrtcPort = await getPort()
 
     // Default libp2p config: https://github.com/ipfs/helia/blob/main/packages/helia/src/utils/libp2p-defaults.ts
     const libp2pOptions = {
@@ -88,8 +89,8 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           `/ip4/0.0.0.0/tcp/${wsPort}/ws`,
           `/ip6/::/tcp/${tcpPort}`,
           `/ip6/::/tcp/${wsPort}/ws`,
-          `/ip4/0.0.0.0/udp/${tcpPort}/webrtc-direct`,
-          `/ip6/::/udp/${tcpPort}/webrtc-direct`,
+          `/ip4/0.0.0.0/udp/${webrtcPort}/webrtc-direct`,
+          `/ip6/::/udp/${webrtcPort}/webrtc-direct`,
           '/p2p-circuit'
         ]
       },
