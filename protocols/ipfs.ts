@@ -150,7 +150,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
     const { publishKey, cid: publishedCid } = await this.publishSite(id, cid, ctx)
     console.timeLog('IPFS Sync', 'Site Published') // Log after publish
-    const subdomain = id.replaceAll('-', '--').replaceAll('.', '-')
+    const subdomain = id.replace(/-/g, '--').replace(/\./g, '-')
 
     console.timeEnd('IPFS Sync') // End total sync timer
     return {
