@@ -72,8 +72,8 @@
 - name: "Enable libp2p tcp traffic through firewall"
   shell: "ufw allow in 7976/tcp"
 
-- name: "Enable libp2p WebSocket traffic through firewall"
-  shell: "ufw allow in 7977/tcp"
+- name: "Enable libp2p WebRTC UDP traffic through firewall (50000-60000)"
+  shell: "ufw allow 50000:60000/udp"
 
 - name: "Check if JWT keys got generated already"
   stat:

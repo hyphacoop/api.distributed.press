@@ -44,6 +44,10 @@ const bootstrapConfig = {
   ]
 }
 
+function getRandomPortInRange (min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min
+}
+
 export interface IPFSProtocolOptions {
   path: string
 }
@@ -79,7 +83,26 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
     const tcpPort = await getPort({ port: 7976 })
     const wsPort = await getPort({ port: 7977 })
-    const webrtcPort = await getPort()
+    // Try to find an available random port in the range 50000-60000 for WebRTC
+    let webrtcPort: number | null = null
+    const maxRetries = 10
+    for (let i = 0; i < maxRetries; i++) {
+      const candidatePort = getRandomPortInRange(50000, 60000)
+      try {
+        webrtcPort = await getPort({ port: candidatePort })
+        console.log(`Selected WebRTC port: ${webrtcPort}`)
+        break
+      } catch (err) {
+        console.warn(`Port ${candidatePort} unavailable, retrying (${i + 1}/${maxRetries})...`)
+        if (i === maxRetries - 1) {
+          throw new Error(`Failed to find an available WebRTC port in range 50000-60000 after ${maxRetries} retries`)
+        }
+      }
+    }
+
+    if (webrtcPort === null) {
+      throw new Error('Failed to assign WebRTC port')
+    }
 
     // Default libp2p config: https://github.com/ipfs/helia/blob/main/packages/helia/src/utils/libp2p-defaults.ts
     const libp2pOptions = {
