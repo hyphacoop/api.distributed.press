@@ -2,7 +2,7 @@ import { mkdir, readdir, copyFile } from 'fs/promises'
 import path from 'path'
 import process from 'process'
 
-async function migrate (srcRepo, destDir) {
+export async function migrate (srcRepo, destDir) {
   const srcKs = path.join(srcRepo, 'keystore')
   await mkdir(destDir, { recursive: true })
 
