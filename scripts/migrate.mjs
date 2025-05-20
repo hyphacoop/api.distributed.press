@@ -1,10 +1,10 @@
-import {mkdir, readdir, copyFile} from 'fs/promises'
+import { mkdir, readdir, copyFile } from 'fs/promises'
 import path from 'path'
 import process from 'process'
 
-async function migrate(srcRepo, destDir) {
+async function migrate (srcRepo, destDir) {
   const srcKs = path.join(srcRepo, 'keystore')
-  await mkdir(destDir, {recursive: true})
+  await mkdir(destDir, { recursive: true })
 
   for (const file of await readdir(srcKs)) {
     await copyFile(path.join(srcKs, file), path.join(destDir, file))
@@ -19,5 +19,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.error('usage: node migrate.mjs <kuboRepo> <heliaDir>')
     process.exit(1)
   }
-  migrate(src, dest).catch(e => (console.error(e), process.exit(1)))
+  migrate(src, dest).catch(e => {
+    console.error(e)
+    process.exit(1)
+  })
 }
