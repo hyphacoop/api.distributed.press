@@ -24,7 +24,8 @@ import type { PrivateKey } from '@libp2p/interface'
 import { peerIdFromPrivateKey } from '@libp2p/peer-id'
 import { CID } from 'multiformats/cid'
 import path from 'path'
-import fs from 'fs'
+import fs, { createReadStream } from 'fs'
+import { Readable } from 'stream'
 import makeDir from 'make-dir'
 import createError from 'http-errors'
 import { Static } from '@sinclair/typebox'
@@ -171,9 +172,13 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       const fullPath = path.join(folderPath, file)
       const stat = await fs.promises.stat(fullPath)
       if (stat.isFile()) {
-        const data = await fs.promises.readFile(fullPath)
-        console.log(`Content of ${file}:`, data.toString()) // Log file content
-        const cid = await this.fs.addBytes(data, { cidVersion: 1 }) as CID
+        // Create a readable stream for the file
+        const stream = createReadStream(fullPath)
+        // Add the file to IPFS with path and content
+        const cid = await this.fs.addFile({
+          path: file, // Use the filename as the path
+          content: Readable.from(stream)
+        }, { cidVersion: 1 }) as CID
         entries.push({ path: file, cid })
         ctx?.logger.debug(`[ipfs] Added file ${file} => ${cid.toString()}`)
       }
