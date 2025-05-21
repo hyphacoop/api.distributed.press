@@ -28,7 +28,9 @@ test.afterEach.always(async t => {
 
 test('ipfs: basic e2e sync', async t => {
   const path = await newProtocolTestPath()
-  t.context.protocol = new IPFSProtocol({ path })
+  // Disable WebRTC in CI by checking process.env.CI
+  const useWebRTC = process.env.CI !== 'true'
+  t.context.protocol = new IPFSProtocol({ path, useWebRTC })
   await t.context.protocol.load()
   await t.notThrowsAsync(t.context.protocol.load(), 'initializing IPFS with Helia should work')
   const links = await t.context.protocol.sync(exampleSiteConfig.domain, fixturePath)
