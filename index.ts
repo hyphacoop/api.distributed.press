@@ -9,7 +9,8 @@ const argv = yargs(hideBin(process.argv)).options({
   dnsport: { type: 'number' },
   host: { type: 'string' },
   domain: { type: 'string' },
-  data: { type: 'string' }
+  data: { type: 'string' },
+  useWebRTC: { type: 'boolean', default: undefined }
 }).parseSync()
 
 export interface ServerI {
@@ -18,6 +19,7 @@ export interface ServerI {
   host: string
   domain: string
   storage: string
+  useWebRTC?: boolean
 }
 
 const cfg: ServerI = {
@@ -25,7 +27,8 @@ const cfg: ServerI = {
   dnsport: Number(argv.dnsport ?? process.env.DNSPORT ?? '53'),
   host: argv.host ?? process.env.HOST ?? 'localhost',
   domain: argv.domain ?? process.env.DOMAIN ?? 'localhost',
-  storage: argv.data ?? paths.data
+  storage: argv.data ?? paths.data,
+  useWebRTC: argv.useWebRTC ?? (process.env.USE_WEBRTC?.toLowerCase() === 'false' ? false : process.env.CI !== 'true')
 }
 
 const server = await apiBuilder({
