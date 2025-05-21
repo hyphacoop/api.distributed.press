@@ -2,7 +2,7 @@ import test from 'ava'
 import fs from 'fs/promises'
 import path from 'path'
 import { nanoid } from 'nanoid'
-import { migrate } from './migrate.mjs'
+import { migrate } from './migrate-keys.mjs'
 
 test('migrate keys successfully', async t => {
   const tempDir = path.join(process.cwd(), 'temp-migrate-test', nanoid())
