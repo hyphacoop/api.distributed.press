@@ -58,6 +58,9 @@
   become_user: "{{distributed_press_user}}"
   shell: |
     cd {{distributed_press_source}}
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    nvm use 20.11.1
     npm ci
 
 - name: "Enable Node to bind to port 53 for DNS"
