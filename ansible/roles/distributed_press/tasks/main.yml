@@ -53,6 +53,29 @@
     clone: yes
     update: yes
 
+- name: Ensure NVM is installed
+  become: yes
+  become_user: "{{distributed_press_user}}"
+  shell: |
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+  args:
+    executable: /bin/bash
+    creates: "{{distributed_press_user_home}}/.nvm/nvm.sh"
+
+- name: Fix permissions on source directory
+  become: yes
+  become_user: "{{distributed_press_user}}"
+  file:
+    path: "{{distributed_press_source}}"
+    state: directory
+    mode: '0755'
+    recurse: yes
+    owner: "{{distributed_press_user}}"
+    group: "{{distributed_press_user}}"
+
 - name: Install NPM Dependencies
   become: yes
   become_user: "{{distributed_press_user}}"
@@ -60,6 +83,8 @@
     cd {{distributed_press_source}}
     export NVM_DIR="$HOME/.nvm"
     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+    nvm install 20.11.1
     nvm use 20.11.1
     npm install
     npm ci
