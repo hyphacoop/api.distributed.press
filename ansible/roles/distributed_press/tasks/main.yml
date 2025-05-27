@@ -61,7 +61,10 @@
     export NVM_DIR="$HOME/.nvm"
     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
     nvm use 20.11.1
+    npm install
     npm ci
+  args:
+    executable: /bin/bash
 
 - name: "Enable Node to bind to port 53 for DNS"
   shell: setcap CAP_NET_BIND_SERVICE=+eip /usr/bin/node
