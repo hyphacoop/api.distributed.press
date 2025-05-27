@@ -11,7 +11,7 @@
     "keygen": "ts-node-esm authorization/scripts/keygen.ts",
     "make-admin": "ts-node-esm authorization/scripts/create_admin.ts",
     "dev": "ts-node-esm index.ts | pino-pretty -c -t",
-    "watch": "nodemon --watch './**/*.ts' --exec 'node --experimental-specifier-resolution=node --loader ts-node/esm' index.ts | pino-pretty -c -t",
+    "watch": "nodemon --watch './**/*.ts' --exec 'node --loader ts-node/esm' index.ts | pino-pretty -c -t",
     "start": "node build/index.js",
     "test": "ava --concurrency 1 --timeout=1m",
     "nuke": "ts-node-esm protocols/scripts/nuke.ts"
@@ -35,7 +35,7 @@
     "url": "https://github.com/hyphacoop/api.distributed.press/issues"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "homepage": "https://distributed.press",
   "dependencies": {
@@ -91,7 +91,7 @@
     "@types/dns2": "npm:@suttyweb/types-dns2@2.0.10",
     "@types/gunzip-maybe": "^1.4.0",
     "@types/http-errors": "^2.0.4",
-    "@types/node": "^18.11.13",
+    "@types/node": "^20.11.19",
     "@types/rimraf": "^3.0.2",
     "@types/tar-fs": "^2.0.1",
     "@types/website-scraper": "^1.2.10",
