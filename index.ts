@@ -14,7 +14,6 @@ import apiBuilder from './api/index.js'
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 import envPaths from 'env-paths'
-import { IPFSProvider, BUILTIN } from './protocols/ipfs.js'
 const paths = envPaths('distributed-press')
 
 const argv = yargs(hideBin(process.argv)).options({
@@ -23,7 +22,7 @@ const argv = yargs(hideBin(process.argv)).options({
   host: { type: 'string' },
   domain: { type: 'string' },
   data: { type: 'string' },
-  ipfsProvider: { type: 'string' }
+  useWebRTC: { type: 'boolean', default: undefined }
 }).parseSync()
 
 export interface ServerI {
@@ -32,7 +31,7 @@ export interface ServerI {
   host: string
   domain: string
   storage: string
-  ipfsProvider: IPFSProvider
+  useWebRTC?: boolean
 }
 
 const cfg: ServerI = {
@@ -41,7 +40,7 @@ const cfg: ServerI = {
   host: argv.host ?? process.env.HOST ?? 'localhost',
   domain: argv.domain ?? process.env.DOMAIN ?? 'localhost',
   storage: argv.data ?? paths.data,
-  ipfsProvider: (argv.ipfsProvider as IPFSProvider) ?? BUILTIN
+  useWebRTC: argv.useWebRTC ?? (process.env.USE_WEBRTC?.toLowerCase() === 'false' ? false : process.env.CI !== 'true')
 }
 
 const server = await apiBuilder({

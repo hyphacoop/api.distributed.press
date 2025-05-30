@@ -7,7 +7,7 @@ import { fileURLToPath } from 'url'
 import { exampleSiteConfig } from '../fixtures/siteConfig.js'
 import { HyperProtocol } from './hyper.js'
 import Protocol from './interfaces.js'
-import { BUILTIN, IPFSProtocol } from './ipfs.js'
+import { IPFSProtocol } from './ipfs.js'
 
 const paths = envPaths('distributed-press')
 const filename = fileURLToPath(import.meta.url)
@@ -21,31 +21,31 @@ async function newProtocolTestPath (): Promise<string> {
 }
 
 const test = anyTest as TestFn<{ protocol: Protocol<any> }>
+
 test.afterEach.always(async t => {
   await t.context.protocol?.unload()
 })
 
 test('ipfs: basic e2e sync', async t => {
   const path = await newProtocolTestPath()
-  t.context.protocol = new IPFSProtocol({
-    path,
-    provider: BUILTIN
-  })
-
-  await t.notThrowsAsync(t.context.protocol.load(), 'initializing IPFS should work')
+  // Disable WebRTC in CI by checking process.env.CI
+  const useWebRTC = process.env.CI !== 'true'
+  t.context.protocol = new IPFSProtocol({ path, useWebRTC })
+  await t.context.protocol.load()
+  await t.notThrowsAsync(t.context.protocol.load(), 'initializing IPFS with Helia should work')
   const links = await t.context.protocol.sync(exampleSiteConfig.domain, fixturePath)
-  t.is(links.enabled, true)
-  t.truthy(links.link)
+  console.log('IPFS Sync Result:', JSON.stringify(links, null, 2))
+  t.is(links.enabled, true, 'sync should enable the site')
+  t.truthy(links.link, 'sync should provide a valid IPNS link')
+  t.regex(links.link, /^ipns:\/\//, 'link should be an IPNS URL')
 })
 
 test('hyper: basic e2e sync', async t => {
   const path = await newProtocolTestPath()
-  t.context.protocol = new HyperProtocol({
-    path
-  })
+  t.context.protocol = new HyperProtocol({ path })
 
   await t.notThrowsAsync(t.context.protocol.load(), 'initializing hyper should work')
   const links = await t.context.protocol.sync(exampleSiteConfig.domain, fixturePath)
-  t.is(links.enabled, true)
-  t.truthy(links.link)
+  t.is(links.enabled, true, 'sync should enable the site')
+  t.truthy(links.link, 'sync should provide a valid link')
 })
