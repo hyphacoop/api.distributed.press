@@ -1,3 +1,19 @@
+// Polyfill CustomEvent for Node.js environment
+if (typeof CustomEvent === 'undefined') {
+  class CustomEvent<T = any> extends Event {
+    detail: T;
+    constructor(type: string, options?: CustomEventInit<T>) {
+      super(type, options);
+      this.detail = options?.detail as T;
+    }
+  }
+  (globalThis as any).CustomEvent = CustomEvent;
+}
+
+// Shim Web Crypto API to global scope for browser-compatible libraries
+import { webcrypto } from 'node:crypto';
+(globalThis as any).crypto = webcrypto;
+
 import anyTest, { TestFn } from 'ava'
 import envPaths from 'env-paths'
 import makeDir from 'make-dir'
