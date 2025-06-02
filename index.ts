@@ -12,7 +12,9 @@ if (typeof CustomEvent === 'undefined') {
 
 // Shim Web Crypto API to global scope for browser-compatible libraries
 import { webcrypto } from 'node:crypto';
-(globalThis as any).crypto = webcrypto;
+if (typeof (globalThis as any).crypto === 'undefined') {
+  (globalThis as any).crypto = webcrypto;
+}
 
 import apiBuilder from './api/index.js'
 import yargs from 'yargs'
