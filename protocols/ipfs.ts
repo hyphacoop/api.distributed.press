@@ -173,6 +173,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     })
 
     for await (const file of files) {
+      console.log(`[console] Added file: ${file.path}, CID: ${file.cid.toString()}`)
       ctx?.logger.debug(`[ipfs] added ${file.path}`)
       lastEntry = file
     }
