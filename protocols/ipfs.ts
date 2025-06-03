@@ -140,21 +140,22 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
   }
 
   async sync (id: string, folderPath: string, options?: SyncOptions, ctx?: Ctx): Promise<Static<typeof IPFSProtocolFields>> {
-    console.time('IPFS Sync') // Start total sync timer
+    const timerLabel = `IPFS Sync - ${id}` // Unique label per site
+    console.time(timerLabel) // Start total sync timer
     ctx?.logger.info('[ipfs] Sync Start')
     if (this.helia == null || this.fs == null || this.ipns == null) {
       throw createError(500, 'Helia must be initialized')
     }
 
     const cid = await this.addDirectory(folderPath, ctx)
-    console.timeLog('IPFS Sync', 'Directory Added') // Log after directory
+    console.timeLog(timerLabel, 'Directory Added') // Log after directory
     ctx?.logger.info(`[ipfs] Added directory with CID ${cid.toString()}`)
 
     const { publishKey, cid: publishedCid } = await this.publishSite(id, cid, ctx)
-    console.timeLog('IPFS Sync', 'Site Published') // Log after publish
+    console.timeLog(timerLabel, 'Site Published') // Log after publish
     const subdomain = id.replace(/-/g, '--').replace(/\./g, '-')
 
-    console.timeEnd('IPFS Sync') // End total sync timer
+    console.timeEnd(timerLabel) // End total sync timer
     return {
       enabled: true,
       link: `ipns://${id}/`,
