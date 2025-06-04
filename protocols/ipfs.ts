@@ -21,7 +21,6 @@ import {
   privateKeyToProtobuf
 } from '@libp2p/crypto/keys'
 import type { PrivateKey } from '@libp2p/interface'
-import { createFromPrivKey } from '@libp2p/peer-id-factory'
 import { CID } from 'multiformats/cid'
 import path from 'path'
 import { promises as fsPromises, createReadStream } from 'fs'
@@ -32,6 +31,7 @@ import { Static } from '@sinclair/typebox'
 import Protocol, { Ctx, SyncOptions, ProtocolStats } from './interfaces.js'
 import { IPFSProtocolFields } from '../api/schemas.js'
 import getPort from 'get-port'
+import { peerIdFromPrivateKey } from '@libp2p/peer-id'
 
 // https://github.com/ipfs/helia/blob/main/packages/helia/src/utils/bootstrappers.ts
 const bootstrapConfig = {
@@ -256,7 +256,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     ctx?.logger.info(`[ipfs] Successfully published to IPNS, verifying resolution...`)
     
     // Verify the published value
-    const peerId = await createFromPrivKey(privateKey)
+    const peerId = await peerIdFromPrivateKey(privateKey)
     const ipnsName = `/ipns/${peerId.toString()}`
     try {
       const resolved = await this.ipns.resolve(ipnsName)
@@ -291,7 +291,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     const privateKey = await this.loadKey(name)
     if (privateKey == null) throw createError(404, `No key for ${id}`)
 
-    const peerId = await createFromPrivKey(privateKey)
+    const peerId = await peerIdFromPrivateKey(privateKey)
     const ipnsName = `/ipns/${peerId.toString()}`
     try {
       const resolved = await this.ipns.resolve(ipnsName)
