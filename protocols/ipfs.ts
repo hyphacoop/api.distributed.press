@@ -193,6 +193,12 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         return CID.parse('bafyaabakaieac')
       }
 
+      // Ensure we have a UnixFS instance
+      const fs = ipfsFs ?? this.ipfsFs
+      if (fs == null) {
+        throw createError(500, 'UnixFS instance not available')
+      }
+
       const entries: Array<{ path: string, cid: CID }> = []
       for (const file of files) {
         const fullPath = path.join(folderPath, file)
@@ -206,8 +212,8 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
             
             // Create a readable stream for the file
             const stream = createReadStream(fullPath)
-            // Use helia.addAll to ensure blocks are persisted
-            for await (const { cid } of this.helia.addAll([{ path: file, content: stream }])) {
+            // Use unixfs.addAll to ensure blocks are persisted
+            for await (const { cid } of fs.addAll([{ path: file, content: stream }])) {
               entries.push({ path: file, cid })
               ctx?.logger.info(`[ipfs] Successfully added file ${file} => ${cid.toString()}`)
             }
@@ -231,7 +237,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
       ctx?.logger.info(`[ipfs] Creating directory with ${entries.length} entries: ${entries.map(e => `${e.path} => ${e.cid.toString()}`).join(', ')}`)
       // Use unixfs API format - object mapping filenames to CIDs
-      const dirCid = await ipfsFs.addDirectory(dirEntries)
+      const dirCid = await fs.addDirectory(dirEntries)
       ctx?.logger.info(`[ipfs] Created directory with CID: ${dirCid.toString()}`)
 
       // Pin the directory to ensure it stays in the blockstore
