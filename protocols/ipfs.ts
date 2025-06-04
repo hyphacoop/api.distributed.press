@@ -139,16 +139,35 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     const timerLabel = `IPFS Sync - ${id}` // Unique label per site
     console.time(timerLabel) // Start total sync timer
     ctx?.logger.info('[ipfs] Sync Start')
-    if (this.helia == null || this.fs == null || this.ipns == null) {
+    if (this.helia == null || this.ipns == null) {
       throw createError(500, 'Helia must be initialized')
     }
 
-    const cid = await this.addDirectory(folderPath, ctx)
+    // Create a fresh UnixFS instance for this sync operation
+    const fs = unixfs(this.helia)
+    ctx?.logger.info('[ipfs] Created fresh UnixFS instance for sync')
+
+    // Read directory contents first to verify what we're about to add
+    const files = await fs.promises.readdir(folderPath)
+    const fileContents = new Map<string, string>()
+    for (const file of files) {
+      const fullPath = path.join(folderPath, file)
+      try {
+        const content = await fs.promises.readFile(fullPath, 'utf8')
+        fileContents.set(file, content)
+        ctx?.logger.info(`[ipfs] Read file ${file} (${content.length} bytes)`)
+      } catch (err) {
+        ctx?.logger.error(`[ipfs] Error reading file ${file}: ${err instanceof Error ? err.message : String(err)}`)
+      }
+    }
+
+    const cid = await this.addDirectory(folderPath, ctx, fs)
     console.timeLog(timerLabel, 'Directory Added') // Log after directory
-    ctx?.logger.info(`[ipfs] Added directory with CID ${cid.toString()}`)
+    ctx?.logger.info(`[ipfs] Added directory with CID ${cid.toString()} (type: ${typeof cid})`)
 
     const { publishKey, cid: publishedCid } = await this.publishSite(id, cid, ctx)
     console.timeLog(timerLabel, 'Site Published') // Log after publish
+    ctx?.logger.info(`[ipfs] Published CID comparison - Original: ${cid.toString()}, Published: ${publishedCid}`)
     const subdomain = id.replace(/-/g, '--').replace(/\./g, '-')
 
     console.timeEnd(timerLabel) // End total sync timer
@@ -162,7 +181,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     }
   }
 
-  async addDirectory (folderPath: string, ctx?: Ctx): Promise<CID> {
+  async addDirectory (folderPath: string, ctx?: Ctx, fs?: any): Promise<CID> {
     ctx?.logger.info(`[ipfs] Attempting to add directory at path: ${folderPath}`)
     
     try {
@@ -181,10 +200,14 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           const stat = await fs.promises.stat(fullPath)
           if (stat.isFile()) {
             ctx?.logger.info(`[ipfs] Processing file: ${file} (${stat.size} bytes) at ${fullPath}`)
+            // Read file content for verification
+            const content = await fs.promises.readFile(fullPath, 'utf8')
+            ctx?.logger.info(`[ipfs] File content hash: ${Buffer.from(content).toString('hex').slice(0, 16)}...`)
+            
             // Create a readable stream for the file
             const stream = createReadStream(fullPath)
             // Add the file to IPFS with path and content
-            const cid = await this.fs.addFile({
+            const cid = await fs.addFile({
               path: file, // Use the filename as the path
               content: Readable.from(stream)
             }, { cidVersion: 1 }) as CID
@@ -210,7 +233,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
       ctx?.logger.info(`[ipfs] Creating directory with ${entries.length} entries: ${entries.map(e => `${e.path} => ${e.cid.toString()}`).join(', ')}`)
       // Use unixfs API format - object mapping filenames to CIDs
-      const dirCid = await this.fs.addDirectory(dirEntries)
+      const dirCid = await fs.addDirectory(dirEntries)
       ctx?.logger.info(`[ipfs] Created directory with CID: ${dirCid.toString()}`)
       return dirCid
     } catch (err) {
@@ -228,10 +251,20 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       await this.saveKey(name, privateKey)
     }
 
-    ctx?.logger.info(`[ipfs] Publishing CID ${cid.toString()} to IPNS with key ${name}`)
+    ctx?.logger.info(`[ipfs] Publishing CID ${cid.toString()} (type: ${typeof cid}, isCID: ${CID.isCID(cid)}) to IPNS with key ${name}`)
     await this.ipns.publish(privateKey, cid, { signal: AbortSignal.timeout(5000) })
-
+    ctx?.logger.info(`[ipfs] Successfully published to IPNS, verifying resolution...`)
+    
+    // Verify the published value
     const peerId = peerIdFromPrivateKey(privateKey)
+    const ipnsName = `/ipns/${peerId.toString()}`
+    try {
+      const resolved = await this.ipns.resolve(ipnsName)
+      ctx?.logger.info(`[ipfs] IPNS resolution check - Published: ${cid.toString()}, Resolved: ${resolved.toString()}`)
+    } catch (err) {
+      ctx?.logger.error(`[ipfs] IPNS resolution check failed: ${err instanceof Error ? err.message : String(err)}`)
+    }
+
     return { publishKey: peerId.toString(), cid: cid.toString() }
   }
 
