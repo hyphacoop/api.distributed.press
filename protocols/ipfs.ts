@@ -163,27 +163,54 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
   }
 
   async addDirectory (folderPath: string, ctx?: Ctx): Promise<CID> {
-    const files = await fs.promises.readdir(folderPath)
-    if (files.length === 0) return CID.parse('bafyaabakaieac')
-
-    const entries: Array<{ path: string, cid: CID }> = []
-    for (const file of files) {
-      const fullPath = path.join(folderPath, file)
-      const stat = await fs.promises.stat(fullPath)
-      if (stat.isFile()) {
-        // Create a readable stream for the file
-        const stream = createReadStream(fullPath)
-        // Add the file to IPFS with path and content
-        const cid = await this.fs.addFile({
-          path: file, // Use the filename as the path
-          content: Readable.from(stream)
-        }, { cidVersion: 1 }) as CID
-        entries.push({ path: file, cid })
-        ctx?.logger.debug(`[ipfs] Added file ${file} => ${cid.toString()}`)
+    ctx?.logger.info(`[ipfs] Attempting to add directory at path: ${folderPath}`)
+    
+    try {
+      const files = await fs.promises.readdir(folderPath)
+      ctx?.logger.info(`[ipfs] Found ${files.length} files in directory: ${files.join(', ')}`)
+      
+      if (files.length === 0) {
+        ctx?.logger.warn(`[ipfs] No files found in directory: ${folderPath}`)
+        return CID.parse('bafyaabakaieac')
       }
+
+      const entries: Array<{ path: string, cid: CID }> = []
+      for (const file of files) {
+        const fullPath = path.join(folderPath, file)
+        try {
+          const stat = await fs.promises.stat(fullPath)
+          if (stat.isFile()) {
+            ctx?.logger.info(`[ipfs] Processing file: ${file} (${stat.size} bytes) at ${fullPath}`)
+            // Create a readable stream for the file
+            const stream = createReadStream(fullPath)
+            // Add the file to IPFS with path and content
+            const cid = await this.fs.addFile({
+              path: file, // Use the filename as the path
+              content: Readable.from(stream)
+            }, { cidVersion: 1 }) as CID
+            entries.push({ path: file, cid })
+            ctx?.logger.info(`[ipfs] Successfully added file ${file} => ${cid.toString()}`)
+          } else {
+            ctx?.logger.warn(`[ipfs] Skipping non-file entry: ${file} (is directory: ${stat.isDirectory()})`)
+          }
+        } catch (err) {
+          ctx?.logger.error(`[ipfs] Error processing file ${file}: ${err instanceof Error ? err.message : String(err)}`)
+        }
+      }
+
+      if (entries.length === 0) {
+        ctx?.logger.warn('[ipfs] No valid files were processed, returning empty directory CID')
+        return CID.parse('bafyaabakaieac')
+      }
+
+      ctx?.logger.info(`[ipfs] Creating directory with ${entries.length} entries: ${entries.map(e => `${e.path} => ${e.cid.toString()}`).join(', ')}`)
+      const dirCid = await this.fs.addDirectory(entries, { cidVersion: 1 })
+      ctx?.logger.info(`[ipfs] Created directory with CID: ${dirCid.toString()}`)
+      return dirCid
+    } catch (err) {
+      ctx?.logger.error(`[ipfs] Error reading directory ${folderPath}: ${err instanceof Error ? err.message : String(err)}`)
+      throw err
     }
-    console.log('Directory Entries:', entries) // Log entries before adding
-    return this.fs.addDirectory(entries, { cidVersion: 1 })
   }
 
   async publishSite (id: string, cid: CID, ctx?: Ctx): Promise<PublishResult> {
