@@ -21,7 +21,7 @@ import {
   privateKeyToProtobuf
 } from '@libp2p/crypto/keys'
 import type { PrivateKey } from '@libp2p/interface'
-import { peerIdFromKeys } from '@libp2p/peer-id'
+import { createFromKey } from '@libp2p/peer-id-factory'
 import { CID } from 'multiformats/cid'
 import path from 'path'
 import { promises as fsPromises, createReadStream } from 'fs'
@@ -256,7 +256,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     ctx?.logger.info(`[ipfs] Successfully published to IPNS, verifying resolution...`)
     
     // Verify the published value
-    const peerId = await peerIdFromKeys(privateKey.public, privateKey)
+    const peerId = await createFromKey(privateKey)
     const ipnsName = `/ipns/${peerId.toString()}`
     try {
       const resolved = await this.ipns.resolve(ipnsName)
@@ -291,7 +291,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     const privateKey = await this.loadKey(name)
     if (privateKey == null) throw createError(404, `No key for ${id}`)
 
-    const peerId = await peerIdFromKeys(privateKey.public, privateKey)
+    const peerId = await createFromKey(privateKey)
     const ipnsName = `/ipns/${peerId.toString()}`
     try {
       const resolved = await this.ipns.resolve(ipnsName)
