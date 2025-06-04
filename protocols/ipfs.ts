@@ -203,8 +203,14 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         return CID.parse('bafyaabakaieac')
       }
 
+      // Convert entries array to object mapping filenames to CIDs
+      const dirEntries = Object.fromEntries(
+        entries.map(entry => [entry.path, entry.cid])
+      )
+
       ctx?.logger.info(`[ipfs] Creating directory with ${entries.length} entries: ${entries.map(e => `${e.path} => ${e.cid.toString()}`).join(', ')}`)
-      const dirCid = await this.fs.addDirectory(entries, { cidVersion: 1 })
+      // Use unixfs API format - object mapping filenames to CIDs
+      const dirCid = await this.fs.addDirectory(dirEntries)
       ctx?.logger.info(`[ipfs] Created directory with CID: ${dirCid.toString()}`)
       return dirCid
     } catch (err) {
@@ -289,6 +295,6 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     const keyPath = this.getKeyPath(name)
     await makeDir(path.dirname(keyPath))
     const pb = privateKeyToProtobuf(privateKey)
-    await fs.promises.writeFile(keyPath, Buffer.from(pb))
+    await fs.promises.writeFile(keyPath, new Uint8Array(pb))
   }
 }
