@@ -24,7 +24,7 @@ import type { PrivateKey } from '@libp2p/interface'
 import { peerIdFromPrivateKey } from '@libp2p/peer-id'
 import { CID } from 'multiformats/cid'
 import path from 'path'
-import fs, { createReadStream } from 'fs'
+import { promises as fsPromises, createReadStream } from 'fs'
 import { Readable } from 'stream'
 import makeDir from 'make-dir'
 import createError from 'http-errors'
@@ -60,14 +60,14 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
   options: IPFSProtocolOptions
   onCleanup: CleanupCallback[]
   helia: any | null
-  fs: any | null
+  ipfsFs: any | null
   ipns: any | null
 
   constructor (options: IPFSProtocolOptions) {
     this.options = { ...options, useWebRTC: options.useWebRTC ?? false }
     this.onCleanup = []
     this.helia = null
-    this.fs = null
+    this.ipfsFs = null
     this.ipns = null
   }
 
@@ -120,7 +120,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     }
 
     this.helia = await createHelia({ datastore, blockstore, libp2p: libp2pOptions })
-    this.fs = unixfs(this.helia)
+    this.ipfsFs = unixfs(this.helia)
     this.ipns = ipns(this.helia)
     console.timeEnd('Helia Initialization') // Log init time
 
@@ -144,16 +144,16 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     }
 
     // Create a fresh UnixFS instance for this sync operation
-    const fs = unixfs(this.helia)
+    const ipfsFs = unixfs(this.helia)
     ctx?.logger.info('[ipfs] Created fresh UnixFS instance for sync')
 
     // Read directory contents first to verify what we're about to add
-    const files = await fs.promises.readdir(folderPath)
+    const files = await fsPromises.readdir(folderPath)
     const fileContents = new Map<string, string>()
     for (const file of files) {
       const fullPath = path.join(folderPath, file)
       try {
-        const content = await fs.promises.readFile(fullPath, 'utf8')
+        const content = await fsPromises.readFile(fullPath, 'utf8')
         fileContents.set(file, content)
         ctx?.logger.info(`[ipfs] Read file ${file} (${content.length} bytes)`)
       } catch (err) {
@@ -161,7 +161,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       }
     }
 
-    const cid = await this.addDirectory(folderPath, ctx, fs)
+    const cid = await this.addDirectory(folderPath, ctx, ipfsFs)
     console.timeLog(timerLabel, 'Directory Added') // Log after directory
     ctx?.logger.info(`[ipfs] Added directory with CID ${cid.toString()} (type: ${typeof cid})`)
 
@@ -181,11 +181,11 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     }
   }
 
-  async addDirectory (folderPath: string, ctx?: Ctx, fs?: any): Promise<CID> {
+  async addDirectory (folderPath: string, ctx?: Ctx, ipfsFs?: any): Promise<CID> {
     ctx?.logger.info(`[ipfs] Attempting to add directory at path: ${folderPath}`)
     
     try {
-      const files = await fs.promises.readdir(folderPath)
+      const files = await fsPromises.readdir(folderPath)
       ctx?.logger.info(`[ipfs] Found ${files.length} files in directory: ${files.join(', ')}`)
       
       if (files.length === 0) {
@@ -197,17 +197,17 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       for (const file of files) {
         const fullPath = path.join(folderPath, file)
         try {
-          const stat = await fs.promises.stat(fullPath)
+          const stat = await fsPromises.stat(fullPath)
           if (stat.isFile()) {
             ctx?.logger.info(`[ipfs] Processing file: ${file} (${stat.size} bytes) at ${fullPath}`)
             // Read file content for verification
-            const content = await fs.promises.readFile(fullPath, 'utf8')
+            const content = await fsPromises.readFile(fullPath, 'utf8')
             ctx?.logger.info(`[ipfs] File content hash: ${Buffer.from(content).toString('hex').slice(0, 16)}...`)
             
             // Create a readable stream for the file
             const stream = createReadStream(fullPath)
             // Add the file to IPFS with path and content
-            const cid = await fs.addFile({
+            const cid = await ipfsFs.addFile({
               path: file, // Use the filename as the path
               content: Readable.from(stream)
             }, { cidVersion: 1 }) as CID
@@ -233,7 +233,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
       ctx?.logger.info(`[ipfs] Creating directory with ${entries.length} entries: ${entries.map(e => `${e.path} => ${e.cid.toString()}`).join(', ')}`)
       // Use unixfs API format - object mapping filenames to CIDs
-      const dirCid = await fs.addDirectory(dirEntries)
+      const dirCid = await ipfsFs.addDirectory(dirEntries)
       ctx?.logger.info(`[ipfs] Created directory with CID: ${dirCid.toString()}`)
       return dirCid
     } catch (err) {
@@ -316,7 +316,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
   async loadKey (name: string): Promise<PrivateKey | null> {
     const keyPath = this.getKeyPath(name)
     try {
-      const raw = await fs.promises.readFile(keyPath)
+      const raw = await fsPromises.readFile(keyPath)
       return privateKeyFromProtobuf(new Uint8Array(raw))
     } catch (err: any) {
       if (err.code === 'ENOENT') return null
@@ -328,6 +328,6 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     const keyPath = this.getKeyPath(name)
     await makeDir(path.dirname(keyPath))
     const pb = privateKeyToProtobuf(privateKey)
-    await fs.promises.writeFile(keyPath, new Uint8Array(pb))
+    await fsPromises.writeFile(keyPath, new Uint8Array(pb))
   }
 }
