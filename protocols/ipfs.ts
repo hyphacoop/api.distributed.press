@@ -206,13 +206,11 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
             
             // Create a readable stream for the file
             const stream = createReadStream(fullPath)
-            // Add the file to IPFS with path and content
-            const cid = await ipfsFs.addFile({
-              path: file, // Use the filename as the path
-              content: stream
-            }, { cidVersion: 1 }) as CID
-            entries.push({ path: file, cid })
-            ctx?.logger.info(`[ipfs] Successfully added file ${file} => ${cid.toString()}`)
+            // Use helia.addAll to ensure blocks are persisted
+            for await (const { cid } of this.helia.addAll([{ path: file, content: stream }])) {
+              entries.push({ path: file, cid })
+              ctx?.logger.info(`[ipfs] Successfully added file ${file} => ${cid.toString()}`)
+            }
           } else {
             ctx?.logger.warn(`[ipfs] Skipping non-file entry: ${file} (is directory: ${stat.isDirectory()})`)
           }
@@ -235,6 +233,15 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       // Use unixfs API format - object mapping filenames to CIDs
       const dirCid = await ipfsFs.addDirectory(dirEntries)
       ctx?.logger.info(`[ipfs] Created directory with CID: ${dirCid.toString()}`)
+
+      // Pin the directory to ensure it stays in the blockstore
+      try {
+        await this.helia.pins.add(dirCid)
+        ctx?.logger.info(`[ipfs] Successfully pinned directory CID: ${dirCid.toString()}`)
+      } catch (err) {
+        ctx?.logger.warn(`[ipfs] Failed to pin directory CID: ${err instanceof Error ? err.message : String(err)}`)
+      }
+
       return dirCid
     } catch (err) {
       ctx?.logger.error(`[ipfs] Error reading directory ${folderPath}: ${err instanceof Error ? err.message : String(err)}`)
