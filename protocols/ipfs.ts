@@ -21,7 +21,7 @@ import {
   privateKeyToProtobuf
 } from '@libp2p/crypto/keys'
 import type { PrivateKey } from '@libp2p/interface'
-import { peerIdFromPrivateKey } from '@libp2p/peer-id'
+import { createFromPrivKey } from '@libp2p/peer-id-factory'
 import { CID } from 'multiformats/cid'
 import path from 'path'
 import { promises as fsPromises, createReadStream } from 'fs'
@@ -209,7 +209,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
             // Add the file to IPFS with path and content
             const cid = await ipfsFs.addFile({
               path: file, // Use the filename as the path
-              content: Readable.from(stream)
+              content: stream
             }, { cidVersion: 1 }) as CID
             entries.push({ path: file, cid })
             ctx?.logger.info(`[ipfs] Successfully added file ${file} => ${cid.toString()}`)
@@ -251,12 +251,12 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       await this.saveKey(name, privateKey)
     }
 
-    ctx?.logger.info(`[ipfs] Publishing CID ${cid.toString()} (type: ${typeof cid}, isCID: ${CID.isCID(cid)}) to IPNS with key ${name}`)
+    ctx?.logger.info(`[ipfs] Publishing CID ${cid.toString()} (type: ${typeof cid}, isValidCID: ${!!CID.asCID(cid)}}) to IPNS with key ${name}`)
     await this.ipns.publish(privateKey, cid, { signal: AbortSignal.timeout(5000) })
     ctx?.logger.info(`[ipfs] Successfully published to IPNS, verifying resolution...`)
     
     // Verify the published value
-    const peerId = peerIdFromPrivateKey(privateKey)
+    const peerId = await createFromPrivKey(privateKey)
     const ipnsName = `/ipns/${peerId.toString()}`
     try {
       const resolved = await this.ipns.resolve(ipnsName)
@@ -291,7 +291,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     const privateKey = await this.loadKey(name)
     if (privateKey == null) throw createError(404, `No key for ${id}`)
 
-    const peerId = peerIdFromPrivateKey(privateKey)
+    const peerId = await createFromPrivKey(privateKey)
     const ipnsName = `/ipns/${peerId.toString()}`
     try {
       const resolved = await this.ipns.resolve(ipnsName)
