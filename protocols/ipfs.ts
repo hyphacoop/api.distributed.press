@@ -135,6 +135,20 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     }
   }
 
+  async listDirectory(cid: CID, ctx?: Ctx): Promise<void> {
+    const fs = this.ipfsFs;
+    if (fs == null) return;
+  
+    try {
+      ctx?.logger.info(`[ipfs] Listing directory contents for CID: ${cid.toString()}`);
+      for await (const entry of fs.ls(cid)) {
+        ctx?.logger.info(`[ipfs] Directory entry: ${entry.name} => ${entry.cid.toString()}`);
+      }
+    } catch (err) {
+      ctx?.logger.error(`[ipfs] Error listing directory: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
   async sync (id: string, folderPath: string, options?: SyncOptions, ctx?: Ctx): Promise<Static<typeof IPFSProtocolFields>> {
     const timerLabel = `IPFS Sync - ${id}` // Unique label per site
     console.time(timerLabel) // Start total sync timer
@@ -162,6 +176,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     }
 
     const cid = await this.addDirectory(folderPath, ctx, ipfsFs)
+    await this.listDirectory(cid, ctx);
     console.timeLog(timerLabel, 'Directory Added') // Log after directory
     ctx?.logger.info(`[ipfs] Added directory with CID ${cid.toString()} (type: ${typeof cid})`)
 
