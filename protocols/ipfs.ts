@@ -142,7 +142,9 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     try {
       ctx?.logger.info(`[ipfs] Listing directory contents for CID: ${cid.toString()}`)
       for await (const entry of fs.ls(cid)) {
-        ctx?.logger.info(`[ipfs] Directory entry: ${entry.name} => ${entry.cid.toString()}`)
+        ctx?.logger.info(
+          `[ipfs] Directory entry: ${String(entry.name)} => ${String(entry.cid)}`
+        )
       }
     } catch (err) {
       ctx?.logger.error(`[ipfs] Error listing directory: ${err instanceof Error ? err.message : String(err)}`)
@@ -169,7 +171,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       try {
         const content = await fsPromises.readFile(fullPath, 'utf8')
         fileContents.set(file, content)
-        ctx?.logger.info(`[ipfs] Read file ${file} (${content.length} bytes)`)
+        ctx?.logger.info(`[ipfs] Read file ${String(file)} (${String(content.length)} bytes)`)
       } catch (err) {
         ctx?.logger.error(`[ipfs] Error reading file ${file}: ${err instanceof Error ? err.message : String(err)}`)
       }
@@ -182,7 +184,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
     const { publishKey, cid: publishedCid } = await this.publishSite(id, cid, ctx)
     console.timeLog(timerLabel, 'Site Published') // Log after publish
-    ctx?.logger.info(`[ipfs] Published CID comparison - Original: ${cid.toString()}, Published: ${publishedCid}`)
+    ctx?.logger.info(`[ipfs] Published CID comparison - Original: ${cid.toString()}, Published: ${String(publishedCid)}`)
     const subdomain = id.replace(/-/g, '--').replace(/\./g, '-')
 
     console.timeEnd(timerLabel) // End total sync timer
@@ -207,7 +209,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     try {
       // Read directory contents to log what's being added
       const files = await fsPromises.readdir(folderPath, { withFileTypes: true })
-      ctx?.logger.info(`[ipfs] Found ${files.length} entries in directory: ${files.map(f => `${f.name} (isFile: ${f.isFile()})`).join(', ')}`)
+      ctx?.logger.info(`[ipfs] Found ${String(files.length)} entries in directory: ${files.map(f => `${f.name} (isFile: ${String(f.isFile())})`).join(', ')}`)
 
       if (files.length === 0) {
         ctx?.logger.warn(`[ipfs] No files found in directory: ${folderPath}`)
@@ -223,7 +225,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
               const stat = await fsPromises.stat(fullPath)
               const content = createReadStream(fullPath)
               yield { path: file.name, content }
-              ctx?.logger.info(`[ipfs] Queued file for addition: ${file.name} (${stat.size} bytes)`)
+              ctx?.logger.info(`[ipfs] Queued file for addition: ${file.name} (${String(stat.size)} bytes)`)
             } else if (file.isDirectory()) {
               ctx?.logger.info(`[ipfs] Skipping subdirectory: ${file.name}`)
             }
@@ -233,7 +235,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
       let dirCid: CID | null = null
       for await (const entry of fs.addAll(readable, { wrapWithDirectory: true, cidVersion: 1 })) {
-        ctx?.logger.info(`[ipfs] Added entry: ${entry.path} => ${entry.cid.toString()}`)
+        ctx?.logger.info(`[ipfs] Added entry: ${String(entry.path)} => ${String(entry.cid)}`)
         dirCid = entry.cid
       }
 
@@ -263,7 +265,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       await this.saveKey(name, privateKey)
     }
 
-    ctx?.logger.info(`[ipfs] Publishing CID ${cid.toString()} (type: ${typeof cid}, isValidCID: ${!(CID.asCID(cid) == null)}}) to IPNS with key ${name}`)
+    ctx?.logger.info(`[ipfs] Publishing CID ${cid.toString()} (type: ${typeof cid}, isValidCID: ${String(!(CID.asCID(cid) == null))}) to IPNS with key ${String(name)}`)
     await this.ipns.publish(privateKey, cid, { signal: AbortSignal.timeout(5000) })
     ctx?.logger.info('[ipfs] Successfully published to IPNS, verifying resolution...')
 
@@ -272,7 +274,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     const ipnsName = `/ipns/${peerId.toString()}`
     try {
       const resolved = await this.ipns.resolve(ipnsName)
-      ctx?.logger.info(`[ipfs] IPNS resolution check - Published: ${cid.toString()}, Resolved: ${resolved.toString()}`)
+      ctx?.logger.info(`[ipfs] IPNS resolution check - Published: ${cid.toString()}, Resolved: ${String(resolved)}`)
     } catch (err) {
       ctx?.logger.error(`[ipfs] IPNS resolution check failed: ${err instanceof Error ? err.message : String(err)}`)
     }

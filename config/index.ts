@@ -5,7 +5,6 @@ import { AdminStore } from './admin.js'
 import { PublisherStore } from './publisher.js'
 import { RevocationStore } from './revocations.js'
 import { SiteConfigStore } from './sites.js'
-import path from 'path'
 import { ProtocolManager } from '../protocols/index.js'
 
 export interface StoreI {
