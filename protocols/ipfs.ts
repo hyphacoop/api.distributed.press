@@ -44,6 +44,10 @@ const bootstrapConfig = {
   ]
 }
 
+function getRandomPortInRange (min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min
+}
+
 export interface IPFSProtocolOptions {
   path: string
   useWebRTC?: boolean
@@ -64,7 +68,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
   ipns: any | null
 
   constructor (options: IPFSProtocolOptions) {
-    this.options = { ...options, useWebRTC: options.useWebRTC ?? false }
+    this.options = { ...options, useWebRTC: options.useWebRTC ?? true }
     this.onCleanup = []
     this.helia = null
     this.ipfsFs = null
@@ -80,6 +84,29 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
     const tcpPort = await getPort({ port: 7976 })
     const wsPort = await getPort({ port: 7977 })
+    let webrtcPort: number | null = null
+
+    // Only initialize WebRTC port if useWebRTC is explicitly true
+    if (this.options.useWebRTC === true) {
+      const maxRetries = 10
+      for (let i = 0; i < maxRetries; i++) {
+        const candidatePort = getRandomPortInRange(50000, 60000)
+        try {
+          webrtcPort = await getPort({ port: candidatePort })
+          console.log(`Selected WebRTC port: ${String(webrtcPort)}`)
+          break
+        } catch (err) {
+          console.warn(`Port ${candidatePort} unavailable, retrying (${i + 1}/${maxRetries})...`)
+          if (i === maxRetries - 1) {
+            throw new Error(`Failed to find an available WebRTC port in range 50000-60000 after ${maxRetries} retries`)
+          }
+        }
+      }
+
+      if (webrtcPort === null) {
+        throw new Error('Failed to assign WebRTC port')
+      }
+    }
 
     // Default libp2p config: https://github.com/ipfs/helia/blob/main/packages/helia/src/utils/libp2p-defaults.ts
     const libp2pOptions = {
@@ -90,6 +117,12 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           `/ip4/0.0.0.0/tcp/${wsPort}/ws`,
           `/ip6/::/tcp/${tcpPort}`,
           `/ip6/::/tcp/${wsPort}/ws`,
+          ...(this.options.useWebRTC === true
+            ? [
+              `/ip4/0.0.0.0/udp/${String(webrtcPort)}/webrtc-direct`,
+              `/ip6/::/udp/${String(webrtcPort)}/webrtc-direct`
+              ]
+            : []),
           '/p2p-circuit'
         ]
       },
