@@ -196,77 +196,61 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     }
   }
 
-  async addDirectory (folderPath: string, ctx?: Ctx, ipfsFs?: any): Promise<CID> {
-    ctx?.logger.info(`[ipfs] Attempting to add directory at path: ${folderPath}`)
-    
+  async addDirectory(folderPath: string, ctx?: Ctx, ipfsFs?: any): Promise<CID> {
+    ctx?.logger.info(`[ipfs] Adding directory recursively at path: ${folderPath}`);
+  
+    const fs = ipfsFs ?? this.ipfsFs;
+    if (fs == null) {
+      throw createError(500, 'UnixFS instance not available');
+    }
+  
     try {
-      const files = await fsPromises.readdir(folderPath)
-      ctx?.logger.info(`[ipfs] Found ${files.length} files in directory: ${files.join(', ')}`)
+      // Read directory contents to log what's being added
+      const files = await fsPromises.readdir(folderPath, { withFileTypes: true });
+      ctx?.logger.info(`[ipfs] Found ${files.length} entries in directory: ${files.map(f => `${f.name} (isFile: ${f.isFile()})`).join(', ')}`);
       
       if (files.length === 0) {
-        ctx?.logger.warn(`[ipfs] No files found in directory: ${folderPath}`)
-        return CID.parse('bafyaabakaieac')
+        ctx?.logger.warn(`[ipfs] No files found in directory: ${folderPath}`);
+        return CID.parse('bafyaabakaieac'); // Empty directory CID
       }
-
-      // Ensure we have a UnixFS instance
-      const fs = ipfsFs ?? this.ipfsFs
-      if (fs == null) {
-        throw createError(500, 'UnixFS instance not available')
-      }
-
-      const entries: Array<{ path: string, cid: CID }> = []
-      for (const file of files) {
-        const fullPath = path.join(folderPath, file)
-        try {
-          const stat = await fsPromises.stat(fullPath)
-          if (stat.isFile()) {
-            ctx?.logger.info(`[ipfs] Processing file: ${file} (${stat.size} bytes) at ${fullPath}`)
-            // Read file content for verification
-            const content = await fsPromises.readFile(fullPath, 'utf8')
-            ctx?.logger.info(`[ipfs] File content hash: ${Buffer.from(content).toString('hex').slice(0, 16)}...`)
-            
-            // Create a readable stream for the file
-            const stream = createReadStream(fullPath)
-            // Use unixfs.addAll to ensure blocks are persisted
-            for await (const { cid } of fs.addAll([{ path: file, content: stream }])) {
-              entries.push({ path: file, cid })
-              ctx?.logger.info(`[ipfs] Successfully added file ${file} => ${cid.toString()}`)
+  
+      // Use unixfs.addAll to recursively add the directory
+      const readable = Readable.from(
+        (async function* () {
+          for (const file of files) {
+            const fullPath = path.join(folderPath, file.name);
+            if (file.isFile()) {
+              const stat = await fsPromises.stat(fullPath);
+              const content = createReadStream(fullPath);
+              yield { path: file.name, content };
+              ctx?.logger.info(`[ipfs] Queued file for addition: ${file.name} (${stat.size} bytes)`);
+            } else if (file.isDirectory()) {
+              ctx?.logger.info(`[ipfs] Skipping subdirectory: ${file.name}`);
             }
-          } else {
-            ctx?.logger.warn(`[ipfs] Skipping non-file entry: ${file} (is directory: ${stat.isDirectory()})`)
           }
-        } catch (err) {
-          ctx?.logger.error(`[ipfs] Error processing file ${file}: ${err instanceof Error ? err.message : String(err)}`)
-        }
+        })()
+      );
+  
+      let dirCid: CID | null = null;
+      for await (const entry of fs.addAll(readable, { wrapWithDirectory: true, cidVersion: 1 })) {
+        ctx?.logger.info(`[ipfs] Added entry: ${entry.path} => ${entry.cid.toString()}`);
+        dirCid = entry.cid;
       }
-
-      if (entries.length === 0) {
-        ctx?.logger.warn('[ipfs] No valid files were processed, returning empty directory CID')
-        return CID.parse('bafyaabakaieac')
+  
+      if (!dirCid) {
+        throw new Error('Failed to generate directory CID');
       }
-
-      // Convert entries array to object mapping filenames to CIDs
-      const dirEntries = Object.fromEntries(
-        entries.map(entry => [entry.path, entry.cid])
-      )
-
-      ctx?.logger.info(`[ipfs] Creating directory with ${entries.length} entries: ${entries.map(e => `${e.path} => ${e.cid.toString()}`).join(', ')}`)
-      // Use unixfs API format - object mapping filenames to CIDs
-      const dirCid = await fs.addDirectory(dirEntries)
-      ctx?.logger.info(`[ipfs] Created directory with CID: ${dirCid.toString()}`)
-
-      // Pin the directory to ensure it stays in the blockstore
-      try {
-        await this.helia.pins.add(dirCid)
-        ctx?.logger.info(`[ipfs] Successfully pinned directory CID: ${dirCid.toString()}`)
-      } catch (err) {
-        ctx?.logger.warn(`[ipfs] Failed to pin directory CID: ${err instanceof Error ? err.message : String(err)}`)
-      }
-
-      return dirCid
+  
+      ctx?.logger.info(`[ipfs] Final directory CID: ${dirCid.toString()}`);
+      
+      // Pin the directory
+      await this.helia.pins.add(dirCid);
+      ctx?.logger.info(`[ipfs] Pinned directory CID: ${dirCid.toString()}`);
+      
+      return dirCid;
     } catch (err) {
-      ctx?.logger.error(`[ipfs] Error reading directory ${folderPath}: ${err instanceof Error ? err.message : String(err)}`)
-      throw err
+      ctx?.logger.error(`[ipfs] Error adding directory: ${err instanceof Error ? err.message : String(err)}`);
+      throw err;
     }
   }
 
