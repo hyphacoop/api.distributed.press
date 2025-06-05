@@ -135,17 +135,17 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     }
   }
 
-  async listDirectory(cid: CID, ctx?: Ctx): Promise<void> {
-    const fs = this.ipfsFs;
-    if (fs == null) return;
-  
+  async listDirectory (cid: CID, ctx?: Ctx): Promise<void> {
+    const fs = this.ipfsFs
+    if (fs == null) return
+
     try {
-      ctx?.logger.info(`[ipfs] Listing directory contents for CID: ${cid.toString()}`);
+      ctx?.logger.info(`[ipfs] Listing directory contents for CID: ${cid.toString()}`)
       for await (const entry of fs.ls(cid)) {
-        ctx?.logger.info(`[ipfs] Directory entry: ${entry.name} => ${entry.cid.toString()}`);
+        ctx?.logger.info(`[ipfs] Directory entry: ${entry.name} => ${entry.cid.toString()}`)
       }
     } catch (err) {
-      ctx?.logger.error(`[ipfs] Error listing directory: ${err instanceof Error ? err.message : String(err)}`);
+      ctx?.logger.error(`[ipfs] Error listing directory: ${err instanceof Error ? err.message : String(err)}`)
     }
   }
 
@@ -176,7 +176,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     }
 
     const cid = await this.addDirectory(folderPath, ctx, ipfsFs)
-    await this.listDirectory(cid, ctx);
+    await this.listDirectory(cid, ctx)
     console.timeLog(timerLabel, 'Directory Added') // Log after directory
     ctx?.logger.info(`[ipfs] Added directory with CID ${cid.toString()} (type: ${typeof cid})`)
 
@@ -196,61 +196,61 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     }
   }
 
-  async addDirectory(folderPath: string, ctx?: Ctx, ipfsFs?: any): Promise<CID> {
-    ctx?.logger.info(`[ipfs] Adding directory recursively at path: ${folderPath}`);
-  
-    const fs = ipfsFs ?? this.ipfsFs;
+  async addDirectory (folderPath: string, ctx?: Ctx, ipfsFs?: any): Promise<CID> {
+    ctx?.logger.info(`[ipfs] Adding directory recursively at path: ${folderPath}`)
+
+    const fs = ipfsFs ?? this.ipfsFs
     if (fs == null) {
-      throw createError(500, 'UnixFS instance not available');
+      throw createError(500, 'UnixFS instance not available')
     }
-  
+
     try {
       // Read directory contents to log what's being added
-      const files = await fsPromises.readdir(folderPath, { withFileTypes: true });
-      ctx?.logger.info(`[ipfs] Found ${files.length} entries in directory: ${files.map(f => `${f.name} (isFile: ${f.isFile()})`).join(', ')}`);
-      
+      const files = await fsPromises.readdir(folderPath, { withFileTypes: true })
+      ctx?.logger.info(`[ipfs] Found ${files.length} entries in directory: ${files.map(f => `${f.name} (isFile: ${f.isFile()})`).join(', ')}`)
+
       if (files.length === 0) {
-        ctx?.logger.warn(`[ipfs] No files found in directory: ${folderPath}`);
-        return CID.parse('bafyaabakaieac'); // Empty directory CID
+        ctx?.logger.warn(`[ipfs] No files found in directory: ${folderPath}`)
+        return CID.parse('bafyaabakaieac') // Empty directory CID
       }
-  
+
       // Use unixfs.addAll to recursively add the directory
       const readable = Readable.from(
-        (async function* () {
+        (async function * () {
           for (const file of files) {
-            const fullPath = path.join(folderPath, file.name);
+            const fullPath = path.join(folderPath, file.name)
             if (file.isFile()) {
-              const stat = await fsPromises.stat(fullPath);
-              const content = createReadStream(fullPath);
-              yield { path: file.name, content };
-              ctx?.logger.info(`[ipfs] Queued file for addition: ${file.name} (${stat.size} bytes)`);
+              const stat = await fsPromises.stat(fullPath)
+              const content = createReadStream(fullPath)
+              yield { path: file.name, content }
+              ctx?.logger.info(`[ipfs] Queued file for addition: ${file.name} (${stat.size} bytes)`)
             } else if (file.isDirectory()) {
-              ctx?.logger.info(`[ipfs] Skipping subdirectory: ${file.name}`);
+              ctx?.logger.info(`[ipfs] Skipping subdirectory: ${file.name}`)
             }
           }
         })()
-      );
-  
-      let dirCid: CID | null = null;
+      )
+
+      let dirCid: CID | null = null
       for await (const entry of fs.addAll(readable, { wrapWithDirectory: true, cidVersion: 1 })) {
-        ctx?.logger.info(`[ipfs] Added entry: ${entry.path} => ${entry.cid.toString()}`);
-        dirCid = entry.cid;
+        ctx?.logger.info(`[ipfs] Added entry: ${entry.path} => ${entry.cid.toString()}`)
+        dirCid = entry.cid
       }
-  
-      if (!dirCid) {
-        throw new Error('Failed to generate directory CID');
+
+      if (dirCid == null) {
+        throw new Error('Failed to generate directory CID')
       }
-  
-      ctx?.logger.info(`[ipfs] Final directory CID: ${dirCid.toString()}`);
-      
+
+      ctx?.logger.info(`[ipfs] Final directory CID: ${dirCid.toString()}`)
+
       // Pin the directory
-      await this.helia.pins.add(dirCid);
-      ctx?.logger.info(`[ipfs] Pinned directory CID: ${dirCid.toString()}`);
-      
-      return dirCid;
+      await this.helia.pins.add(dirCid)
+      ctx?.logger.info(`[ipfs] Pinned directory CID: ${dirCid.toString()}`)
+
+      return dirCid
     } catch (err) {
-      ctx?.logger.error(`[ipfs] Error adding directory: ${err instanceof Error ? err.message : String(err)}`);
-      throw err;
+      ctx?.logger.error(`[ipfs] Error adding directory: ${err instanceof Error ? err.message : String(err)}`)
+      throw err
     }
   }
 
@@ -263,10 +263,10 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       await this.saveKey(name, privateKey)
     }
 
-    ctx?.logger.info(`[ipfs] Publishing CID ${cid.toString()} (type: ${typeof cid}, isValidCID: ${!!CID.asCID(cid)}}) to IPNS with key ${name}`)
+    ctx?.logger.info(`[ipfs] Publishing CID ${cid.toString()} (type: ${typeof cid}, isValidCID: ${!(CID.asCID(cid) == null)}}) to IPNS with key ${name}`)
     await this.ipns.publish(privateKey, cid, { signal: AbortSignal.timeout(5000) })
-    ctx?.logger.info(`[ipfs] Successfully published to IPNS, verifying resolution...`)
-    
+    ctx?.logger.info('[ipfs] Successfully published to IPNS, verifying resolution...')
+
     // Verify the published value
     const peerId = await peerIdFromPrivateKey(privateKey)
     const ipnsName = `/ipns/${peerId.toString()}`

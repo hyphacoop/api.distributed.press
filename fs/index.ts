@@ -31,7 +31,7 @@ export class SiteFileSystem {
   async extract (tarballPath: string, siteId: string): Promise<string> {
     const sitePath = this.getPath(siteId)
     console.log(`[fs] Extracting tarball from ${tarballPath} to ${sitePath}`)
-    
+
     try {
       await pipeline(
         fs.createReadStream(tarballPath),
@@ -45,11 +45,11 @@ export class SiteFileSystem {
           }
         })
       )
-      
+
       // Verify extraction by listing directory contents
       const files = await fs.promises.readdir(sitePath)
       console.log(`[fs] Extraction complete. Files in ${sitePath}:`, files)
-      
+
       return sitePath
     } catch (err) {
       console.error(`[fs] Error extracting tarball: ${err instanceof Error ? err.message : String(err)}`)
