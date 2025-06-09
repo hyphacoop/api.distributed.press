@@ -305,7 +305,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     }
 
     ctx?.logger.info(`[ipfs] Publishing CID ${cid.toString()} (type: ${typeof cid}, isValidCID: ${String(!(CID.asCID(cid) == null))}) to IPNS with key ${String(name)}`)
-    await this.ipns.publish(privateKey, cid, { signal: AbortSignal.timeout(5000) })
+    await this.ipns.publish(privateKey, cid, { signal: AbortSignal.timeout(60000) })
     ctx?.logger.info('[ipfs] Successfully published to IPNS, verifying resolution...')
 
     // Verify the published value
