@@ -48,6 +48,19 @@ const bootstrapConfig = {
   ]
 }
 
+// Function to get the public IP address
+async function getPublicIP(): Promise<string> {
+  try {
+    // Try to get public IP from a service
+    const response = await fetch('https://api.ipify.org?format=json')
+    const data = await response.json()
+    return data.ip
+  } catch (err) {
+    console.warn('[ipfs] Could not detect public IP, using 0.0.0.0')
+    return '0.0.0.0'
+  }
+}
+
 function getRandomPortInRange (min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min
 }
@@ -70,6 +83,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
   helia: any | null
   ipfsFs: any | null
   ipns: any | null
+  peerMonitorInterval: NodeJS.Timeout | null
 
   constructor (options: IPFSProtocolOptions) {
     this.options = { ...options, useWebRTC: options.useWebRTC ?? true }
@@ -77,6 +91,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     this.helia = null
     this.ipfsFs = null
     this.ipns = null
+    this.peerMonitorInterval = null
   }
 
   async load (): Promise<void> {
@@ -112,6 +127,10 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       }
     }
 
+    // Get public IP for announce addresses
+    const publicIP = await getPublicIP()
+    console.log(`[ipfs] Using public IP for announce: ${publicIP}`)
+
     // Default libp2p config: https://github.com/ipfs/helia/blob/main/packages/helia/src/utils/libp2p-defaults.ts
     const defaults = await libp2pDefaults()
     
@@ -130,6 +149,14 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
               ]
             : []),
           '/p2p-circuit'
+        ],
+        announce: [
+          // Add public addresses that external peers can reach
+          `/ip4/${publicIP}/tcp/${tcpPort}`,
+          `/ip4/${publicIP}/tcp/${wsPort}/ws`,
+          ...(this.options.useWebRTC === true
+            ? [`/ip4/${publicIP}/udp/${String(webrtcPort)}/webrtc-direct`]
+            : [])
         ]
       },
       transports: [
@@ -176,9 +203,37 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     const nodeId: string = this.helia.libp2p.peerId.toString()
     console.log(`[ipfs] Helia node initialized with ID: ${nodeId}`)
 
+    // Start peer monitoring for debugging
+    this.startPeerMonitoring()
+
     this.onCleanup.push(async () => {
+      this.stopPeerMonitoring()
       await this.helia.stop()
     })
+  }
+
+  startPeerMonitoring(): void {
+    this.peerMonitorInterval = setInterval(() => {
+      if (this.helia?.libp2p) {
+        const peerCount = this.helia.libp2p.getPeers().length
+        console.log(`[ipfs] Connected peers: ${peerCount}`)
+        
+        // Log some peer addresses for debugging
+        const peers = this.helia.libp2p.getPeers().slice(0, 3)
+        if (peers.length > 0) {
+          peers.forEach((peer: any) => {
+            console.log(`[ipfs] Peer: ${peer.toString()}`)
+          })
+        }
+      }
+    }, 30000) // Every 30 seconds
+  }
+
+  stopPeerMonitoring(): void {
+    if (this.peerMonitorInterval) {
+      clearInterval(this.peerMonitorInterval)
+      this.peerMonitorInterval = null
+    }
   }
 
   async unload (): Promise<void> {
@@ -234,10 +289,19 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     console.timeLog(timerLabel, 'Directory Added') // Log after directory
     ctx?.logger.info(`[ipfs] Added directory with CID ${cid.toString()} (type: ${typeof cid})`)
 
+    // Verify content is accessible before publishing
+    const isContentAccessible = await this.verifyContent(cid, ctx)
+    if (!isContentAccessible) {
+      ctx?.logger.warn('[ipfs] Content verification failed before publishing, but continuing...')
+    }
+
     const { publishKey, cid: publishedCid } = await this.publishSite(id, cid, ctx)
     console.timeLog(timerLabel, 'Site Published') // Log after publish
     ctx?.logger.info(`[ipfs] Published CID comparison - Original: ${cid.toString()}, Published: ${String(publishedCid)}`)
     const subdomain = id.replace(/-/g, '--').replace(/\./g, '-')
+
+    // Test if the CID is accessible from external sources
+    await this.testCIDAccessibility(publishedCid, ctx)
 
     console.timeEnd(timerLabel) // End total sync timer
     return {
@@ -301,9 +365,36 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       await this.helia.pins.add(dirCid)
       ctx?.logger.info(`[ipfs] Pinned directory CID: ${dirCid.toString()}`)
 
-      // Provide the CID to the DHT so other peers can find it
-      await this.helia.libp2p.services.dht.provide(dirCid)
-      ctx?.logger.info(`[ipfs] Provided directory CID to DHT: ${dirCid.toString()}`)
+      // Provide to DHT with timeout to prevent hanging
+      try {
+        const providePromise = this.helia.libp2p.services.dht.provide(dirCid)
+        await Promise.race([
+          providePromise,
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('DHT provide timeout')), 30000)
+          )
+        ])
+        ctx?.logger.info(`[ipfs] Provided directory CID to DHT: ${dirCid.toString()}`)
+      } catch (err) {
+        ctx?.logger.warn(`[ipfs] DHT provide failed or timed out: ${err instanceof Error ? err.message : String(err)}`)
+        // Continue anyway - the content is still accessible via your node
+      }
+
+      // Verify the provide operation by checking if we can find ourselves as a provider
+      try {
+        const providers = []
+        for await (const provider of this.helia.libp2p.services.dht.findProviders(dirCid, { timeout: 10000 })) {
+          providers.push(provider.id.toString())
+        }
+        const ourPeerId = this.helia.libp2p.peerId.toString()
+        if (providers.includes(ourPeerId)) {
+          ctx?.logger.info(`[ipfs] ✅ DHT provide verification successful - our peer found as provider`)
+        } else {
+          ctx?.logger.warn(`[ipfs] ⚠️ DHT provide verification failed - our peer not found as provider. Found: ${providers.join(', ')}`)
+        }
+      } catch (err) {
+        ctx?.logger.warn(`[ipfs] DHT provide verification failed: ${err instanceof Error ? err.message : String(err)}`)
+      }
 
       return dirCid
     } catch (err) {
@@ -325,7 +416,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     
     // Create proper AbortController with cleanup to prevent listener leaks
     const ctrl = new AbortController()
-    const timer = setTimeout(() => ctrl.abort(), 60000)
+    const timer = setTimeout(() => ctrl.abort(), 15000) // Reduced from 60s to 15s
     
     try {
       await this.ipns.publish(privateKey, cid, { signal: ctrl.signal })
@@ -445,5 +536,48 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     await makeDir(path.dirname(keyPath))
     const pb = privateKeyToProtobuf(privateKey)
     await fsPromises.writeFile(keyPath, new Uint8Array(pb))
+  }
+
+  // Test if a CID is accessible from external sources
+  async testCIDAccessibility (cid: string, ctx?: Ctx): Promise<void> {
+    const gateways = [
+      `https://ipfs.io/ipfs/${cid}`,
+      `https://dweb.link/ipfs/${cid}`,
+      `https://gateway.pinata.cloud/ipfs/${cid}`
+    ]
+
+    ctx?.logger.info(`[ipfs] Testing CID accessibility for: ${cid}`)
+    
+    for (const gateway of gateways) {
+      try {
+        const response = await fetch(gateway, { 
+          method: 'HEAD',
+          signal: AbortSignal.timeout(10000)
+        })
+        if (response.ok) {
+          ctx?.logger.info(`[ipfs] ✅ CID accessible via ${gateway}`)
+        } else {
+          ctx?.logger.warn(`[ipfs] ⚠️ CID not accessible via ${gateway} (${response.status})`)
+        }
+      } catch (err) {
+        ctx?.logger.warn(`[ipfs] ❌ CID not accessible via ${gateway}: ${err instanceof Error ? err.message : String(err)}`)
+      }
+    }
+  }
+
+  // Add content verification method
+  async verifyContent(cid: CID, ctx?: Ctx): Promise<boolean> {
+    try {
+      // Try to list the directory to verify it's accessible
+      const entries = []
+      for await (const entry of this.ipfsFs.ls(cid)) {
+        entries.push(entry.name)
+      }
+      ctx?.logger.info(`[ipfs] Content verification successful. Files: ${entries.join(', ')}`)
+      return true
+    } catch (err) {
+      ctx?.logger.error(`[ipfs] Content verification failed: ${err instanceof Error ? err.message : String(err)}`)
+      return false
+    }
   }
 }
