@@ -155,6 +155,16 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     }
 
     this.helia = await createHelia({ datastore, blockstore, libp2p: libp2pOptions })
+    
+    // Start the libp2p node
+    await this.helia.libp2p.start()
+    console.log('[ipfs] libp2p started:', this.helia.libp2p.isStarted())
+    
+    // Log multiaddrs
+    for (const addr of this.helia.libp2p.getMultiaddrs()) {
+      console.log('[ipfs] announcing as:', addr.toString())
+    }
+    
     this.ipfsFs = unixfs(this.helia)
     this.ipns = ipns(this.helia)
     console.timeEnd('Helia Initialization') // Log init time
