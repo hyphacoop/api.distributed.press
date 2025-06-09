@@ -384,7 +384,10 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       try {
         const providers = []
         for await (const provider of this.helia.libp2p.services.dht.findProviders(dirCid, { timeout: 10000 })) {
-          providers.push(provider.id.toString())
+          // Add null safety check here
+          if (provider?.id) {
+            providers.push(provider.id.toString())
+          }
         }
         const ourPeerId = this.helia.libp2p.peerId.toString()
         if (providers.includes(ourPeerId)) {
