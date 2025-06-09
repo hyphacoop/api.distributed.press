@@ -211,20 +211,59 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     const dht = this.helia.libp2p.services.dht
     console.log(`[ipfs] DHT service exists: ${dht !== undefined}`)
     console.log(`[ipfs] DHT service started: ${dht.isStarted()}`)
-    console.log(`[ipfs] DHT mode property: ${dht.mode}`)
-    console.log(`[ipfs] DHT mode getter: ${typeof dht.mode}`)
     
-    // Force DHT into server mode if needed
-    if (dht.mode !== 'server') {
+    // Use getMode() method instead of mode property
+    const dhtAny = dht as any
+    const actualMode = dhtAny.getMode ? dhtAny.getMode() : 'unknown'
+    console.log(`[ipfs] DHT actual mode: ${actualMode}`)
+    console.log(`[ipfs] DHT mode property: ${dht.mode}`)
+    
+    // Debug DHT service properties
+    console.log(`[ipfs] DHT service keys: ${Object.keys(dht).join(', ')}`)
+    console.log(`[ipfs] DHT service prototype: ${Object.getPrototypeOf(dht)?.constructor?.name}`)
+    
+    // Try different ways to access DHT mode
+    try {
+      console.log(`[ipfs] DHT _mode property: ${dhtAny._mode}`)
+      console.log(`[ipfs] DHT getMode method: ${typeof dhtAny.getMode}`)
+      if (dhtAny.getMode) {
+        console.log(`[ipfs] DHT getMode result: ${dhtAny.getMode()}`)
+      }
+    } catch (err) {
+      console.log(`[ipfs] DHT property access error: ${err instanceof Error ? err.message : String(err)}`)
+    }
+    
+    // Check if DHT is in server mode using the correct method
+    if (actualMode !== 'server') {
       console.log('[ipfs] ⚠️ DHT not in server mode, attempting to fix...')
       try {
-        // Try to access the internal mode property or force server mode
-        if (dht.setMode) {
-          dht.setMode('server')
-          console.log('[ipfs] ✅ Forced DHT into server mode')
-        } else {
-          console.log('[ipfs] ⚠️ Cannot force DHT mode - no setMode method')
+        // Try multiple approaches to set DHT to server mode
+        const dhtAny = dht as any
+        
+        // Method 1: Try setMode method
+        if (dhtAny.setMode && typeof dhtAny.setMode === 'function') {
+          dhtAny.setMode('server')
+          console.log('[ipfs] ✅ Forced DHT into server mode via setMode')
         }
+        // Method 2: Try setting _mode property directly
+        else if (dhtAny._mode !== undefined) {
+          dhtAny._mode = 'server'
+          console.log('[ipfs] ✅ Forced DHT into server mode via _mode property')
+        }
+        // Method 3: Try accessing internal mode setter
+        else if (dhtAny.mode !== undefined) {
+          dhtAny.mode = 'server'
+          console.log('[ipfs] ✅ Forced DHT into server mode via mode property')
+        }
+        else {
+          console.log('[ipfs] ⚠️ Cannot force DHT mode - no available method found')
+          console.log('[ipfs] Available DHT properties:', Object.keys(dhtAny))
+        }
+        
+        // Verify the change took effect
+        const newMode = dhtAny.getMode ? dhtAny.getMode() : dhtAny._mode || dhtAny.mode || 'unknown'
+        console.log(`[ipfs] DHT mode after fix attempt: ${newMode}`)
+        
       } catch (err) {
         console.log(`[ipfs] ⚠️ Failed to set DHT mode: ${err instanceof Error ? err.message : String(err)}`)
       }
@@ -453,7 +492,9 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         }
         
         // Check DHT mode before providing
-        console.log(`[ipfs] DHT mode before provide: ${dht.mode}`)
+        const dhtAny = dht as any
+        const actualMode = dhtAny.getMode ? dhtAny.getMode() : 'unknown'
+        console.log(`[ipfs] DHT mode before provide: ${actualMode}`)
         console.log(`[ipfs] DHT started: ${dht.isStarted()}`)
         
         const providePromise = this.helia.libp2p.services.dht.provide(dirCid)
@@ -466,7 +507,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         ctx?.logger.info(`[ipfs] DHT provide completed for: ${dirCid.toString()}`)
         
         // Check if we're in DHT server mode
-        console.log(`[ipfs] DHT mode: ${dht.mode}`)
+        console.log(`[ipfs] DHT mode: ${actualMode}`)
         console.log(`[ipfs] DHT enabled: ${dht.isStarted()}`)
         
         // Wait longer for content propagation
@@ -487,6 +528,39 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         }
         
         console.log(`[ipfs] Total providers found: ${providerCount}`)
+        
+        // Try alternative DHT provide method if no providers found
+        if (providerCount === 0) {
+          console.log('[ipfs] ⚠️ No providers found, trying alternative DHT provide method...')
+          try {
+            // Try to force DHT provide with different approach
+            const dhtAny = dht as any
+            if (dhtAny._routingTable) {
+              console.log('[ipfs] Found DHT routing table, attempting direct provide...')
+              // Try to access the internal provide method
+              if (dhtAny._provide) {
+                await dhtAny._provide(dirCid)
+                console.log('[ipfs] ✅ Direct DHT provide completed')
+              }
+            }
+            
+            // Wait and check again
+            await new Promise(resolve => setTimeout(resolve, 10000))
+            
+            let retryProviderCount = 0
+            for await (const provider of this.helia.libp2p.services.dht.findProviders(dirCid, { timeout: 15000 })) {
+              if (provider?.id) {
+                retryProviderCount++
+                console.log(`[ipfs] Found provider after retry ${retryProviderCount}: ${provider.id.toString()}`)
+                if (retryProviderCount >= 3) break
+              }
+            }
+            console.log(`[ipfs] Providers found after retry: ${retryProviderCount}`)
+            
+          } catch (retryErr) {
+            console.log(`[ipfs] Alternative DHT provide failed: ${retryErr instanceof Error ? retryErr.message : String(retryErr)}`)
+          }
+        }
         
       } catch (err) {
         ctx?.logger.error(`[ipfs] DHT provide failed: ${err instanceof Error ? err.message : String(err)}`)
