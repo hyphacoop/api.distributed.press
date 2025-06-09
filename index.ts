@@ -2,6 +2,16 @@
 // Shim Web Crypto API to global scope for browser-compatible libraries
 import { webcrypto } from 'node:crypto'
 
+// Add process error handler to prevent socket cleanup crashes
+process.on('uncaughtException', (error) => {
+  if (error.stack?.includes('JSStreamSocket.finishShutdown')) {
+    console.warn('[system] Ignoring socket cleanup error - service continues')
+    return
+  }
+  console.error('[system] Uncaught exception:', error)
+  process.exit(1)
+})
+
 import apiBuilder from './api/index.js'
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
