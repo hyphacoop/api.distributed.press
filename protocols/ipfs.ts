@@ -174,7 +174,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           selectors: {
             ipns: ipnsSelector
           },
-          clientMode: false,
+          clientMode: true,
           allowQueryWithZeroPeers: true
         }),
         identify: identify(),
@@ -316,6 +316,81 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         // Don't crash the entire service
       }
     }, 30000) // Every 30 seconds
+
+    // Check reachability after connections stabilize
+    setTimeout(async () => {
+      console.log('[ipfs] === NETWORK REACHABILITY TEST ===')
+      
+      try {
+        if (!this.helia?.libp2p) {
+          console.log('[ipfs] Helia not available for reachability test')
+          return
+        }
+
+        // Check connections
+        const connections = this.helia.libp2p.getConnections()
+        console.log(`[ipfs] Total connections: ${connections.length}`)
+        
+        const inbound = connections.filter((c: any) => c.direction === 'inbound').length
+        const outbound = connections.filter((c: any) => c.direction === 'outbound').length
+        console.log(`[ipfs] Inbound: ${inbound}, Outbound: ${outbound}`)
+        
+        // Check if AutoNAT has determined reachability
+        const libp2pAny = this.helia.libp2p as any
+        if (libp2pAny.services?.autoNAT) {
+          try {
+            // Check various reachability indicators
+            console.log('[ipfs] AutoNAT service found')
+            
+            // Try to access addressManager
+            if (libp2pAny.addressManager) {
+              const announced = libp2pAny.addressManager.getAddresses()
+              console.log(`[ipfs] Announced addresses: ${announced.length}`)
+              announced.slice(0, 3).forEach((addr: any) => 
+                console.log(`[ipfs]   ${addr.toString()}`)
+              )
+            }
+            
+            // Check for reachability status in connectionManager
+            if (libp2pAny.connectionManager) {
+              console.log('[ipfs] ConnectionManager found')
+            }
+            
+          } catch (e) {
+            console.log(`[ipfs] AutoNAT check failed: ${e instanceof Error ? e.message : String(e)}`)
+          }
+        }
+        
+        // The key test: if inbound = 0, node is likely not reachable
+        if (inbound === 0) {
+          console.log('[ipfs] 🚨 CRITICAL: No inbound connections - node NOT publicly reachable')
+        } else {
+          console.log('[ipfs] ✅ Node appears publicly reachable')
+        }
+
+        // Additional DHT status check
+        const dht = this.helia.libp2p.services.dht
+        if (dht) {
+          const dhtAny = dht as any
+          const actualMode = dhtAny.getMode ? dhtAny.getMode() : 'unknown'
+          console.log(`[ipfs] DHT mode during reachability test: ${actualMode}`)
+          console.log(`[ipfs] DHT started: ${dht.isStarted()}`)
+        }
+
+        // Log all multiaddrs for debugging
+        const multiaddrs = this.helia.libp2p.getMultiaddrs()
+        console.log(`[ipfs] All multiaddrs (${multiaddrs.length}):`)
+        multiaddrs.forEach((addr: any) => {
+          console.log(`[ipfs]   ${addr.toString()}`)
+        })
+
+      } catch (err) {
+        console.error('[ipfs] Reachability test failed:', err instanceof Error ? err.message : String(err))
+      }
+      
+      console.log('[ipfs] === END NETWORK REACHABILITY TEST ===')
+      
+    }, 60000) // Wait 60 seconds for connections to stabilize
   }
 
   stopPeerMonitoring(): void {
