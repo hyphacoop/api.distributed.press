@@ -109,8 +109,10 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     }
 
     // Default libp2p config: https://github.com/ipfs/helia/blob/main/packages/helia/src/utils/libp2p-defaults.ts
+    const defaults = await libp2pDefaults()
+    
     const libp2pOptions = {
-      ...libp2pDefaults(),
+      ...defaults,
       addresses: {
         listen: [
           `/ip4/0.0.0.0/tcp/${tcpPort}`,
