@@ -32,6 +32,10 @@ import Protocol, { Ctx, SyncOptions, ProtocolStats } from './interfaces.js'
 import { IPFSProtocolFields } from '../api/schemas.js'
 import getPort from 'get-port'
 import { peerIdFromPrivateKey } from '@libp2p/peer-id'
+import { setMaxListeners } from 'events'
+
+// Fix abort-signal leak crash loop
+setMaxListeners(0)
 
 // https://github.com/ipfs/helia/blob/main/packages/helia/src/utils/bootstrappers.ts
 const bootstrapConfig = {
@@ -297,6 +301,10 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       await this.helia.pins.add(dirCid)
       ctx?.logger.info(`[ipfs] Pinned directory CID: ${dirCid.toString()}`)
 
+      // Provide the CID to the DHT so other peers can find it
+      await this.helia.libp2p.services.dht.provide(dirCid)
+      ctx?.logger.info(`[ipfs] Provided directory CID to DHT: ${dirCid.toString()}`)
+
       return dirCid
     } catch (err) {
       ctx?.logger.error(`[ipfs] Error adding directory: ${err instanceof Error ? err.message : String(err)}`)
@@ -314,8 +322,17 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     }
 
     ctx?.logger.info(`[ipfs] Publishing CID ${cid.toString()} (type: ${typeof cid}, isValidCID: ${String(!(CID.asCID(cid) == null))}) to IPNS with key ${String(name)}`)
-    await this.ipns.publish(privateKey, cid, { signal: AbortSignal.timeout(60000) })
-    ctx?.logger.info('[ipfs] Successfully published to IPNS, verifying resolution...')
+    
+    // Create proper AbortController with cleanup to prevent listener leaks
+    const ctrl = new AbortController()
+    const timer = setTimeout(() => ctrl.abort(), 60000)
+    
+    try {
+      await this.ipns.publish(privateKey, cid, { signal: ctrl.signal })
+      ctx?.logger.info('[ipfs] Successfully published to IPNS, verifying resolution...')
+    } finally {
+      clearTimeout(timer)
+    }
 
     // Verify the published value
     const peerId = await peerIdFromPrivateKey(privateKey)
@@ -355,8 +372,17 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     const privateKey = await this.loadKey(name)
     if (privateKey != null) {
       const EMPTY = CID.parse('bafyaabakaieac')
-      await this.ipns.publish(privateKey, EMPTY, { signal: AbortSignal.timeout(5000) })
-      ctx?.logger.info(`[ipfs] Unsynced ${id}`)
+      
+      // Create proper AbortController with cleanup to prevent listener leaks
+      const ctrl = new AbortController()
+      const timer = setTimeout(() => ctrl.abort(), 5000)
+      
+      try {
+        await this.ipns.publish(privateKey, EMPTY, { signal: ctrl.signal })
+        ctx?.logger.info(`[ipfs] Unsynced ${id}`)
+      } finally {
+        clearTimeout(timer)
+      }
     } else {
       ctx?.logger.warn(`[ipfs] No key for ${id}`)
     }
