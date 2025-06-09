@@ -207,24 +207,36 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     this.startPeerMonitoring()
 
     this.onCleanup.push(async () => {
-      this.stopPeerMonitoring()
-      await this.helia.stop()
+      try {
+        this.stopPeerMonitoring()
+        if (this.helia) {
+          await this.helia.stop()
+        }
+      } catch (err) {
+        console.error('[ipfs] Helia stop error:', err instanceof Error ? err.message : String(err))
+        // Continue with cleanup even if Helia stop fails
+      }
     })
   }
 
   startPeerMonitoring(): void {
     this.peerMonitorInterval = setInterval(() => {
-      if (this.helia?.libp2p) {
-        const peerCount = this.helia.libp2p.getPeers().length
-        console.log(`[ipfs] Connected peers: ${peerCount}`)
-        
-        // Log some peer addresses for debugging
-        const peers = this.helia.libp2p.getPeers().slice(0, 3)
-        if (peers.length > 0) {
-          peers.forEach((peer: any) => {
-            console.log(`[ipfs] Peer: ${peer.toString()}`)
-          })
+      try {
+        if (this.helia?.libp2p) {
+          const peerCount = this.helia.libp2p.getPeers().length
+          console.log(`[ipfs] Connected peers: ${peerCount}`)
+          
+          // Log some peer addresses for debugging
+          const peers = this.helia.libp2p.getPeers().slice(0, 3)
+          if (peers.length > 0) {
+            peers.forEach((peer: any) => {
+              console.log(`[ipfs] Peer: ${peer.toString()}`)
+            })
+          }
         }
+      } catch (err) {
+        console.error('[ipfs] Peer monitoring error:', err instanceof Error ? err.message : String(err))
+        // Don't crash the entire service
       }
     }, 30000) // Every 30 seconds
   }
@@ -237,8 +249,19 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
   }
 
   async unload (): Promise<void> {
-    for (const onCleanup of this.onCleanup) {
-      await onCleanup()
+    try {
+      this.stopPeerMonitoring()
+      
+      for (const onCleanup of this.onCleanup) {
+        try {
+          await onCleanup()
+        } catch (err) {
+          console.error('[ipfs] Cleanup error:', err instanceof Error ? err.message : String(err))
+          // Continue with other cleanup tasks
+        }
+      }
+    } catch (err) {
+      console.error('[ipfs] Unload error:', err instanceof Error ? err.message : String(err))
     }
   }
 
