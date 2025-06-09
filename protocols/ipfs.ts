@@ -203,6 +203,44 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     const nodeId: string = this.helia.libp2p.peerId.toString()
     console.log(`[ipfs] Helia node initialized with ID: ${nodeId}`)
 
+    // Add network connectivity debugging
+    console.log(`[ipfs] DHT mode: ${this.helia.libp2p.services.dht.mode}`)
+    console.log(`[ipfs] Connected peers: ${this.helia.libp2p.getPeers().length}`)
+
+    // Check DHT service status more thoroughly
+    const dht = this.helia.libp2p.services.dht
+    console.log(`[ipfs] DHT service exists: ${dht !== undefined}`)
+    console.log(`[ipfs] DHT service started: ${dht.isStarted()}`)
+    console.log(`[ipfs] DHT mode property: ${dht.mode}`)
+    console.log(`[ipfs] DHT mode getter: ${typeof dht.mode}`)
+    
+    // Force DHT into server mode if needed
+    if (dht.mode !== 'server') {
+      console.log('[ipfs] ⚠️ DHT not in server mode, attempting to fix...')
+      try {
+        // Try to access the internal mode property or force server mode
+        if (dht.setMode) {
+          dht.setMode('server')
+          console.log('[ipfs] ✅ Forced DHT into server mode')
+        } else {
+          console.log('[ipfs] ⚠️ Cannot force DHT mode - no setMode method')
+        }
+      } catch (err) {
+        console.log(`[ipfs] ⚠️ Failed to set DHT mode: ${err instanceof Error ? err.message : String(err)}`)
+      }
+    } else {
+      console.log('[ipfs] ✅ DHT is in server mode')
+    }
+
+    // Check if we're actually reachable
+    this.helia.libp2p.addEventListener('self:reachable', () => {
+      console.log('[ipfs] 🎉 Node is publicly reachable - can serve content')
+    })
+
+    this.helia.libp2p.addEventListener('self:unreachable', () => {
+      console.log('[ipfs] ⚠️ Node is not publicly reachable - DHT providing may fail')
+    })
+
     // Start peer monitoring for debugging
     this.startPeerMonitoring()
 
@@ -384,12 +422,40 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
       ctx?.logger.info(`[ipfs] Final directory CID: ${dirCid.toString()}`)
 
+      // Log directory size and structure for debugging
+      try {
+        let totalSize = 0
+        let fileCount = 0
+        for await (const entry of fs.ls(dirCid)) {
+          fileCount++
+          if (entry.size) {
+            totalSize += entry.size
+          }
+        }
+        ctx?.logger.info(`[ipfs] Directory stats - Files: ${fileCount}, Total size: ${totalSize} bytes`)
+      } catch (err) {
+        ctx?.logger.warn(`[ipfs] Could not calculate directory stats: ${err instanceof Error ? err.message : String(err)}`)
+      }
+
       // Pin the directory
       await this.helia.pins.add(dirCid)
       ctx?.logger.info(`[ipfs] Pinned directory CID: ${dirCid.toString()}`)
 
       // Provide to DHT with timeout to prevent hanging
       try {
+        console.log(`[ipfs] Starting DHT provide for CID: ${dirCid.toString()}`)
+        
+        // Wait for DHT to be ready
+        const dht = this.helia.libp2p.services.dht
+        if (!dht.isStarted()) {
+          console.log('[ipfs] ⚠️ DHT not started, waiting...')
+          await new Promise(resolve => setTimeout(resolve, 5000))
+        }
+        
+        // Check DHT mode before providing
+        console.log(`[ipfs] DHT mode before provide: ${dht.mode}`)
+        console.log(`[ipfs] DHT started: ${dht.isStarted()}`)
+        
         const providePromise = this.helia.libp2p.services.dht.provide(dirCid)
         await Promise.race([
           providePromise,
@@ -397,9 +463,33 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
             setTimeout(() => reject(new Error('DHT provide timeout')), 30000)
           )
         ])
-        ctx?.logger.info(`[ipfs] Provided directory CID to DHT: ${dirCid.toString()}`)
+        ctx?.logger.info(`[ipfs] DHT provide completed for: ${dirCid.toString()}`)
+        
+        // Check if we're in DHT server mode
+        console.log(`[ipfs] DHT mode: ${dht.mode}`)
+        console.log(`[ipfs] DHT enabled: ${dht.isStarted()}`)
+        
+        // Wait longer for content propagation
+        await new Promise(resolve => setTimeout(resolve, 15000)) // 15 seconds
+        
+        // Try to find providers (including ourselves)
+        let providerCount = 0
+        try {
+          for await (const provider of this.helia.libp2p.services.dht.findProviders(dirCid, { timeout: 30000 })) {
+            if (provider?.id) {
+              providerCount++
+              console.log(`[ipfs] Found provider ${providerCount}: ${provider.id.toString()}`)
+              if (providerCount >= 5) break // Limit to prevent too much output
+            }
+          }
+        } catch (findErr) {
+          console.log(`[ipfs] Provider search failed: ${findErr instanceof Error ? findErr.message : String(findErr)}`)
+        }
+        
+        console.log(`[ipfs] Total providers found: ${providerCount}`)
+        
       } catch (err) {
-        ctx?.logger.warn(`[ipfs] DHT provide failed or timed out: ${err instanceof Error ? err.message : String(err)}`)
+        ctx?.logger.error(`[ipfs] DHT provide failed: ${err instanceof Error ? err.message : String(err)}`)
         // Continue anyway - the content is still accessible via your node
       }
 
