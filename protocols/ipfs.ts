@@ -158,7 +158,6 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     
     // Start the libp2p node
     await this.helia.libp2p.start()
-    console.log('[ipfs] libp2p started:', this.helia.libp2p.isStarted())
     
     // Log multiaddrs
     for (const addr of this.helia.libp2p.getMultiaddrs()) {
