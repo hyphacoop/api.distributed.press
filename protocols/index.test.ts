@@ -48,14 +48,26 @@ test('ipfs: basic e2e sync', async t => {
   const path = await newProtocolTestPath()
   // Disable WebRTC in CI by checking process.env.CI
   const useWebRTC = process.env.CI !== 'true'
-  t.context.protocol = new IPFSProtocol({ path, useWebRTC })
-  await t.context.protocol.load()
+  t.context.protocol = new IPFSProtocol({ path, useWebRTC, testMode: true })
   await t.notThrowsAsync(t.context.protocol.load(), 'initializing IPFS with Helia should work')
   const links = await t.context.protocol.sync(exampleSiteConfig.domain, fixturePath)
   console.log('IPFS Sync Result:', JSON.stringify(links, null, 2))
   t.is(links.enabled, true, 'sync should enable the site')
   t.truthy(links.link, 'sync should provide a valid IPNS link')
   t.regex(links.link, /^ipns:\/\//, 'link should be an IPNS URL')
+})
+
+test('ipfs: directory addition only', async t => {
+  const path = await newProtocolTestPath()
+  const useWebRTC = process.env.CI !== 'true'
+  t.context.protocol = new IPFSProtocol({ path, useWebRTC, testMode: true })
+  await t.context.protocol.load()
+  
+  // Test just the directory addition without IPNS
+  const ipfsProtocol = t.context.protocol as IPFSProtocol
+  const cid = await ipfsProtocol.addDirectory(fixturePath)
+  t.truthy(cid, 'should return a valid CID')
+  console.log('Directory CID:', cid.toString())
 })
 
 test('hyper: basic e2e sync', async t => {

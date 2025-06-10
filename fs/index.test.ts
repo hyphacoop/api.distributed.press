@@ -11,7 +11,7 @@ const paths = envPaths('distributed-press')
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 const fixturePath = path.resolve(dirname, '..', 'fixtures', 'site.tar.gz')
-const expectedFilePath = path.join('site', 'index.html')
+const expectedFilePath = 'index.html'
 
 function newTempTestPath (): string {
   return path.join(paths.temp, 'fs-test', nanoid())
