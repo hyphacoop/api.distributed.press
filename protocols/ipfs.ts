@@ -44,6 +44,19 @@ const bootstrapConfig = {
   ]
 }
 
+// Function to get the public IP address
+async function getPublicIP (): Promise<string> {
+  try {
+    // Try to get public IP from a service
+    const response = await fetch('https://api.ipify.org?format=json')
+    const data = await response.json()
+    return data.ip
+  } catch (err) {
+    console.warn('[ipfs] Could not detect public IP, using 0.0.0.0')
+    return '0.0.0.0'
+  }
+}
+
 function getRandomPortInRange (min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min
 }
@@ -111,6 +124,10 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     // Default libp2p config: https://github.com/ipfs/helia/blob/main/packages/helia/src/utils/libp2p-defaults.ts
     const defaults = await libp2pDefaults()
 
+    // Get public IP for announce addresses
+    const publicIP = await getPublicIP()
+    console.log(`[ipfs] Using public IP for announce: ${publicIP}`)
+
     const libp2pOptions = {
       ...defaults,
       addresses: {
@@ -126,6 +143,10 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
               ]
             : []),
           '/p2p-circuit'
+        ],
+        announce: [
+          `/ip4/${publicIP}/tcp/${tcpPort}`,
+          `/ip4/${publicIP}/tcp/${wsPort}/ws`
         ]
       },
       transports: [
