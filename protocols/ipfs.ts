@@ -136,52 +136,21 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     const libp2pOptions = {
       addresses: {
         listen: [
-          `/ip4/0.0.0.0/tcp/${tcpPort}`,
-          `/ip4/0.0.0.0/tcp/${wsPort}/ws`,
-          `/ip6/::/tcp/${tcpPort}`,
-          `/ip6/::/tcp/${wsPort}/ws`,
-          ...(this.options.useWebRTC === true
-            ? [
-              `/ip4/0.0.0.0/udp/${String(webrtcPort)}/webrtc-direct`,
-              `/ip6/::/udp/${String(webrtcPort)}/webrtc-direct`
-              ]
-            : []),
-          '/p2p-circuit'
+          `/ip4/0.0.0.0/tcp/7976`,
+          `/ip4/0.0.0.0/tcp/7977/ws`
         ],
         announce: [
-          // Add public addresses that external peers can reach
-          `/ip4/${publicIP}/tcp/${tcpPort}`,
-          `/ip4/${publicIP}/tcp/${wsPort}/ws`,
-          ...(this.options.useWebRTC === true
-            ? [`/ip4/${publicIP}/udp/${String(webrtcPort)}/webrtc-direct`]
-            : [])
+          `/ip4/${publicIP}/tcp/7976`,
+          `/ip4/${publicIP}/tcp/7977/ws`
         ]
       },
-      transports: [
-        tcp(),
-        webSockets(),
-        ...(this.options.useWebRTC === true ? [webRTCDirect()] : [])
-      ],
-      connectionEncryption: [noise()],
-      streamMuxers: [yamux()], 
+      transports: [tcp(), webSockets()],
+      connectionEncryption: [noise()],  
+      streamMuxers: [yamux()],
       peerDiscovery: [bootstrap(bootstrapConfig)],
-      services: {
-        autoNAT: autoNAT(),
-        autoTLS: autoTLS(),
-        dht: kadDHT({
-          protocol: '/ipfs/kad/1.0.0',
-          validators: {
-            ipns: ipnsValidator
-          },
-          selectors: {
-            ipns: ipnsSelector
-          },
-          allowQueryWithZeroPeers: true
-        }),
+      services: {                           // NO autoTLS, NO autoNAT for now
         identify: identify(),
-        identifyPush: identifyPush(),
-        ping: ping(),
-        keychain: keychain()
+        dht: kadDHT()
       }
     }
 
