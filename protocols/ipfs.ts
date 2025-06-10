@@ -190,12 +190,15 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     // Start the libp2p node
     await this.helia.libp2p.start()
 
-    const announceAddrs = await this.helia.libp2p.addressManager.getAnnounceAddrs()
+    if (this.helia?.libp2p?.addressManager?.getAnnounceAddrs) {
+      const announceAddrs = await this.helia.libp2p.addressManager.getAnnounceAddrs()
       console.log(`[ipfs] getAnnounceAddrs(): ${announceAddrs.length}`)
-      announceAddrs.forEach((addr: any) => {
+      for (const addr of announceAddrs) {
         console.log(`[ipfs]   ${addr.toString()}`)
-      })
-
+      }
+    } else {
+      console.warn('[ipfs] addressManager.getAnnounceAddrs not available (libp2p may not be fully initialized)')
+    }
     
     // Log multiaddrs
     for (const addr of this.helia.libp2p.getMultiaddrs()) {
