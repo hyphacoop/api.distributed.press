@@ -7,6 +7,7 @@ import { keychain } from '@libp2p/keychain'
 import { ping } from '@libp2p/ping'
 import { autoTLS } from '@ipshipyard/libp2p-auto-tls'
 import { autoNAT } from '@libp2p/autonat'
+import { dcutr } from '@libp2p/dcutr'
 import { identify, identifyPush } from '@libp2p/identify'
 import { kadDHT } from '@libp2p/kad-dht'
 import { ipnsSelector } from 'ipns/selector'
@@ -157,6 +158,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       services: {
         autoNAT: autoNAT(),
         autoTLS: autoTLS(),
+        dcutr: dcutr(),
         dht: kadDHT({
           validators: {
             ipns: ipnsValidator
@@ -169,8 +171,8 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         }),
         identify: identify(),
         identifyPush: identifyPush(),
-        ping: ping(),
-        keychain: keychain()
+        keychain: keychain(),
+        ping: ping()
       },
       peerDiscovery: [bootstrap(bootstrapConfig)]
     }
