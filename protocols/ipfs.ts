@@ -1,5 +1,6 @@
 import { createHelia, libp2pDefaults } from 'helia'
 import { unixfs } from '@helia/unixfs'
+import * as dagPB from '@ipld/dag-pb'
 import { ipns } from '@helia/ipns'
 import { FsDatastore } from 'datastore-fs'
 import { FsBlockstore } from 'blockstore-fs'
@@ -448,13 +449,6 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     ctx?.logger.info(`[ipfs] Published CID comparison - Original: ${cid.toString()}, Published: ${String(publishedCid)}`)
     const subdomain = id.replace(/-/g, '--').replace(/\./g, '-')
 
-    // Test if the CID is accessible from external sources
-    if (!this.options.testMode) {
-      await this.testCIDAccessibility(publishedCid, ctx)
-    } else {
-      ctx?.logger.info('[ipfs] Test mode: skipping external gateway testing')
-    }
-
     console.timeEnd(timerLabel) // End total sync timer
     return {
       enabled: true,
@@ -515,10 +509,8 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
       // -> advertise to the DHT
       if (!this.options.testMode) {
-        for await (const entry of this.ipfsFs.ls(dirCid)) {
-          await this.helia.libp2p.contentRouting.provide(entry.cid)
-        }
-        await this.helia.libp2p.contentRouting.provide(dirCid)
+        await this.provideRecursive(dirCid, this.helia, ctx)
+
         ctx?.logger.info(`[ipfs] Provided directory CID to DHT: ${dirCid.toString()}`)
       } else {
         ctx?.logger.info('[ipfs] Test mode: skipping DHT providing')
@@ -677,32 +669,6 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     await fsPromises.writeFile(keyPath, new Uint8Array(pb))
   }
 
-  // Test if a CID is accessible from external sources
-  async testCIDAccessibility (cid: string, ctx?: Ctx): Promise<void> {
-    const gateways = [
-      `https://ipfs.io/ipfs/${cid}`,
-      `https://dweb.link/ipfs/${cid}`,
-      `https://gateway.pinata.cloud/ipfs/${cid}`
-    ]
-
-    ctx?.logger.info(`[ipfs] Testing CID accessibility for: ${cid}`)
-    
-    for (const gateway of gateways) {
-      try {
-        const response = await fetch(gateway, { 
-          method: 'HEAD',
-          signal: AbortSignal.timeout(10000)
-        })
-        if (response.ok) {
-          ctx?.logger.info(`[ipfs] ✅ CID accessible via ${gateway}`)
-        } else {
-          ctx?.logger.warn(`[ipfs] ⚠️ CID not accessible via ${gateway} (${response.status})`)
-        }
-      } catch (err) {
-        ctx?.logger.warn(`[ipfs] ❌ CID not accessible via ${gateway}: ${err instanceof Error ? err.message : String(err)}`)
-      }
-    }
-  }
 
   // Add content verification method
   async verifyContent(cid: CID, ctx?: Ctx): Promise<boolean> {
@@ -717,6 +683,49 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     } catch (err) {
       ctx?.logger.error(`[ipfs] Content verification failed: ${err instanceof Error ? err.message : String(err)}`)
       return false
+    }
+  }
+
+  async provideRecursive(cid: CID, helia: any, ctx?: Ctx): Promise<void> {
+    const libp2p = helia.libp2p
+    if (!libp2p.contentRouting) {
+      throw new Error('libp2p.contentRouting is not available')
+    }
+  
+    ctx?.logger.info(`[ipfs] Providing DAG for ${cid.toString()}`)
+  
+    const walkDag = async function * (startCid: CID): AsyncGenerator<CID> {
+      const seen = new Set<string>()
+      const queue: CID[] = [startCid]
+  
+      while (queue.length > 0) {
+        const current = queue.shift()!
+        const key = current.toString()
+        if (seen.has(key)) continue
+        seen.add(key)
+        yield current
+  
+        try {
+          const block = await helia.blockstore.get(current)
+          const node = dagPB.decode(block)
+          for (const link of node.Links) {
+            queue.push(link.Hash)
+          }
+        } catch (err) {
+          ctx?.logger.warn(`[ipfs] Skipping non-dag-pb CID: ${current.toString()} (${err instanceof Error ? err.message : String(err)})`)
+        }
+      }
+    }
+  
+    try {
+      for await (const blockCid of walkDag(cid)) {
+        ctx?.logger.debug(`[ipfs] Providing CID: ${blockCid.toString()}`)
+        await libp2p.contentRouting.provide(blockCid)
+      }
+      ctx?.logger.info(`[ipfs] Successfully provided all blocks for ${cid.toString()}`)
+    } catch (err) {
+      ctx?.logger.error(`[ipfs] Error during provideRecursive: ${err instanceof Error ? err.message : String(err)}`)
+      throw err
     }
   }
 }
