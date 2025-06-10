@@ -110,7 +110,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
     // Default libp2p config: https://github.com/ipfs/helia/blob/main/packages/helia/src/utils/libp2p-defaults.ts
     const defaults = await libp2pDefaults()
-    
+
     const libp2pOptions = {
       ...defaults,
       addresses: {
@@ -288,6 +288,10 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       await this.helia.pins.add(dirCid)
       ctx?.logger.info(`[ipfs] Pinned directory CID: ${dirCid.toString()}`)
 
+      // Advertise the directory CID in the DHT
+      await this.helia.libp2p.contentRouting.provide(dirCid)
+      ctx?.logger.info(`Provided ${dirCid.toString()} to DHT`)
+
       return dirCid
     } catch (err) {
       ctx?.logger.error(`[ipfs] Error adding directory: ${err instanceof Error ? err.message : String(err)}`)
@@ -313,7 +317,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     try {
       // Use the public key directly instead of the IPNS name string
       const resolved = await this.ipns.resolve(privateKey.publicKey)
-      
+
       // Add proper guards for the resolved value
       if (resolved == null) {
         ctx?.logger.warn(`[ipfs] [expected-delay] IPNS resolution returned null/undefined for key ${String(name)}`)
@@ -364,13 +368,13 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     try {
       // Use the public key directly instead of the IPNS name string
       const resolved = await this.ipns.resolve(privateKey.publicKey)
-      
+
       // Add proper guards for the resolved value
       if (resolved == null) {
         console.warn(`[ipfs] [expected-delay] IPNS resolution returned null/undefined for key ${String(name)} in stats`)
         return { peerCount: 0 }
       }
-      
+
       let count = 0
       for await (const provider of this.helia.libp2p.services.dht.findProviders(resolved.cid)) {
         void provider
