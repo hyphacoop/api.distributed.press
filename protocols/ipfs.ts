@@ -149,6 +149,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       streamMuxers: [yamux()],
       peerDiscovery: [bootstrap(bootstrapConfig)],
       services: {                           // NO autoTLS, NO autoNAT for now
+        ping: ping(),
         identify: identify(),
         dht: kadDHT()
       }
