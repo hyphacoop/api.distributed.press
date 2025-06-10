@@ -466,6 +466,9 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       ctx?.logger.info(`[ipfs] Pinned directory CID: ${dirCid.toString()}`)
 
       // -> advertise to the DHT
+      for await (const entry of this.helia.fs.ls(dirCid)) {
+        await this.helia.libp2p.contentRouting.provide(entry.cid)
+      }
       await this.helia.libp2p.contentRouting.provide(dirCid)
       ctx?.logger.info(`[ipfs] Provided directory CID to DHT: ${dirCid.toString()}`)
 
