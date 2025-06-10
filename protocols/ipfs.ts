@@ -15,6 +15,8 @@ import { tcp } from '@libp2p/tcp'
 import { webSockets } from '@libp2p/websockets'
 import { webRTCDirect } from '@libp2p/webrtc'
 import { bootstrap } from '@libp2p/bootstrap'
+import { noise } from '@chainsafe/libp2p-noise'
+import { yamux } from '@chainsafe/libp2p-yamux'
 import {
   generateKeyPair,
   privateKeyFromProtobuf,
@@ -131,11 +133,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     const publicIP = await getPublicIP()
     console.log(`[ipfs] Using public IP for announce: ${publicIP}`)
 
-    // Default libp2p config: https://github.com/ipfs/helia/blob/main/packages/helia/src/utils/libp2p-defaults.ts
-    const defaults = await libp2pDefaults()
-    
     const libp2pOptions = {
-      ...defaults,
       addresses: {
         listen: [
           `/ip4/0.0.0.0/tcp/${tcpPort}`,
@@ -164,10 +162,14 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         webSockets(),
         ...(this.options.useWebRTC === true ? [webRTCDirect()] : [])
       ],
+      connectionEncryption: [noise()],
+      streamMuxers: [yamux()], 
+      peerDiscovery: [bootstrap(bootstrapConfig)],
       services: {
         autoNAT: autoNAT(),
         autoTLS: autoTLS(),
         dht: kadDHT({
+          protocol: '/ipfs/kad/1.0.0',
           validators: {
             ipns: ipnsValidator
           },
@@ -180,16 +182,40 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         identifyPush: identifyPush(),
         ping: ping(),
         keychain: keychain()
-      },
-      peerDiscovery: [bootstrap(bootstrapConfig)]
+      }
     }
 
     this.helia = await createHelia({ datastore, blockstore, libp2p: libp2pOptions })
     
     // Start the libp2p node
     await this.helia.libp2p.start()
+
+    const announceAddrs = await this.helia.libp2p.addressManager.getAnnounceAddrs()
+      console.log(`[ipfs] getAnnounceAddrs(): ${announceAddrs.length}`)
+      announceAddrs.forEach((addr: any) => {
+        console.log(`[ipfs]   ${addr.toString()}`)
+      })
+
     
     // Log multiaddrs
+    for (const addr of this.helia.libp2p.getMultiaddrs()) {
+      console.log('[ipfs] announcing as:', addr.toString())
+    }
+
+    console.log('[ipfs] Actively dialing bootstrap peers...')
+    let connectionSuccesses = 0
+    await Promise.all(bootstrapConfig.list.map(async (peer) => {
+      try {
+        await this.helia.libp2p.dial(peer)
+        console.log(`[ipfs] Successfully dialed ${peer}`)
+        connectionSuccesses++
+      } catch (err) {
+        console.warn(`[ipfs] Could not dial ${peer}`)
+      }
+    }))
+    console.log(`[ipfs] Actively connected to ${connectionSuccesses}/${bootstrapConfig.list.length} bootstrap peers.`)
+    
+    // 4. Log multiaddrs
     for (const addr of this.helia.libp2p.getMultiaddrs()) {
       console.log('[ipfs] announcing as:', addr.toString())
     }
@@ -222,7 +248,6 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         }
       } catch (err) {
         console.error('[ipfs] Helia stop error:', err instanceof Error ? err.message : String(err))
-        // Continue with cleanup even if Helia stop fails
       }
     })
   }
