@@ -70,6 +70,7 @@ function getRandomPortInRange (min: number, max: number): number {
 export interface IPFSProtocolOptions {
   path: string
   useWebRTC?: boolean
+  testMode?: boolean
 }
 
 export interface PublishResult {
@@ -86,17 +87,31 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
   ipfsFs: any | null
   ipns: any | null
   peerMonitorInterval: NodeJS.Timeout | null
+  reachabilityTestTimeout: NodeJS.Timeout | null
+  loaded: boolean
 
   constructor (options: IPFSProtocolOptions) {
-    this.options = { ...options, useWebRTC: options.useWebRTC ?? true }
+    this.options = { 
+      ...options, 
+      useWebRTC: options.useWebRTC ?? true,
+      testMode: options.testMode ?? false
+    }
     this.onCleanup = []
     this.helia = null
     this.ipfsFs = null
     this.ipns = null
     this.peerMonitorInterval = null
+    this.reachabilityTestTimeout = null
+    this.loaded = false
   }
 
   async load (): Promise<void> {
+    // Prevent multiple initializations
+    if (this.loaded) {
+      console.warn('[ipfs] Protocol already loaded, skipping initialization')
+      return
+    }
+    
     console.time('Helia Initialization') // Start timing
     const datastorePath = path.join(this.options.path, 'datastore')
     const blockstorePath = path.join(this.options.path, 'blockstore')
@@ -105,6 +120,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
     const tcpPort = await getPort({ port: 7976 })
     const wsPort = await getPort({ port: 7977 })
+    console.log(`[ipfs] Allocated ports - TCP: ${tcpPort}, WS: ${wsPort}`)
     let webrtcPort: number | null = null
 
     // Only initialize WebRTC port if useWebRTC is explicitly true
@@ -136,12 +152,12 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     const libp2pOptions = {
       addresses: {
         listen: [
-          `/ip4/0.0.0.0/tcp/7976`,
-          `/ip4/0.0.0.0/tcp/7977/ws`
+          `/ip4/0.0.0.0/tcp/${tcpPort}`,
+          `/ip4/0.0.0.0/tcp/${wsPort}/ws`
         ],
         announce: [
-          `/ip4/${publicIP}/tcp/7976`,
-          `/ip4/${publicIP}/tcp/7977/ws`
+          `/ip4/${publicIP}/tcp/${tcpPort}`,
+          `/ip4/${publicIP}/tcp/${wsPort}/ws`
         ]
       },
       transports: [tcp(), webSockets()],
@@ -177,16 +193,20 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
     console.log('[ipfs] Actively dialing bootstrap peers...')
     let connectionSuccesses = 0
-    await Promise.all(bootstrapConfig.list.map(async (peer) => {
-      try {
-        await this.helia.libp2p.dial(peer)
-        console.log(`[ipfs] Successfully dialed ${peer}`)
-        connectionSuccesses++
-      } catch (err) {
-        console.warn(`[ipfs] Could not dial ${peer}`)
-      }
-    }))
-    console.log(`[ipfs] Actively connected to ${connectionSuccesses}/${bootstrapConfig.list.length} bootstrap peers.`)
+    if (!this.options.testMode) {
+      await Promise.all(bootstrapConfig.list.map(async (peer) => {
+        try {
+          await this.helia.libp2p.dial(peer)
+          console.log(`[ipfs] Successfully dialed ${peer}`)
+          connectionSuccesses++
+        } catch (err) {
+          console.warn(`[ipfs] Could not dial ${peer}`)
+        }
+      }))
+      console.log(`[ipfs] Actively connected to ${connectionSuccesses}/${bootstrapConfig.list.length} bootstrap peers.`)
+    } else {
+      console.log('[ipfs] Test mode: skipping bootstrap peer dialing')
+    }
     
     // 4. Log multiaddrs
     for (const addr of this.helia.libp2p.getMultiaddrs()) {
@@ -211,7 +231,11 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     })
 
     // Start peer monitoring for debugging
-    this.startPeerMonitoring()
+    if (!this.options.testMode) {
+      this.startPeerMonitoring()
+    } else {
+      console.log('[ipfs] Test mode: skipping peer monitoring')
+    }
 
     this.onCleanup.push(async () => {
       try {
@@ -223,6 +247,9 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         console.error('[ipfs] Helia stop error:', err instanceof Error ? err.message : String(err))
       }
     })
+    
+    // Mark as loaded
+    this.loaded = true
   }
 
   startPeerMonitoring(): void {
@@ -247,7 +274,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     }, 30000) // Every 30 seconds
 
     // Check reachability after connections stabilize
-    setTimeout(async () => {
+    this.reachabilityTestTimeout = setTimeout(async () => {
       console.log('[ipfs] === NETWORK REACHABILITY TEST ===')
       
       try {
@@ -327,13 +354,23 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       clearInterval(this.peerMonitorInterval)
       this.peerMonitorInterval = null
     }
+    if (this.reachabilityTestTimeout) {
+      clearTimeout(this.reachabilityTestTimeout)
+      this.reachabilityTestTimeout = null
+    }
   }
 
   async unload (): Promise<void> {
     try {
+      // Stop peer monitoring first
       this.stopPeerMonitoring()
       
-      for (const onCleanup of this.onCleanup) {
+      // Clear all cleanup callbacks
+      const cleanupCallbacks = [...this.onCleanup]
+      this.onCleanup = []
+      
+      // Execute cleanup callbacks
+      for (const onCleanup of cleanupCallbacks) {
         try {
           await onCleanup()
         } catch (err) {
@@ -341,6 +378,13 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           // Continue with other cleanup tasks
         }
       }
+      
+      // Explicitly null out references to help garbage collection
+      this.helia = null
+      this.ipfsFs = null
+      this.ipns = null
+      this.loaded = false
+      
     } catch (err) {
       console.error('[ipfs] Unload error:', err instanceof Error ? err.message : String(err))
     }
@@ -405,7 +449,11 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     const subdomain = id.replace(/-/g, '--').replace(/\./g, '-')
 
     // Test if the CID is accessible from external sources
-    await this.testCIDAccessibility(publishedCid, ctx)
+    if (!this.options.testMode) {
+      await this.testCIDAccessibility(publishedCid, ctx)
+    } else {
+      ctx?.logger.info('[ipfs] Test mode: skipping external gateway testing')
+    }
 
     console.timeEnd(timerLabel) // End total sync timer
     return {
@@ -466,11 +514,15 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       ctx?.logger.info(`[ipfs] Pinned directory CID: ${dirCid.toString()}`)
 
       // -> advertise to the DHT
-      for await (const entry of this.helia.fs.ls(dirCid)) {
-        await this.helia.libp2p.contentRouting.provide(entry.cid)
+      if (!this.options.testMode) {
+        for await (const entry of this.ipfsFs.ls(dirCid)) {
+          await this.helia.libp2p.contentRouting.provide(entry.cid)
+        }
+        await this.helia.libp2p.contentRouting.provide(dirCid)
+        ctx?.logger.info(`[ipfs] Provided directory CID to DHT: ${dirCid.toString()}`)
+      } else {
+        ctx?.logger.info('[ipfs] Test mode: skipping DHT providing')
       }
-      await this.helia.libp2p.contentRouting.provide(dirCid)
-      ctx?.logger.info(`[ipfs] Provided directory CID to DHT: ${dirCid.toString()}`)
 
       return dirCid
     } catch (err) {
@@ -490,9 +542,16 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
     ctx?.logger.info(`[ipfs] Publishing CID ${cid.toString()} (type: ${typeof cid}, isValidCID: ${String(!(CID.asCID(cid) == null))}) to IPNS with key ${String(name)}`)
     
+    // In test mode, skip actual IPNS publishing and just return mock data
+    if (this.options.testMode) {
+      ctx?.logger.info('[ipfs] Test mode: using mock IPNS publish')
+      const peerId = await peerIdFromPrivateKey(privateKey)
+      return { publishKey: peerId.toString(), cid: cid.toString() }
+    }
+    
     // Create proper AbortController with cleanup to prevent listener leaks
     const ctrl = new AbortController()
-    const timer = setTimeout(() => ctrl.abort(), 15000) // Reduced from 60s to 15s
+    const timer = setTimeout(() => ctrl.abort(), this.options.testMode ? 5000 : 15000) // Shorter timeout in test mode
     
     try {
       await this.ipns.publish(privateKey, cid, { signal: ctrl.signal })
@@ -503,29 +562,33 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
     // Verify the published value
     const peerId = await peerIdFromPrivateKey(privateKey)
-    try {
-      // Use the public key directly instead of the IPNS name string
-      const resolved = await this.ipns.resolve(privateKey.publicKey)
-      
-      // Add proper guards for the resolved value
-      if (resolved == null) {
-        ctx?.logger.warn(`[ipfs] [expected-delay] IPNS resolution returned null/undefined for key ${String(name)}`)
-      } else {
-        ctx?.logger.info(`[ipfs] IPNS resolution check - Published: ${cid.toString()}, Resolved: ${String(resolved.cid)}`)
-      }
-    } catch (err) {
-      // More specific error handling for IPNS resolution failures
-      if (err instanceof Error) {
-        if (err.message.includes('IPNS record not found')) {
-          ctx?.logger.warn(`[ipfs] [expected-delay] IPNS record not found yet for key ${String(name)} - this is normal immediately after publishing`)
-        } else if (err.message.includes('Cannot read properties of undefined')) {
-          ctx?.logger.warn(`[ipfs] [expected-delay] IPNS resolution returned undefined value for key ${String(name)} - this may be a temporary issue`)
+    if (!this.options.testMode) {
+      try {
+        // Use the public key directly instead of the IPNS name string
+        const resolved = await this.ipns.resolve(privateKey.publicKey)
+        
+        // Add proper guards for the resolved value
+        if (resolved == null) {
+          ctx?.logger.warn(`[ipfs] [expected-delay] IPNS resolution returned null/undefined for key ${String(name)}`)
         } else {
-          ctx?.logger.error(`[ipfs] IPNS resolution check failed: ${err.message}`)
+          ctx?.logger.info(`[ipfs] IPNS resolution check - Published: ${cid.toString()}, Resolved: ${String(resolved.cid)}`)
         }
-      } else {
-        ctx?.logger.error(`[ipfs] IPNS resolution check failed: ${String(err)}`)
+      } catch (err) {
+        // More specific error handling for IPNS resolution failures
+        if (err instanceof Error) {
+          if (err.message.includes('IPNS record not found')) {
+            ctx?.logger.warn(`[ipfs] [expected-delay] IPNS record not found yet for key ${String(name)} - this is normal immediately after publishing`)
+          } else if (err.message.includes('Cannot read properties of undefined')) {
+            ctx?.logger.warn(`[ipfs] [expected-delay] IPNS resolution returned undefined value for key ${String(name)} - this may be a temporary issue`)
+          } else {
+            ctx?.logger.error(`[ipfs] IPNS resolution check failed: ${err.message}`)
+          }
+        } else {
+          ctx?.logger.error(`[ipfs] IPNS resolution check failed: ${String(err)}`)
+        }
       }
+    } else {
+      ctx?.logger.info('[ipfs] Test mode: skipping IPNS resolution check')
     }
 
     return { publishKey: peerId.toString(), cid: cid.toString() }
