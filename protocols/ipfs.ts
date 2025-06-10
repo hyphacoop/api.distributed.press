@@ -429,27 +429,23 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     }
 
     try {
-      // Read directory contents to log what's being added
       const files = await fsPromises.readdir(folderPath, { withFileTypes: true })
-      ctx?.logger.info(`[ipfs] Found ${String(files.length)} entries in directory: ${files.map(f => `${f.name} (isFile: ${String(f.isFile())})`).join(', ')}`)
+      ctx?.logger.info(`[ipfs] Found ${String(files.length)} entries in directory: ${files.map(f => f.name).join(', ')}`)
 
       if (files.length === 0) {
         ctx?.logger.warn(`[ipfs] No files found in directory: ${folderPath}`)
         return CID.parse('bafyaabakaieac') // Empty directory CID
       }
 
-      // Use unixfs.addAll to recursively add the directory
       const readable = Readable.from(
         (async function * () {
           for (const file of files) {
             const fullPath = path.join(folderPath, file.name)
             if (file.isFile()) {
-              const stat = await fsPromises.stat(fullPath)
-              const content = createReadStream(fullPath)
-              yield { path: file.name, content }
-              ctx?.logger.info(`[ipfs] Queued file for addition: ${file.name} (${String(stat.size)} bytes)`)
-            } else if (file.isDirectory()) {
-              ctx?.logger.info(`[ipfs] Skipping subdirectory: ${file.name}`)
+              yield {
+                path: file.name,
+                content: createReadStream(fullPath)
+              }
             }
           }
         })()
@@ -466,131 +462,10 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       }
 
       ctx?.logger.info(`[ipfs] Final directory CID: ${dirCid.toString()}`)
-
-      // Log directory size and structure for debugging
-      try {
-        let totalSize = 0
-        let fileCount = 0
-        for await (const entry of fs.ls(dirCid)) {
-          fileCount++
-          if (entry.size) {
-            totalSize += entry.size
-          }
-        }
-        ctx?.logger.info(`[ipfs] Directory stats - Files: ${fileCount}, Total size: ${totalSize} bytes`)
-      } catch (err) {
-        ctx?.logger.warn(`[ipfs] Could not calculate directory stats: ${err instanceof Error ? err.message : String(err)}`)
-      }
-
-      // Pin the directory
+      
+      // Pin the directory to ensure it's not garbage collected
       await this.helia.pins.add(dirCid)
       ctx?.logger.info(`[ipfs] Pinned directory CID: ${dirCid.toString()}`)
-
-      // Provide to DHT with timeout to prevent hanging
-      try {
-        console.log(`[ipfs] Starting DHT provide for CID: ${dirCid.toString()}`)
-        
-        // Wait for DHT to be ready
-        const dht = this.helia.libp2p.services.dht
-        if (!dht.isStarted()) {
-          console.log('[ipfs] ⚠️ DHT not started, waiting...')
-          await new Promise(resolve => setTimeout(resolve, 5000))
-        }
-        
-        // Check DHT mode before providing
-        const dhtAny = dht as any
-        const actualMode = dhtAny.getMode ? dhtAny.getMode() : 'unknown'
-        console.log(`[ipfs] DHT mode before provide: ${actualMode}`)
-        console.log(`[ipfs] DHT started: ${dht.isStarted()}`)
-        
-        const providePromise = this.helia.libp2p.services.dht.provide(dirCid)
-        await Promise.race([
-          providePromise,
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('DHT provide timeout')), 30000)
-          )
-        ])
-        ctx?.logger.info(`[ipfs] DHT provide completed for: ${dirCid.toString()}`)
-        
-        // Check if we're in DHT server mode
-        console.log(`[ipfs] DHT mode: ${actualMode}`)
-        console.log(`[ipfs] DHT enabled: ${dht.isStarted()}`)
-        
-        // Wait longer for content propagation
-        await new Promise(resolve => setTimeout(resolve, 15000)) // 15 seconds
-        
-        // Try to find providers (including ourselves)
-        let providerCount = 0
-        try {
-          for await (const provider of this.helia.libp2p.services.dht.findProviders(dirCid, { timeout: 30000 })) {
-            if (provider?.id) {
-              providerCount++
-              console.log(`[ipfs] Found provider ${providerCount}: ${provider.id.toString()}`)
-              if (providerCount >= 5) break // Limit to prevent too much output
-            }
-          }
-        } catch (findErr) {
-          console.log(`[ipfs] Provider search failed: ${findErr instanceof Error ? findErr.message : String(findErr)}`)
-        }
-        
-        console.log(`[ipfs] Total providers found: ${providerCount}`)
-        
-        // Try alternative DHT provide method if no providers found
-        if (providerCount === 0) {
-          console.log('[ipfs] ⚠️ No providers found, trying alternative DHT provide method...')
-          try {
-            // Try to force DHT provide with different approach
-            const dhtAny = dht as any
-            if (dhtAny._routingTable) {
-              console.log('[ipfs] Found DHT routing table, attempting direct provide...')
-              // Try to access the internal provide method
-              if (dhtAny._provide) {
-                await dhtAny._provide(dirCid)
-                console.log('[ipfs] ✅ Direct DHT provide completed')
-              }
-            }
-            
-            // Wait and check again
-            await new Promise(resolve => setTimeout(resolve, 10000))
-            
-            let retryProviderCount = 0
-            for await (const provider of this.helia.libp2p.services.dht.findProviders(dirCid, { timeout: 15000 })) {
-              if (provider?.id) {
-                retryProviderCount++
-                console.log(`[ipfs] Found provider after retry ${retryProviderCount}: ${provider.id.toString()}`)
-                if (retryProviderCount >= 3) break
-              }
-            }
-            console.log(`[ipfs] Providers found after retry: ${retryProviderCount}`)
-            
-          } catch (retryErr) {
-            console.log(`[ipfs] Alternative DHT provide failed: ${retryErr instanceof Error ? retryErr.message : String(retryErr)}`)
-          }
-        }
-        
-      } catch (err) {
-        ctx?.logger.error(`[ipfs] DHT provide failed: ${err instanceof Error ? err.message : String(err)}`)
-        // Continue anyway - the content is still accessible via your node
-      }
-
-      // Verify the provide operation by checking if we can find ourselves as a provider
-      try {
-        const providers = []
-        for await (const provider of this.helia.libp2p.services.dht.findProviders(dirCid, { timeout: 10000 })) {
-          // Add null safety check here
-          if (provider?.id) {
-            providers.push(provider.id.toString())
-          }
-        }
-        const ourPeerId = this.helia.libp2p.peerId.toString()
-        if (providers.includes(ourPeerId)) {
-          ctx?.logger.info(`[ipfs] ✅ DHT provide verification successful - our peer found as provider`)
-        } else {
-          ctx?.logger.warn(`[ipfs] ⚠️ DHT provide verification failed - our peer not found as provider. Found: ${providers.join(', ')}`)
-        }
-      } catch (err) {
-        ctx?.logger.warn(`[ipfs] DHT provide verification failed: ${err instanceof Error ? err.message : String(err)}`)
-      }
 
       return dirCid
     } catch (err) {
