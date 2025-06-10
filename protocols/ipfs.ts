@@ -174,7 +174,6 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           selectors: {
             ipns: ipnsSelector
           },
-          clientMode: true,
           allowQueryWithZeroPeers: true
         }),
         identify: identify(),
@@ -202,74 +201,6 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     // Log the Helia node ID (Peer ID) after initialization
     const nodeId: string = this.helia.libp2p.peerId.toString()
     console.log(`[ipfs] Helia node initialized with ID: ${nodeId}`)
-
-    // Add network connectivity debugging
-    console.log(`[ipfs] DHT mode: ${this.helia.libp2p.services.dht.mode}`)
-    console.log(`[ipfs] Connected peers: ${this.helia.libp2p.getPeers().length}`)
-
-    // Check DHT service status more thoroughly
-    const dht = this.helia.libp2p.services.dht
-    console.log(`[ipfs] DHT service exists: ${dht !== undefined}`)
-    console.log(`[ipfs] DHT service started: ${dht.isStarted()}`)
-    
-    // Use getMode() method instead of mode property
-    const dhtAny = dht as any
-    const actualMode = dhtAny.getMode ? dhtAny.getMode() : 'unknown'
-    console.log(`[ipfs] DHT actual mode: ${actualMode}`)
-    console.log(`[ipfs] DHT mode property: ${dht.mode}`)
-    
-    // Debug DHT service properties
-    console.log(`[ipfs] DHT service keys: ${Object.keys(dht).join(', ')}`)
-    console.log(`[ipfs] DHT service prototype: ${Object.getPrototypeOf(dht)?.constructor?.name}`)
-    
-    // Try different ways to access DHT mode
-    try {
-      console.log(`[ipfs] DHT _mode property: ${dhtAny._mode}`)
-      console.log(`[ipfs] DHT getMode method: ${typeof dhtAny.getMode}`)
-      if (dhtAny.getMode) {
-        console.log(`[ipfs] DHT getMode result: ${dhtAny.getMode()}`)
-      }
-    } catch (err) {
-      console.log(`[ipfs] DHT property access error: ${err instanceof Error ? err.message : String(err)}`)
-    }
-    
-    // Check if DHT is in server mode using the correct method
-    if (actualMode !== 'server') {
-      console.log('[ipfs] ⚠️ DHT not in server mode, attempting to fix...')
-      try {
-        // Try multiple approaches to set DHT to server mode
-        const dhtAny = dht as any
-        
-        // Method 1: Try setMode method
-        if (dhtAny.setMode && typeof dhtAny.setMode === 'function') {
-          dhtAny.setMode('server')
-          console.log('[ipfs] ✅ Forced DHT into server mode via setMode')
-        }
-        // Method 2: Try setting _mode property directly
-        else if (dhtAny._mode !== undefined) {
-          dhtAny._mode = 'server'
-          console.log('[ipfs] ✅ Forced DHT into server mode via _mode property')
-        }
-        // Method 3: Try accessing internal mode setter
-        else if (dhtAny.mode !== undefined) {
-          dhtAny.mode = 'server'
-          console.log('[ipfs] ✅ Forced DHT into server mode via mode property')
-        }
-        else {
-          console.log('[ipfs] ⚠️ Cannot force DHT mode - no available method found')
-          console.log('[ipfs] Available DHT properties:', Object.keys(dhtAny))
-        }
-        
-        // Verify the change took effect
-        const newMode = dhtAny.getMode ? dhtAny.getMode() : dhtAny._mode || dhtAny.mode || 'unknown'
-        console.log(`[ipfs] DHT mode after fix attempt: ${newMode}`)
-        
-      } catch (err) {
-        console.log(`[ipfs] ⚠️ Failed to set DHT mode: ${err instanceof Error ? err.message : String(err)}`)
-      }
-    } else {
-      console.log('[ipfs] ✅ DHT is in server mode')
-    }
 
     // Check if we're actually reachable
     this.helia.libp2p.addEventListener('self:reachable', () => {
