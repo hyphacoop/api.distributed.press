@@ -23,7 +23,7 @@ test('basic file system test', async t => {
   await sfs.makeFolder(exampleSiteConfig.domain)
   await sfs.extract(fixturePath, exampleSiteConfig.domain)
 
-  const fp = path.join(testPath, 'sites', exampleSiteConfig.domain, expectedFilePath)
+  const fp = path.join(testPath, 'sites', exampleSiteConfig.domain, 'site', expectedFilePath)
   await t.notThrowsAsync(fs.promises.stat(fp), 'index.html exists where we expect it to')
   await sfs.clear(exampleSiteConfig.domain)
   await t.throwsAsync(fs.promises.stat(fp), undefined, 'files should not exist after clear')
