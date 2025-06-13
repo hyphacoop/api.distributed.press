@@ -38,7 +38,6 @@ import { IPFSProtocolFields } from '../api/schemas.js'
 import getPort from 'get-port'
 import { peerIdFromPrivateKey } from '@libp2p/peer-id'
 import { base36 } from 'multiformats/bases/base36'
-import { base58btc } from 'multiformats/bases/base58'
 
 // https://github.com/ipfs/helia/blob/main/packages/helia/src/utils/bootstrappers.ts
 const bootstrapConfig = {
