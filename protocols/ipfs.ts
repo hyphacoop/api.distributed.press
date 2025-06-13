@@ -3,6 +3,9 @@ import { unixfs } from '@helia/unixfs'
 import { ipns } from '@helia/ipns'
 import { FsDatastore } from 'datastore-fs'
 import { FsBlockstore } from 'blockstore-fs'
+import { noise } from '@chainsafe/libp2p-noise'
+import { yamux } from '@chainsafe/libp2p-yamux'
+import { mplex } from '@libp2p/mplex'
 import { keychain } from '@libp2p/keychain'
 import { ping } from '@libp2p/ping'
 import { autoTLS } from '@ipshipyard/libp2p-auto-tls'
@@ -155,6 +158,9 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         webSockets(),
         ...(this.options.useWebRTC === true ? [webRTCDirect()] : [])
       ],
+      connectionEncrypters: [noise()],
+      streamMuxers: [yamux(), mplex()],
+      peerDiscovery: [bootstrap(bootstrapConfig)],
       services: {
         autoNAT: autoNAT(),
         autoTLS: autoTLS(),
@@ -173,8 +179,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         identifyPush: identifyPush(),
         keychain: keychain(),
         ping: ping()
-      },
-      peerDiscovery: [bootstrap(bootstrapConfig)]
+      }
     }
 
     this.helia = await createHelia({ datastore, blockstore, libp2p: libp2pOptions })
