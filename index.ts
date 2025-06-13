@@ -1,25 +1,25 @@
 // Polyfill CustomEvent for Node.js environment
-if (typeof CustomEvent === 'undefined') {
-  class CustomEvent<T = any> extends Event {
-    detail: T;
-    constructor(type: string, options?: CustomEventInit<T>) {
-      super(type, options);
-      this.detail = options?.detail as T;
-    }
-  }
-  (globalThis as any).CustomEvent = CustomEvent;
-}
-
 // Shim Web Crypto API to global scope for browser-compatible libraries
-import { webcrypto } from 'node:crypto';
-if (typeof (globalThis as any).crypto === 'undefined') {
-  (globalThis as any).crypto = webcrypto;
-}
+import { webcrypto } from 'node:crypto'
 
 import apiBuilder from './api/index.js'
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 import envPaths from 'env-paths'
+
+if (typeof CustomEvent === 'undefined') {
+  class CustomEvent<T = any> extends Event {
+    detail: T
+    constructor (type: string, options?: CustomEventInit<T>) {
+      super(type, options)
+      this.detail = options?.detail as T
+    }
+  }
+  (globalThis as any).CustomEvent = CustomEvent
+}
+if (typeof (globalThis as any).crypto === 'undefined') {
+  (globalThis as any).crypto = webcrypto
+}
 const paths = envPaths('distributed-press')
 
 const argv = yargs(hideBin(process.argv)).options({

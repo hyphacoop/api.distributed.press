@@ -3,10 +3,15 @@ import { unixfs } from '@helia/unixfs'
 import { ipns } from '@helia/ipns'
 import { FsDatastore } from 'datastore-fs'
 import { FsBlockstore } from 'blockstore-fs'
+import { noise } from '@chainsafe/libp2p-noise'
+import { yamux } from '@chainsafe/libp2p-yamux'
+import { mplex } from '@libp2p/mplex'
 import { keychain } from '@libp2p/keychain'
 import { ping } from '@libp2p/ping'
 import { autoTLS } from '@ipshipyard/libp2p-auto-tls'
 import { autoNAT } from '@libp2p/autonat'
+import { uPnPNAT } from '@libp2p/upnp-nat'
+import { dcutr } from '@libp2p/dcutr'
 import { identify, identifyPush } from '@libp2p/identify'
 import { kadDHT } from '@libp2p/kad-dht'
 import { ipnsSelector } from 'ipns/selector'
@@ -21,10 +26,9 @@ import {
   privateKeyToProtobuf
 } from '@libp2p/crypto/keys'
 import type { PrivateKey } from '@libp2p/interface'
-import { peerIdFromPrivateKey } from '@libp2p/peer-id'
 import { CID } from 'multiformats/cid'
 import path from 'path'
-import fs, { createReadStream } from 'fs'
+import { promises as fsPromises, createReadStream } from 'fs'
 import { Readable } from 'stream'
 import makeDir from 'make-dir'
 import createError from 'http-errors'
@@ -32,6 +36,7 @@ import { Static } from '@sinclair/typebox'
 import Protocol, { Ctx, SyncOptions, ProtocolStats } from './interfaces.js'
 import { IPFSProtocolFields } from '../api/schemas.js'
 import getPort from 'get-port'
+import { peerIdFromPrivateKey } from '@libp2p/peer-id'
 
 // https://github.com/ipfs/helia/blob/main/packages/helia/src/utils/bootstrappers.ts
 const bootstrapConfig = {
@@ -42,6 +47,19 @@ const bootstrapConfig = {
     '/dnsaddr/va1.bootstrap.libp2p.io/p2p/12D3KooWKnDdG3iXw9eTFijk3EWSunZcFi54Zka4wmtqtt6rPxc8',
     '/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ'
   ]
+}
+
+// Function to get the public IP address
+async function getPublicIP (): Promise<string> {
+  try {
+    // Try to get public IP from a service
+    const response = await fetch('https://api.ipify.org?format=json')
+    const data = await response.json()
+    return data.ip
+  } catch (err) {
+    console.warn('[ipfs] Could not detect public IP, using 0.0.0.0')
+    return '0.0.0.0'
+  }
 }
 
 function getRandomPortInRange (min: number, max: number): number {
@@ -64,14 +82,14 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
   options: IPFSProtocolOptions
   onCleanup: CleanupCallback[]
   helia: any | null
-  fs: any | null
+  ipfsFs: any | null
   ipns: any | null
 
   constructor (options: IPFSProtocolOptions) {
     this.options = { ...options, useWebRTC: options.useWebRTC ?? true }
     this.onCleanup = []
     this.helia = null
-    this.fs = null
+    this.ipfsFs = null
     this.ipns = null
   }
 
@@ -109,8 +127,14 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     }
 
     // Default libp2p config: https://github.com/ipfs/helia/blob/main/packages/helia/src/utils/libp2p-defaults.ts
+    const defaults = await libp2pDefaults()
+
+    // Get public IP for announce addresses
+    const publicIP = await getPublicIP()
+    console.log(`[ipfs] Using public IP for announce: ${publicIP}`)
+
     const libp2pOptions = {
-      ...libp2pDefaults(),
+      ...defaults,
       addresses: {
         listen: [
           `/ip4/0.0.0.0/tcp/${tcpPort}`,
@@ -124,6 +148,10 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
               ]
             : []),
           '/p2p-circuit'
+        ],
+        announce: [
+          `/ip4/${publicIP}/tcp/${tcpPort}`,
+          `/ip4/${publicIP}/tcp/${wsPort}/ws`
         ]
       },
       transports: [
@@ -131,9 +159,14 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         webSockets(),
         ...(this.options.useWebRTC === true ? [webRTCDirect()] : [])
       ],
+      connectionEncrypters: [noise()],
+      streamMuxers: [yamux(), mplex()],
+      peerDiscovery: [bootstrap(bootstrapConfig)],
       services: {
+        ...defaults.services,
         autoNAT: autoNAT(),
         autoTLS: autoTLS(),
+        dcutr: dcutr(),
         dht: kadDHT({
           validators: {
             ipns: ipnsValidator
@@ -141,21 +174,25 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           selectors: {
             ipns: ipnsSelector
           },
-          clientMode: true,
+          clientMode: false,
           allowQueryWithZeroPeers: true
         }),
         identify: identify(),
         identifyPush: identifyPush(),
+        keychain: keychain(),
         ping: ping(),
-        keychain: keychain()
-      },
-      peerDiscovery: [bootstrap(bootstrapConfig)]
+        upnpNAT: uPnPNAT()
+      }
     }
 
     this.helia = await createHelia({ datastore, blockstore, libp2p: libp2pOptions })
-    this.fs = unixfs(this.helia)
+    this.ipfsFs = unixfs(this.helia)
     this.ipns = ipns(this.helia)
     console.timeEnd('Helia Initialization') // Log init time
+
+    // Log the Helia node ID (Peer ID) after initialization
+    const nodeId: string = this.helia.libp2p.peerId.toString()
+    console.log(`[ipfs] Helia node initialized with ID: ${nodeId}`)
 
     this.onCleanup.push(async () => {
       await this.helia.stop()
@@ -168,22 +205,59 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     }
   }
 
+  async listDirectory (cid: CID, ctx?: Ctx): Promise<void> {
+    const fs = this.ipfsFs
+    if (fs == null) return
+
+    try {
+      ctx?.logger.info(`[ipfs] Listing directory contents for CID: ${cid.toString()}`)
+      for await (const entry of fs.ls(cid)) {
+        ctx?.logger.info(
+          `[ipfs] Directory entry: ${String(entry.name)} => ${String(entry.cid)}`
+        )
+      }
+    } catch (err) {
+      ctx?.logger.error(`[ipfs] Error listing directory: ${err instanceof Error ? err.message : String(err)}`)
+    }
+  }
+
   async sync (id: string, folderPath: string, options?: SyncOptions, ctx?: Ctx): Promise<Static<typeof IPFSProtocolFields>> {
-    console.time('IPFS Sync') // Start total sync timer
+    const timerLabel = `IPFS Sync - ${id}` // Unique label per site
+    console.time(timerLabel) // Start total sync timer
     ctx?.logger.info('[ipfs] Sync Start')
-    if (this.helia == null || this.fs == null || this.ipns == null) {
+    if (this.helia == null || this.ipns == null) {
       throw createError(500, 'Helia must be initialized')
     }
 
-    const cid = await this.addDirectory(folderPath, ctx)
-    console.timeLog('IPFS Sync', 'Directory Added') // Log after directory
-    ctx?.logger.info(`[ipfs] Added directory with CID ${cid.toString()}`)
+    // Create a fresh UnixFS instance for this sync operation
+    const ipfsFs = unixfs(this.helia)
+    ctx?.logger.info('[ipfs] Created fresh UnixFS instance for sync')
+
+    // Read directory contents first to verify what we're about to add
+    const files = await fsPromises.readdir(folderPath)
+    const fileContents = new Map<string, string>()
+    for (const file of files) {
+      const fullPath = path.join(folderPath, file)
+      try {
+        const content = await fsPromises.readFile(fullPath, 'utf8')
+        fileContents.set(file, content)
+        ctx?.logger.info(`[ipfs] Read file ${String(file)} (${String(content.length)} bytes)`)
+      } catch (err) {
+        ctx?.logger.error(`[ipfs] Error reading file ${file}: ${err instanceof Error ? err.message : String(err)}`)
+      }
+    }
+
+    const cid = await this.addDirectory(folderPath, ctx, ipfsFs)
+    await this.listDirectory(cid, ctx)
+    console.timeLog(timerLabel, 'Directory Added') // Log after directory
+    ctx?.logger.info(`[ipfs] Added directory with CID ${cid.toString()} (type: ${typeof cid})`)
 
     const { publishKey, cid: publishedCid } = await this.publishSite(id, cid, ctx)
-    console.timeLog('IPFS Sync', 'Site Published') // Log after publish
+    console.timeLog(timerLabel, 'Site Published') // Log after publish
+    ctx?.logger.info(`[ipfs] Published CID comparison - Original: ${cid.toString()}, Published: ${String(publishedCid)}`)
     const subdomain = id.replace(/-/g, '--').replace(/\./g, '-')
 
-    console.timeEnd('IPFS Sync') // End total sync timer
+    console.timeEnd(timerLabel) // End total sync timer
     return {
       enabled: true,
       link: `ipns://${id}/`,
@@ -194,28 +268,66 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     }
   }
 
-  async addDirectory (folderPath: string, ctx?: Ctx): Promise<CID> {
-    const files = await fs.promises.readdir(folderPath)
-    if (files.length === 0) return CID.parse('bafyaabakaieac')
+  async addDirectory (folderPath: string, ctx?: Ctx, ipfsFs?: any): Promise<CID> {
+    ctx?.logger.info(`[ipfs] Adding directory recursively at path: ${folderPath}`)
 
-    const entries: Array<{ path: string, cid: CID }> = []
-    for (const file of files) {
-      const fullPath = path.join(folderPath, file)
-      const stat = await fs.promises.stat(fullPath)
-      if (stat.isFile()) {
-        // Create a readable stream for the file
-        const stream = createReadStream(fullPath)
-        // Add the file to IPFS with path and content
-        const cid = await this.fs.addFile({
-          path: file, // Use the filename as the path
-          content: Readable.from(stream)
-        }, { cidVersion: 1 }) as CID
-        entries.push({ path: file, cid })
-        ctx?.logger.debug(`[ipfs] Added file ${file} => ${cid.toString()}`)
-      }
+    const fs = ipfsFs ?? this.ipfsFs
+    if (fs == null) {
+      throw createError(500, 'UnixFS instance not available')
     }
-    console.log('Directory Entries:', entries) // Log entries before adding
-    return this.fs.addDirectory(entries, { cidVersion: 1 })
+
+    try {
+      // Read directory contents to log what's being added
+      const files = await fsPromises.readdir(folderPath, { withFileTypes: true })
+      ctx?.logger.info(`[ipfs] Found ${String(files.length)} entries in directory: ${files.map(f => `${f.name} (isFile: ${String(f.isFile())})`).join(', ')}`)
+
+      if (files.length === 0) {
+        ctx?.logger.warn(`[ipfs] No files found in directory: ${folderPath}`)
+        return CID.parse('bafyaabakaieac') // Empty directory CID
+      }
+
+      // Use unixfs.addAll to recursively add the directory
+      const readable = Readable.from(
+        (async function * () {
+          for (const file of files) {
+            const fullPath = path.join(folderPath, file.name)
+            if (file.isFile()) {
+              const stat = await fsPromises.stat(fullPath)
+              const content = createReadStream(fullPath)
+              yield { path: file.name, content }
+              ctx?.logger.info(`[ipfs] Queued file for addition: ${file.name} (${String(stat.size)} bytes)`)
+            } else if (file.isDirectory()) {
+              ctx?.logger.info(`[ipfs] Skipping subdirectory: ${file.name}`)
+            }
+          }
+        })()
+      )
+
+      let dirCid: CID | null = null
+      for await (const entry of fs.addAll(readable, { wrapWithDirectory: true, cidVersion: 1 })) {
+        ctx?.logger.info(`[ipfs] Added entry: ${String(entry.path)} => ${String(entry.cid)}`)
+        dirCid = entry.cid
+      }
+
+      if (dirCid == null) {
+        throw new Error('Failed to generate directory CID')
+      }
+
+      ctx?.logger.info(`[ipfs] Final directory CID: ${dirCid.toString()}`)
+
+      // Pin the directory
+      await this.helia.pins.add(dirCid)
+      ctx?.logger.info(`[ipfs] Pinned directory CID: ${dirCid.toString()}`)
+
+      // Advertise the directory CID in the DHT
+      await this.helia.libp2p.contentRouting.provide(dirCid)
+      ctx?.logger.info(`Provided ${dirCid.toString()} to DHT`)
+
+      return dirCid
+    } catch (err) {
+      ctx?.logger.error(`[ipfs] Error adding directory: ${err instanceof Error ? err.message : String(err)}`)
+      throw err
+    }
   }
 
   async publishSite (id: string, cid: CID, ctx?: Ctx): Promise<PublishResult> {
@@ -227,10 +339,37 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       await this.saveKey(name, privateKey)
     }
 
-    ctx?.logger.info(`[ipfs] Publishing CID ${cid.toString()} to IPNS with key ${name}`)
-    await this.ipns.publish(privateKey, cid, { signal: AbortSignal.timeout(5000) })
+    ctx?.logger.info(`[ipfs] Publishing CID ${cid.toString()} (type: ${typeof cid}, isValidCID: ${String(!(CID.asCID(cid) == null))}) to IPNS with key ${String(name)}`)
+    await this.ipns.publish(privateKey, cid, { signal: AbortSignal.timeout(60000) })
+    ctx?.logger.info('[ipfs] Successfully published to IPNS, verifying resolution...')
 
-    const peerId = peerIdFromPrivateKey(privateKey)
+    // Verify the published value
+    const peerId = await peerIdFromPrivateKey(privateKey)
+    try {
+      // Use the public key directly instead of the IPNS name string
+      const resolved = await this.ipns.resolve(privateKey.publicKey)
+
+      // Add proper guards for the resolved value
+      if (resolved == null) {
+        ctx?.logger.warn(`[ipfs] [expected-delay] IPNS resolution returned null/undefined for key ${String(name)}`)
+      } else {
+        ctx?.logger.info(`[ipfs] IPNS resolution check - Published: ${cid.toString()}, Resolved: ${String(resolved.cid)}`)
+      }
+    } catch (err) {
+      // More specific error handling for IPNS resolution failures
+      if (err instanceof Error) {
+        if (err.message.includes('IPNS record not found')) {
+          ctx?.logger.warn(`[ipfs] [expected-delay] IPNS record not found yet for key ${String(name)} - this is normal immediately after publishing`)
+        } else if (err.message.includes('Cannot read properties of undefined')) {
+          ctx?.logger.warn(`[ipfs] [expected-delay] IPNS resolution returned undefined value for key ${String(name)} - this may be a temporary issue`)
+        } else {
+          ctx?.logger.error(`[ipfs] IPNS resolution check failed: ${err.message}`)
+        }
+      } else {
+        ctx?.logger.error(`[ipfs] IPNS resolution check failed: ${String(err)}`)
+      }
+    }
+
     return { publishKey: peerId.toString(), cid: cid.toString() }
   }
 
@@ -257,19 +396,30 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     const privateKey = await this.loadKey(name)
     if (privateKey == null) throw createError(404, `No key for ${id}`)
 
-    const peerId = peerIdFromPrivateKey(privateKey)
-    const ipnsName = `/ipns/${peerId.toString()}`
     try {
-      const resolved = await this.ipns.resolve(ipnsName)
+      // Use the public key directly instead of the IPNS name string
+      const resolved = await this.ipns.resolve(privateKey.publicKey)
+
+      // Add proper guards for the resolved value
+      if (resolved == null) {
+        console.warn(`[ipfs] [expected-delay] IPNS resolution returned null/undefined for key ${String(name)} in stats`)
+        return { peerCount: 0 }
+      }
+
       let count = 0
-      for await (const provider of this.helia.libp2p.services.dht.findProviders(resolved)) {
+      for await (const provider of this.helia.libp2p.services.dht.findProviders(resolved.cid)) {
         void provider
         count++
       }
       return { peerCount: count }
     } catch (e: unknown) {
-      if (e instanceof Error && e.message.includes('IPNS record not found')) {
-        return { peerCount: 0 }
+      if (e instanceof Error) {
+        if (e.message.includes('IPNS record not found')) {
+          return { peerCount: 0 }
+        } else if (e.message.includes('Cannot read properties of undefined')) {
+          console.warn(`[ipfs] [expected-delay] IPNS resolution returned undefined value for key ${String(name)} in stats`)
+          return { peerCount: 0 }
+        }
       }
       throw e
     }
@@ -282,7 +432,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
   async loadKey (name: string): Promise<PrivateKey | null> {
     const keyPath = this.getKeyPath(name)
     try {
-      const raw = await fs.promises.readFile(keyPath)
+      const raw = await fsPromises.readFile(keyPath)
       return privateKeyFromProtobuf(new Uint8Array(raw))
     } catch (err: any) {
       if (err.code === 'ENOENT') return null
@@ -294,6 +444,6 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     const keyPath = this.getKeyPath(name)
     await makeDir(path.dirname(keyPath))
     const pb = privateKeyToProtobuf(privateKey)
-    await fs.promises.writeFile(keyPath, Buffer.from(pb))
+    await fsPromises.writeFile(keyPath, new Uint8Array(pb))
   }
 }

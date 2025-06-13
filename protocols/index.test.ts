@@ -1,20 +1,6 @@
 // Polyfill CustomEvent for Node.js environment
-if (typeof CustomEvent === 'undefined') {
-  class CustomEvent<T = any> extends Event {
-    detail: T;
-    constructor(type: string, options?: CustomEventInit<T>) {
-      super(type, options);
-      this.detail = options?.detail as T;
-    }
-  }
-  (globalThis as any).CustomEvent = CustomEvent;
-}
-
 // Shim Web Crypto API to global scope for browser-compatible libraries
-import { webcrypto } from 'node:crypto';
-if (typeof (globalThis as any).crypto === 'undefined') {
-  (globalThis as any).crypto = webcrypto;
-}
+import { webcrypto } from 'node:crypto'
 
 import anyTest, { TestFn } from 'ava'
 import envPaths from 'env-paths'
@@ -26,6 +12,20 @@ import { exampleSiteConfig } from '../fixtures/siteConfig.js'
 import { HyperProtocol } from './hyper.js'
 import Protocol from './interfaces.js'
 import { IPFSProtocol } from './ipfs.js'
+
+if (typeof CustomEvent === 'undefined') {
+  class CustomEvent<T = any> extends Event {
+    detail: T
+    constructor (type: string, options?: CustomEventInit<T>) {
+      super(type, options)
+      this.detail = options?.detail as T
+    }
+  }
+  (globalThis as any).CustomEvent = CustomEvent
+}
+if (typeof (globalThis as any).crypto === 'undefined') {
+  (globalThis as any).crypto = webcrypto
+}
 
 const paths = envPaths('distributed-press')
 const filename = fileURLToPath(import.meta.url)

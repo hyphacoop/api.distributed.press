@@ -5,7 +5,6 @@ import { AdminStore } from './admin.js'
 import { PublisherStore } from './publisher.js'
 import { RevocationStore } from './revocations.js'
 import { SiteConfigStore } from './sites.js'
-import path from 'path'
 import { ProtocolManager } from '../protocols/index.js'
 
 export interface StoreI {
@@ -28,9 +27,7 @@ export default class Store implements StoreI {
     this.db = db
 
     const basePath = cfg.storage
-    const siteStoragePath = path.join(basePath, 'sites')
-
-    this.fs = new SiteFileSystem(siteStoragePath)
+    this.fs = new SiteFileSystem(basePath)
     this.admin = new AdminStore(this.db.sublevel('admin', { valueEncoding: 'json' }))
     this.publisher = new PublisherStore(this.db.sublevel('publisher', { valueEncoding: 'json' }))
     this.sites = new SiteConfigStore(this.db.sublevel('sites', { valueEncoding: 'json' }), protocols)
