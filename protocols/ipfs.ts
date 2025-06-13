@@ -37,6 +37,8 @@ import Protocol, { Ctx, SyncOptions, ProtocolStats } from './interfaces.js'
 import { IPFSProtocolFields } from '../api/schemas.js'
 import getPort from 'get-port'
 import { peerIdFromPrivateKey } from '@libp2p/peer-id'
+import { base36 } from 'multiformats/bases/base36'
+import { base58btc } from 'multiformats/bases/base58'
 
 // https://github.com/ipfs/helia/blob/main/packages/helia/src/utils/bootstrappers.ts
 const bootstrapConfig = {
@@ -345,6 +347,14 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
     // Verify the published value
     const peerId = await peerIdFromPrivateKey(privateKey)
+    
+    // Convert peer ID to base36: peer IDs use base58 without multibase prefix
+    // Add the 'z' prefix that base58btc decoder expects
+    const peerIdBase58 = peerId.toString()
+    const peerIdWithPrefix = 'z' + peerIdBase58
+    const peerIdBytes = base58btc.decode(peerIdWithPrefix)
+    const peerIdBase36 = base36.encode(peerIdBytes)
+    
     try {
       // Use the public key directly instead of the IPNS name string
       const resolved = await this.ipns.resolve(privateKey.publicKey)
@@ -370,7 +380,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       }
     }
 
-    return { publishKey: peerId.toString(), cid: cid.toString() }
+    return { publishKey: peerIdBase36, cid: cid.toString() }
   }
 
   async unsync (id: string, _: Static<typeof IPFSProtocolFields>, ctx?: Ctx): Promise<void> {
