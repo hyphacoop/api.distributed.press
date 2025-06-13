@@ -349,10 +349,11 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
     const peerIdCid = await peerId.toCID()
     const publishKey = peerIdCid.toString(base36)
+    const ipnsPath = `/ipns/${publishKey}`
 
     try {
-      // Use the public key directly instead of the IPNS name string
-      const resolved = await this.ipns.resolve(privateKey.publicKey)
+      const resolved = await this.ipns.resolve(ipnsPath)
+      console.log(`IPNS resolved to: ${String(resolved?.cid)}`)
 
       // Add proper guards for the resolved value
       if (resolved == null) {
