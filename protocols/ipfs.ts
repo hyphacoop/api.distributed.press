@@ -347,14 +347,14 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
     // Verify the published value
     const peerId = await peerIdFromPrivateKey(privateKey)
-    
+
     // Convert peer ID to base36: peer IDs use base58 without multibase prefix
     // Add the 'z' prefix that base58btc decoder expects
     const peerIdBase58 = peerId.toString()
     const peerIdWithPrefix = 'z' + peerIdBase58
     const peerIdBytes = base58btc.decode(peerIdWithPrefix)
     const peerIdBase36 = base36.encode(peerIdBytes)
-    
+
     try {
       // Use the public key directly instead of the IPNS name string
       const resolved = await this.ipns.resolve(privateKey.publicKey)
