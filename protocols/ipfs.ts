@@ -163,6 +163,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       streamMuxers: [yamux(), mplex()],
       peerDiscovery: [bootstrap(bootstrapConfig)],
       services: {
+        ...defaults.services,
         autoNAT: autoNAT(),
         autoTLS: autoTLS(),
         dcutr: dcutr(),
