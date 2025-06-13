@@ -183,6 +183,11 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         keychain: keychain(),
         ping: ping(),
         upnpNAT: uPnPNAT()
+      },
+      connectionManager: {
+        maxConnections: 300,
+        maxParallelDials: 20,
+        dialTimeout: 10000
       }
     }
 
