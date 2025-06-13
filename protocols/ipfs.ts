@@ -10,6 +10,7 @@ import { keychain } from '@libp2p/keychain'
 import { ping } from '@libp2p/ping'
 import { autoTLS } from '@ipshipyard/libp2p-auto-tls'
 import { autoNAT } from '@libp2p/autonat'
+import { uPnPNAT } from '@libp2p/upnp-nat'
 import { dcutr } from '@libp2p/dcutr'
 import { identify, identifyPush } from '@libp2p/identify'
 import { kadDHT } from '@libp2p/kad-dht'
@@ -178,7 +179,8 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         identify: identify(),
         identifyPush: identifyPush(),
         keychain: keychain(),
-        ping: ping()
+        ping: ping(),
+        upnpNAT: uPnPNAT()
       }
     }
 
