@@ -20,7 +20,8 @@ import { ipnsSelector } from 'ipns/selector'
 import { ipnsValidator } from 'ipns/validator'
 import { tcp } from '@libp2p/tcp'
 import { webSockets } from '@libp2p/websockets'
-// import { webRTCDirect } from '@libp2p/webrtc'
+import { circuitRelayTransport } from '@libp2p/circuit-relay-v2'
+import { webRTC, webRTCDirect } from '@libp2p/webrtc'
 import { bootstrap } from '@libp2p/bootstrap'
 import {
   generateKeyPair,
@@ -104,7 +105,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
     this.options = {
       ...options,
-      useWebRTC: options.useWebRTC ?? false,
+      useWebRTC: options.useWebRTC ?? true,
       tcpPort: tcpPort ?? options.tcpPort,
       wsPort: wsPort ?? options.wsPort
     }
@@ -165,23 +166,26 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           `/ip4/0.0.0.0/tcp/${wsPort}/ws`,
           `/ip6/::/tcp/${tcpPort}`,
           `/ip6/::/tcp/${wsPort}/ws`,
-          // ...(this.options.useWebRTC === true
-          //   ? [
-          //     `/ip4/0.0.0.0/udp/${String(webrtcPort)}/webrtc-direct`,
-          //     `/ip6/::/udp/${String(webrtcPort)}/webrtc-direct`
-          //     ]
-          //   : []),
+          ...(this.options.useWebRTC === true
+            ? [
+              `/ip4/0.0.0.0/udp/${String(webrtcPort)}/webrtc-direct`,
+              `/ip6/::/udp/${String(webrtcPort)}/webrtc-direct`
+              ]
+            : []),
           '/p2p-circuit'
         ],
         announce: [
           ...(publicIP !== '0.0.0.0' ? [`/ip4/${publicIP}/tcp/${tcpPort}`] : []),
-          ...(publicIP !== '0.0.0.0' ? [`/ip4/${publicIP}/tcp/${wsPort}/ws`] : [])
+          ...(publicIP !== '0.0.0.0' ? [`/ip4/${publicIP}/tcp/${wsPort}/ws`] : []),
+          ...(this.options.useWebRTC === true && webrtcPort !== null && publicIP !== '0.0.0.0'
+            ? [`/ip4/${publicIP}/udp/${String(webrtcPort)}/webrtc-direct`]
+            : [])
         ]
       },
       transports: [
         tcp(),
-        webSockets()
-        // ...(this.options.useWebRTC === true ? [webRTCDirect()] : [])
+        webSockets(),
+        ...(this.options.useWebRTC === true ? [webRTC(), webRTCDirect(), circuitRelayTransport()] : [])
       ],
       connectionEncrypters: [noise()],
       streamMuxers: [yamux(), mplex()],
@@ -193,13 +197,14 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         dcutr: dcutr(),
         delegatedRouting: () => createDelegatedRoutingV1HttpApiClient('https://delegated-ipfs.dev', delegatedHTTPRoutingDefaults()),
         dht: kadDHT({
-          clientMode: false,
           validators: {
             ipns: ipnsValidator
           },
           selectors: {
             ipns: ipnsSelector
           },
+          clientMode: false,
+          allowQueryWithZeroPeers: true
         }),
         identify: identify(),
         identifyPush: identifyPush(),
