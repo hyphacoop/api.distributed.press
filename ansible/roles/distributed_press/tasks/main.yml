@@ -67,7 +67,7 @@
   shell: "ufw allow in 53/udp"
 
 - name: "Enable libp2p udp traffic through firewall"
-  shell: "ufw allow in 7976/udp"
+  shell: "ufw allow in {{ distributed_press_tcp_port }}/udp"
 
 - name: "Enable libp2p tcp traffic through firewall"
   shell: "ufw allow in {{ distributed_press_tcp_port }}/tcp"
