@@ -193,14 +193,13 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         dcutr: dcutr(),
         delegatedRouting: () => createDelegatedRoutingV1HttpApiClient('https://delegated-ipfs.dev', delegatedHTTPRoutingDefaults()),
         dht: kadDHT({
+          clientMode: false,
           validators: {
             ipns: ipnsValidator
           },
           selectors: {
             ipns: ipnsSelector
           },
-          clientMode: false,
-          allowQueryWithZeroPeers: true
         }),
         identify: identify(),
         identifyPush: identifyPush(),
