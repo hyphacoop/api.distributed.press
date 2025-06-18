@@ -20,7 +20,7 @@ import { ipnsSelector } from 'ipns/selector'
 import { ipnsValidator } from 'ipns/validator'
 import { tcp } from '@libp2p/tcp'
 import { webSockets } from '@libp2p/websockets'
-import { webRTCDirect } from '@libp2p/webrtc'
+// import { webRTCDirect } from '@libp2p/webrtc'
 import { bootstrap } from '@libp2p/bootstrap'
 import {
   generateKeyPair,
@@ -104,7 +104,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
     this.options = {
       ...options,
-      useWebRTC: options.useWebRTC ?? true,
+      useWebRTC: options.useWebRTC ?? false,
       tcpPort: tcpPort ?? options.tcpPort,
       wsPort: wsPort ?? options.wsPort
     }
@@ -165,12 +165,12 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           `/ip4/0.0.0.0/tcp/${wsPort}/ws`,
           `/ip6/::/tcp/${tcpPort}`,
           `/ip6/::/tcp/${wsPort}/ws`,
-          ...(this.options.useWebRTC === true
-            ? [
-              `/ip4/0.0.0.0/udp/${String(webrtcPort)}/webrtc-direct`,
-              `/ip6/::/udp/${String(webrtcPort)}/webrtc-direct`
-              ]
-            : []),
+          // ...(this.options.useWebRTC === true
+          //   ? [
+          //     `/ip4/0.0.0.0/udp/${String(webrtcPort)}/webrtc-direct`,
+          //     `/ip6/::/udp/${String(webrtcPort)}/webrtc-direct`
+          //     ]
+          //   : []),
           '/p2p-circuit'
         ],
         announce: [
@@ -180,8 +180,8 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       },
       transports: [
         tcp(),
-        webSockets(),
-        ...(this.options.useWebRTC === true ? [webRTCDirect()] : [])
+        webSockets()
+        // ...(this.options.useWebRTC === true ? [webRTCDirect()] : [])
       ],
       connectionEncrypters: [noise()],
       streamMuxers: [yamux(), mplex()],
