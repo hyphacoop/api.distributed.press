@@ -3,11 +3,11 @@ Description=Distributed Press API Server
 After=network-online.target
 [Service]
 # Environment="DEBUG=*"
-Environment="TCP_PORT={{ distributed_press_tcp_port }}"  # Add this line
-Environment="WS_PORT={{ distributed_press_ws_port }}"    # Add this line
+Environment="TCP_PORT={{ distributed_press_tcp_port }}"
+Environment="WS_PORT={{ distributed_press_ws_port }}"
 WorkingDirectory={{distributed_press_source}}
 User={{distributed_press_user}}
-ExecStart=npx ts-node-esm index.ts --port {{distributed_press_port}} --host {{distributed_press_host}} --domain {{distributed_press_domain}} --tcp-port $TCP_PORT --ws-port $WS_PORT  # Updated
+ExecStart=npx ts-node-esm index.ts --port {{distributed_press_port}} --host {{distributed_press_host}} --domain {{distributed_press_domain}} --tcp-port $TCP_PORT --ws-port $WS_PORT
 Restart=always
 RestartSec=3
 LimitNOFILE=4096

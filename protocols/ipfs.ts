@@ -93,6 +93,15 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
   constructor (options: IPFSProtocolOptions) {
     const tcpPort = typeof process.env.TCP_PORT === 'string' ? parseInt(process.env.TCP_PORT, 10) : undefined
     const wsPort = typeof process.env.WS_PORT === 'string' ? parseInt(process.env.WS_PORT, 10) : undefined
+
+    // Validate port ranges if provided
+    if (tcpPort !== undefined && (tcpPort < 1024 || tcpPort > 65535)) {
+      throw new Error(`Invalid TCP port: ${tcpPort}. Must be between 1024 and 65535`)
+    }
+    if (wsPort !== undefined && (wsPort < 1024 || wsPort > 65535)) {
+      throw new Error(`Invalid WebSocket port: ${wsPort}. Must be between 1024 and 65535`)
+    }
+
     this.options = {
       ...options,
       useWebRTC: options.useWebRTC ?? true,

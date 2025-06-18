@@ -12,6 +12,24 @@ A project may use the Distributed Press API of this server to publish its websit
 The Distributed Press is in early development, and is currently used to publish the [COMPOST magazine](https://compost.digital).
 The official instance of the Distributed Press API is hosted at [api.distributed.press](https://api.distributed.press).
 
+## Configuration
+
+### IPFS Port Configuration
+
+The Distributed Press API uses configurable ports for IPFS networking:
+
+- **TCP Port**: Default `7976`, configurable via `--tcp-port` argument or `TCP_PORT` environment variable
+- **WebSocket Port**: Default `7977`, configurable via `--ws-port` argument or `WS_PORT` environment variable
+
+When using Ansible deployment, these ports can be configured in `ansible/inventory.yml`:
+```yaml
+vars:
+  distributed_press_tcp_port: 7976
+  distributed_press_ws_port: 7977
+```
+
+Ports must be between 1024 and 65535. The system will automatically find an available port if the specified one is already in use.
+
 ## Developing
 
 1. (Only once) Install dependencies: `npm i`
