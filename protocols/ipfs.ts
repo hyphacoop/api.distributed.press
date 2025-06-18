@@ -5,6 +5,7 @@ import { FsDatastore } from 'datastore-fs'
 import { FsBlockstore } from 'blockstore-fs'
 import { noise } from '@chainsafe/libp2p-noise'
 import { yamux } from '@chainsafe/libp2p-yamux'
+import { mdns } from "@libp2p/mdns";
 import { mplex } from '@libp2p/mplex'
 import { keychain } from '@libp2p/keychain'
 import { ping } from '@libp2p/ping'
@@ -190,7 +191,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       ],
       connectionEncrypters: [noise()],
       streamMuxers: [yamux(), mplex()],
-      peerDiscovery: [bootstrap(bootstrapConfig)],
+      peerDiscovery: [mdns(),bootstrap(bootstrapConfig)],
       services: {
         ...defaults.services,
         autoNAT: autoNAT(),
