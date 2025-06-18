@@ -6,6 +6,8 @@ all:
     distributed_press_domain: "example.com"
     distributed_press_letsencrypt_email: "example@example.com"
     distributed_press_served_sites: []
+    distributed_press_tcp_port: 7976
+    distributed_press_ws_port: 7977
   children:
     distributed_press:
       hosts:

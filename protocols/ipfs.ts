@@ -72,6 +72,8 @@ function getRandomPortInRange (min: number, max: number): number {
 export interface IPFSProtocolOptions {
   path: string
   useWebRTC?: boolean
+  tcpPort?: number
+  wsPort?: number
 }
 
 export interface PublishResult {
@@ -89,7 +91,14 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
   ipns: any | null
 
   constructor (options: IPFSProtocolOptions) {
-    this.options = { ...options, useWebRTC: options.useWebRTC ?? true }
+    const tcpPort = typeof process.env.TCP_PORT === 'string' ? parseInt(process.env.TCP_PORT, 10) : undefined
+    const wsPort = typeof process.env.WS_PORT === 'string' ? parseInt(process.env.WS_PORT, 10) : undefined
+    this.options = {
+      ...options,
+      useWebRTC: options.useWebRTC ?? true,
+      tcpPort: tcpPort ?? options.tcpPort,
+      wsPort: wsPort ?? options.wsPort
+    }
     this.onCleanup = []
     this.helia = null
     this.ipfsFs = null
@@ -103,8 +112,11 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     const datastore = new FsDatastore(datastorePath)
     const blockstore = new FsBlockstore(blockstorePath)
 
-    const tcpPort = await getPort({ port: 7976 })
-    const wsPort = await getPort({ port: 7977 })
+    // Use configured ports with getPort fallback, handling undefined explicitly
+    const tcpPort = this.options.tcpPort !== undefined ? await getPort({ port: this.options.tcpPort }) : await getPort({ port: 7976 })
+    const wsPort = this.options.wsPort !== undefined ? await getPort({ port: this.options.wsPort }) : await getPort({ port: 7977 })
+    console.log(`[ipfs] Assigned TCP port: ${tcpPort}, WS port: ${wsPort}`)
+
     let webrtcPort: number | null = null
 
     // Only initialize WebRTC port if useWebRTC is explicitly true
@@ -153,8 +165,8 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           '/p2p-circuit'
         ],
         announce: [
-          `/ip4/${publicIP}/tcp/${tcpPort}`,
-          `/ip4/${publicIP}/tcp/${wsPort}/ws`
+          ...(publicIP !== '0.0.0.0' ? [`/ip4/${publicIP}/tcp/${tcpPort}`] : []),
+          ...(publicIP !== '0.0.0.0' ? [`/ip4/${publicIP}/tcp/${wsPort}/ws`] : [])
         ]
       },
       transports: [

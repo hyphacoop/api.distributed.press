@@ -28,7 +28,9 @@ const argv = yargs(hideBin(process.argv)).options({
   host: { type: 'string' },
   domain: { type: 'string' },
   data: { type: 'string' },
-  useWebRTC: { type: 'boolean', default: undefined }
+  useWebRTC: { type: 'boolean', default: undefined },
+  tcpPort: { type: 'number' },
+  wsPort: { type: 'number' }
 }).parseSync()
 
 export interface ServerI {
@@ -38,6 +40,8 @@ export interface ServerI {
   domain: string
   storage: string
   useWebRTC?: boolean
+  tcpPort?: number
+  wsPort?: number
 }
 
 const cfg: ServerI = {
@@ -46,7 +50,9 @@ const cfg: ServerI = {
   host: argv.host ?? process.env.HOST ?? 'localhost',
   domain: argv.domain ?? process.env.DOMAIN ?? 'localhost',
   storage: argv.data ?? paths.data,
-  useWebRTC: argv.useWebRTC ?? (process.env.USE_WEBRTC?.toLowerCase() === 'false' ? false : process.env.CI !== 'true')
+  useWebRTC: argv.useWebRTC ?? (process.env.USE_WEBRTC?.toLowerCase() === 'false' ? false : process.env.CI !== 'true'),
+  tcpPort: argv.tcpPort ?? (typeof process.env.TCP_PORT === 'string' ? parseInt(process.env.TCP_PORT, 10) : undefined),
+  wsPort: argv.wsPort ?? (typeof process.env.WS_PORT === 'string' ? parseInt(process.env.WS_PORT, 10) : undefined)
 }
 
 const server = await apiBuilder({

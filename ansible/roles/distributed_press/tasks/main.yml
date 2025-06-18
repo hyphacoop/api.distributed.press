@@ -70,7 +70,10 @@
   shell: "ufw allow in 7976/udp"
 
 - name: "Enable libp2p tcp traffic through firewall"
-  shell: "ufw allow in 7976/tcp"
+  shell: "ufw allow in {{ distributed_press_tcp_port }}/tcp"
+
+- name: "Enable libp2p WebSocket TCP traffic through firewall"
+  shell: "ufw allow in {{ distributed_press_ws_port }}/tcp"
 
 - name: "Enable libp2p WebRTC UDP traffic through firewall (50000-60000)"
   shell: "ufw allow 50000:60000/udp"
