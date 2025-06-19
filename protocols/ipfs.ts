@@ -5,7 +5,7 @@ import { FsDatastore } from 'datastore-fs'
 import { FsBlockstore } from 'blockstore-fs'
 import { noise } from '@chainsafe/libp2p-noise'
 import { yamux } from '@chainsafe/libp2p-yamux'
-import { mdns } from '@libp2p/mdns'
+// import { mdns } from '@libp2p/mdns'
 import { mplex } from '@libp2p/mplex'
 import { keychain } from '@libp2p/keychain'
 import { ping } from '@libp2p/ping'
@@ -21,8 +21,8 @@ import { ipnsSelector } from 'ipns/selector'
 import { ipnsValidator } from 'ipns/validator'
 import { tcp } from '@libp2p/tcp'
 import { webSockets } from '@libp2p/websockets'
-import { circuitRelayTransport } from '@libp2p/circuit-relay-v2'
-import { webRTC, webRTCDirect } from '@libp2p/webrtc'
+// import { circuitRelayTransport } from '@libp2p/circuit-relay-v2'
+// import { webRTC, webRTCDirect } from '@libp2p/webrtc'
 import { bootstrap } from '@libp2p/bootstrap'
 import {
   generateKeyPair,
@@ -108,7 +108,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
     this.options = {
       ...options,
-      useWebRTC: options.useWebRTC ?? true,
+      useWebRTC: options.useWebRTC ?? false,
       tcpPort: tcpPort ?? options.tcpPort,
       wsPort: wsPort ?? options.wsPort
     }
@@ -169,30 +169,30 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           `/ip4/0.0.0.0/tcp/${wsPort}/ws`,
           `/ip6/::/tcp/${tcpPort}`,
           `/ip6/::/tcp/${wsPort}/ws`,
-          ...(this.options.useWebRTC === true
-            ? [
-              `/ip4/0.0.0.0/udp/${String(webrtcPort)}/webrtc-direct`,
-              `/ip6/::/udp/${String(webrtcPort)}/webrtc-direct`
-              ]
-            : []),
+          // ...(this.options.useWebRTC === true
+          //   ? [
+          //     `/ip4/0.0.0.0/udp/${String(webrtcPort)}/webrtc-direct`,
+          //     `/ip6/::/udp/${String(webrtcPort)}/webrtc-direct`
+          //     ]
+          //   : []),
           '/p2p-circuit'
         ],
         announce: [
           ...(publicIP !== '0.0.0.0' ? [`/ip4/${publicIP}/tcp/${tcpPort}`] : []),
-          ...(publicIP !== '0.0.0.0' ? [`/ip4/${publicIP}/tcp/${wsPort}/ws`] : []),
-          ...(this.options.useWebRTC === true && webrtcPort !== null && publicIP !== '0.0.0.0'
-            ? [`/ip4/${publicIP}/udp/${String(webrtcPort)}/webrtc-direct`]
-            : [])
+          ...(publicIP !== '0.0.0.0' ? [`/ip4/${publicIP}/tcp/${wsPort}/ws`] : [])
+          // ...(this.options.useWebRTC === true && webrtcPort !== null && publicIP !== '0.0.0.0'
+          //   ? [`/ip4/${publicIP}/udp/${String(webrtcPort)}/webrtc-direct`]
+          //   : [])
         ]
       },
       transports: [
         tcp(),
-        webSockets(),
-        ...(this.options.useWebRTC === true ? [webRTC(), webRTCDirect(), circuitRelayTransport()] : [])
+        webSockets()
+        // ...(this.options.useWebRTC === true ? [webRTC(), webRTCDirect(), circuitRelayTransport()] : [])
       ],
       connectionEncrypters: [noise()],
       streamMuxers: [yamux(), mplex()],
-      peerDiscovery: [mdns(), bootstrap(bootstrapConfig)],
+      peerDiscovery: [bootstrap(bootstrapConfig)],
       services: {
         ...defaults.services,
         autoNAT: autoNAT(),
