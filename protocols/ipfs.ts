@@ -178,12 +178,13 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           '/p2p-circuit'
         ],
         announce: [
-          ...(publicIP !== '0.0.0.0' ? [`/ip4/${publicIP}/tcp/${tcpPort}`] : []),
-          ...(publicIP !== '0.0.0.0' ? [`/ip4/${publicIP}/tcp/${wsPort}/ws`] : [])
+          // ...(publicIP !== '0.0.0.0' ? [`/ip4/${publicIP}/tcp/${tcpPort}`] : []),
+          // ...(publicIP !== '0.0.0.0' ? [`/ip4/${publicIP}/tcp/${wsPort}/ws`] : [])
           // ...(this.options.useWebRTC === true && webrtcPort !== null && publicIP !== '0.0.0.0'
           //   ? [`/ip4/${publicIP}/udp/${String(webrtcPort)}/webrtc-direct`]
           //   : [])
-        ]
+        ],
+        noAnnounce: []
       },
       transports: [
         tcp(),
