@@ -5,7 +5,7 @@ import { FsDatastore } from 'datastore-fs'
 import { FsBlockstore } from 'blockstore-fs'
 import { noise } from '@chainsafe/libp2p-noise'
 import { yamux } from '@chainsafe/libp2p-yamux'
-import { mdns } from "@libp2p/mdns";
+import { mdns } from '@libp2p/mdns'
 import { mplex } from '@libp2p/mplex'
 import { keychain } from '@libp2p/keychain'
 import { ping } from '@libp2p/ping'
@@ -181,7 +181,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           ...(this.options.useWebRTC === true && webrtcPort !== null && publicIP !== '0.0.0.0'
             ? [`/ip4/${publicIP}/udp/${String(webrtcPort)}/webrtc-direct`]
             : []),
-            '/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN'
+          '/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN'
         ]
       },
       transports: [
@@ -191,7 +191,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       ],
       connectionEncrypters: [noise()],
       streamMuxers: [yamux(), mplex()],
-      peerDiscovery: [mdns(),bootstrap(bootstrapConfig)],
+      peerDiscovery: [mdns(), bootstrap(bootstrapConfig)],
       services: {
         ...defaults.services,
         autoNAT: autoNAT(),
@@ -205,7 +205,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           selectors: {
             ipns: ipnsSelector
           },
-          clientMode: false,
+          clientMode: true,
           allowQueryWithZeroPeers: true
         }),
         identify: identify(),
