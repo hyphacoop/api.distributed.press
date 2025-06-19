@@ -180,8 +180,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           ...(publicIP !== '0.0.0.0' ? [`/ip4/${publicIP}/tcp/${wsPort}/ws`] : []),
           ...(this.options.useWebRTC === true && webrtcPort !== null && publicIP !== '0.0.0.0'
             ? [`/ip4/${publicIP}/udp/${String(webrtcPort)}/webrtc-direct`]
-            : []),
-          '/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN'
+            : [])
         ]
       },
       transports: [
