@@ -203,9 +203,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           },
           selectors: {
             ipns: ipnsSelector
-          },
-          clientMode: false,
-          allowQueryWithZeroPeers: true
+          }
         }),
         identify: identify(),
         identifyPush: identifyPush(),
