@@ -5,7 +5,6 @@ import { FsDatastore } from 'datastore-fs'
 import { FsBlockstore } from 'blockstore-fs'
 import { noise } from '@chainsafe/libp2p-noise'
 import { yamux } from '@chainsafe/libp2p-yamux'
-import { mplex } from '@libp2p/mplex'
 import { keychain } from '@libp2p/keychain'
 import { ping } from '@libp2p/ping'
 import { autoTLS } from '@ipshipyard/libp2p-auto-tls'
@@ -165,7 +164,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         ...(this.options.useWebRTC === true ? [webRTCDirect()] : [])
       ],
       connectionEncrypters: [noise()],
-      streamMuxers: [yamux(), mplex()],
+      streamMuxers: [yamux()],
       peerDiscovery: [bootstrap(bootstrapConfig)],
       services: {
         ...defaults.services,
