@@ -12,8 +12,8 @@ import { autoNAT } from '@libp2p/autonat'
 import { uPnPNAT } from '@libp2p/upnp-nat'
 import { dcutr } from '@libp2p/dcutr'
 import { identify, identifyPush } from '@libp2p/identify'
-import { createDelegatedRoutingV1HttpApiClient } from '@helia/delegated-routing-v1-http-api-client'
-import { delegatedHTTPRoutingDefaults } from '@helia/routers'
+// import { createDelegatedRoutingV1HttpApiClient } from '@helia/delegated-routing-v1-http-api-client'
+// import { delegatedHTTPRoutingDefaults } from '@helia/routers'
 import { kadDHT, removePrivateAddressesMapper } from '@libp2p/kad-dht'
 import { ipnsSelector } from 'ipns/selector'
 import { ipnsValidator } from 'ipns/validator'
@@ -171,7 +171,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         autoNAT: autoNAT(),
         autoTLS: autoTLS(),
         dcutr: dcutr(),
-        delegatedRouting: () => createDelegatedRoutingV1HttpApiClient('https://delegated-ipfs.dev', delegatedHTTPRoutingDefaults()),
+        // delegatedRouting: () => createDelegatedRoutingV1HttpApiClient('https://delegated-ipfs.dev', delegatedHTTPRoutingDefaults()),
         dht: kadDHT({
           clientMode: false,
           allowQueryWithZeroPeers: true,
@@ -190,11 +190,9 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         upnpNAT: uPnPNAT()
       },
       connectionManager: {
-        maxConnections: 500,
         inboundConnectionThreshold: 100,
         maxIncomingPendingConnections: 100,
-        maxParallelDials: 50,
-        dialTimeout: 10000
+        maxConnections: 500
       }
     }
 
