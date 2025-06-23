@@ -15,7 +15,6 @@ import { identify, identifyPush } from '@libp2p/identify'
 import { createDelegatedRoutingV1HttpApiClient } from '@helia/delegated-routing-v1-http-api-client'
 import { delegatedHTTPRoutingDefaults } from '@helia/routers'
 import { kadDHT, removePrivateAddressesMapper } from '@libp2p/kad-dht'
-import { isPrivateIp } from '@libp2p/utils/private-ip'
 import { ipnsSelector } from 'ipns/selector'
 import { ipnsValidator } from 'ipns/validator'
 import { tcp } from '@libp2p/tcp'
@@ -40,7 +39,6 @@ import { IPFSProtocolFields } from '../api/schemas.js'
 import getPort from 'get-port'
 import { peerIdFromPrivateKey } from '@libp2p/peer-id'
 import { base36 } from 'multiformats/bases/base36'
-import type { Multiaddr } from '@multiformats/multiaddr'
 
 // https://github.com/libp2p/js-libp2p-amino-dht-bootstrapper/blob/main/src/utils/default-config.ts
 const bootstrapConfig = {
@@ -197,13 +195,6 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         maxIncomingPendingConnections: 100,
         maxParallelDials: 50,
         dialTimeout: 10000
-      },
-      connectionGater: {
-        // do not try to dial private addresses
-        denyDialMultiaddr (multiaddr: Multiaddr) {
-          const nodeAddress = multiaddr.nodeAddress()
-          return isPrivateIp(nodeAddress.address) === true
-        }
       }
     }
 
