@@ -173,6 +173,8 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         dcutr: dcutr(),
         delegatedRouting: () => createDelegatedRoutingV1HttpApiClient('https://delegated-ipfs.dev', delegatedHTTPRoutingDefaults()),
         dht: kadDHT({
+          clientMode: false,
+          allowQueryWithZeroPeers: true,
           validators: {
             ipns: ipnsValidator
           },
@@ -442,9 +444,9 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       }
 
       let count = 0
-        for await (const provider of this.helia.libp2p.services.dht.findProviders(resolved.cid)) {
-          void provider
-          count++
+      for await (const provider of this.helia.libp2p.services.dht.findProviders(resolved.cid)) {
+        void provider
+        count++
       }
       return { peerCount: count }
     } catch (e: unknown) {
