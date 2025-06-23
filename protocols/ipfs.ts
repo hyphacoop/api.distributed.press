@@ -14,7 +14,8 @@ import { dcutr } from '@libp2p/dcutr'
 import { identify, identifyPush } from '@libp2p/identify'
 import { createDelegatedRoutingV1HttpApiClient } from '@helia/delegated-routing-v1-http-api-client'
 import { delegatedHTTPRoutingDefaults } from '@helia/routers'
-import { kadDHT } from '@libp2p/kad-dht'
+import { kadDHT, removePrivateAddressesMapper } from '@libp2p/kad-dht'
+import { isPrivateIp } from '@libp2p/utils/private-ip'
 import { ipnsSelector } from 'ipns/selector'
 import { ipnsValidator } from 'ipns/validator'
 import { tcp } from '@libp2p/tcp'
@@ -153,10 +154,10 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
             : []),
           '/p2p-circuit'
         ],
-        announce: [
-          `/ip4/${publicIP}/tcp/${tcpPort}`,
-          `/ip4/${publicIP}/tcp/${wsPort}/ws`
-        ]
+        // announce: [
+        //   `/ip4/${publicIP}/tcp/${tcpPort}`,
+        //   `/ip4/${publicIP}/tcp/${wsPort}/ws`
+        // ]
       },
       transports: [
         tcp(),
@@ -180,7 +181,8 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           },
           selectors: {
             ipns: ipnsSelector
-          }
+          },
+          peerInfoMapper: removePrivateAddressesMapper
         }),
         identify: identify(),
         identifyPush: identifyPush(),
