@@ -40,6 +40,7 @@ import { IPFSProtocolFields } from '../api/schemas.js'
 import getPort from 'get-port'
 import { peerIdFromPrivateKey } from '@libp2p/peer-id'
 import { base36 } from 'multiformats/bases/base36'
+import type { Multiaddr } from '@multiformats/multiaddr'
 
 // https://github.com/libp2p/js-libp2p-amino-dht-bootstrapper/blob/main/src/utils/default-config.ts
 const bootstrapConfig = {
@@ -154,10 +155,10 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
             : []),
           '/p2p-circuit'
         ],
-        // announce: [
-        //   `/ip4/${publicIP}/tcp/${tcpPort}`,
-        //   `/ip4/${publicIP}/tcp/${wsPort}/ws`
-        // ]
+        announce: [
+          `/ip4/${publicIP}/tcp/${tcpPort}`,
+          `/ip4/${publicIP}/tcp/${wsPort}/ws`
+        ]
       },
       transports: [
         tcp(),
@@ -196,6 +197,13 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         maxIncomingPendingConnections: 100,
         maxParallelDials: 50,
         dialTimeout: 10000
+      },
+      connectionGater: {
+        // do not try to dial private addresses
+        denyDialMultiaddr (multiaddr: Multiaddr) {
+          const nodeAddress = multiaddr.nodeAddress()
+          return isPrivateIp(nodeAddress.address) === true
+        }
       }
     }
 
