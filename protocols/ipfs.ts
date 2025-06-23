@@ -329,9 +329,29 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       await this.helia.pins.add(dirCid)
       ctx?.logger.info(`[ipfs] Pinned directory CID: ${dirCid.toString()}`)
 
-      // Advertise the directory CID in the DHT
-      await this.helia.libp2p.contentRouting.provide(dirCid)
-      ctx?.logger.info(`Provided ${dirCid.toString()} to DHT`)
+      // Advertise the directory CID in the DHT with retries
+      const maxProvideRetries = 3
+      for (let attempt = 0; attempt < maxProvideRetries; attempt++) {
+        try {
+          await this.helia.libp2p.contentRouting.provide(dirCid)
+          ctx?.logger.info(`[ipfs] Provided ${dirCid.toString()} to DHT (attempt ${attempt + 1})`)
+          break // success
+        } catch (err) {
+          if (err instanceof Error && err.name === 'QueryAbortedError') {
+            const delay = 2000 * (attempt + 1)
+            ctx?.logger.warn(`[ipfs] DHT provide aborted (attempt ${attempt + 1}/${maxProvideRetries}), retrying in ${delay}ms`)
+            if (attempt === maxProvideRetries - 1) {
+              ctx?.logger.error(`[ipfs] DHT provide failed after ${maxProvideRetries} attempts: ${err.message}`)
+            } else {
+              // Wait before next retry
+              await new Promise(resolve => setTimeout(resolve, delay))
+            }
+          } else {
+            ctx?.logger.error(`[ipfs] DHT provide operation failed: ${err instanceof Error ? err.message : String(err)}`)
+            break
+          }
+        }
+      }
 
       return dirCid
     } catch (err) {
@@ -422,9 +442,9 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       }
 
       let count = 0
-      for await (const provider of this.helia.libp2p.services.dht.findProviders(resolved.cid)) {
-        void provider
-        count++
+        for await (const provider of this.helia.libp2p.services.dht.findProviders(resolved.cid)) {
+          void provider
+          count++
       }
       return { peerCount: count }
     } catch (e: unknown) {
