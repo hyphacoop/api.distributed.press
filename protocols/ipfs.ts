@@ -289,7 +289,6 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     }
 
     try {
-      // Read directory contents to log what's being added
       const files = await fsPromises.readdir(folderPath, { withFileTypes: true })
       ctx?.logger.info(`[ipfs] Found ${String(files.length)} entries in directory: ${files.map(f => `${f.name} (isFile: ${String(f.isFile())})`).join(', ')}`)
 
@@ -298,7 +297,6 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         return CID.parse('bafyaabakaieac') // Empty directory CID
       }
 
-      // Use unixfs.addAll to recursively add the directory
       const readable = Readable.from(
         (async function * () {
           for (const file of files) {
@@ -315,10 +313,14 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         })()
       )
 
+      const addedCids: CID[] = []
       let dirCid: CID | null = null
       for await (const entry of fs.addAll(readable, { wrapWithDirectory: true, cidVersion: 1 })) {
         ctx?.logger.info(`[ipfs] Added entry: ${String(entry.path)} => ${String(entry.cid)}`)
-        dirCid = entry.cid
+        addedCids.push(entry.cid)
+        if (entry.path === '') {
+          dirCid = entry.cid // The root directory CID
+        }
       }
 
       if (dirCid == null) {
@@ -327,30 +329,30 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
       ctx?.logger.info(`[ipfs] Final directory CID: ${dirCid.toString()}`)
 
-      // Pin the directory
       await this.helia.pins.add(dirCid)
       ctx?.logger.info(`[ipfs] Pinned directory CID: ${dirCid.toString()}`)
 
-      // Advertise the directory CID in the DHT with retries
+      // Provide all added CIDs to DHT
       const maxProvideRetries = 3
-      for (let attempt = 0; attempt < maxProvideRetries; attempt++) {
-        try {
-          await this.helia.libp2p.contentRouting.provide(dirCid)
-          ctx?.logger.info(`[ipfs] Provided ${dirCid.toString()} to DHT (attempt ${attempt + 1})`)
-          break // success
-        } catch (err) {
-          if (err instanceof Error && err.name === 'QueryAbortedError') {
-            const delay = 2000 * (attempt + 1)
-            ctx?.logger.warn(`[ipfs] DHT provide aborted (attempt ${attempt + 1}/${maxProvideRetries}), retrying in ${delay}ms`)
-            if (attempt === maxProvideRetries - 1) {
-              ctx?.logger.error(`[ipfs] DHT provide failed after ${maxProvideRetries} attempts: ${err.message}`)
+      for (const cid of addedCids) {
+        for (let attempt = 0; attempt < maxProvideRetries; attempt++) {
+          try {
+            await this.helia.libp2p.contentRouting.provide(cid)
+            ctx?.logger.info(`[ipfs] Provided ${cid.toString()} to DHT (attempt ${attempt + 1})`)
+            break // Success
+          } catch (err) {
+            if (err instanceof Error && err.name === 'QueryAbortedError') {
+              const delay = 2000 * (attempt + 1)
+              ctx?.logger.warn(`[ipfs] DHT provide aborted for ${cid.toString()} (attempt ${attempt + 1}/${maxProvideRetries}), retrying in ${delay}ms`)
+              if (attempt === maxProvideRetries - 1) {
+                ctx?.logger.error(`[ipfs] DHT provide failed for ${cid.toString()} after ${maxProvideRetries} attempts: ${err.message}`)
+              } else {
+                await new Promise(resolve => setTimeout(resolve, delay))
+              }
             } else {
-              // Wait before next retry
-              await new Promise(resolve => setTimeout(resolve, delay))
+              ctx?.logger.error(`[ipfs] DHT provide operation failed for ${cid.toString()}: ${err instanceof Error ? err.message : String(err)}`)
+              break
             }
-          } else {
-            ctx?.logger.error(`[ipfs] DHT provide operation failed: ${err instanceof Error ? err.message : String(err)}`)
-            break
           }
         }
       }
