@@ -181,7 +181,8 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           selectors: {
             ipns: ipnsSelector
           },
-          peerInfoMapper: removePrivateAddressesMapper
+          peerInfoMapper: removePrivateAddressesMapper,
+          reprovide: { concurrency: 10 }
         }),
         identify: identify(),
         identifyPush: identifyPush(),
