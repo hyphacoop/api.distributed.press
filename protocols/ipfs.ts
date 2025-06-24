@@ -104,8 +104,8 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     const datastore = new FsDatastore(datastorePath)
     const blockstore = new FsBlockstore(blockstorePath)
 
-    const tcpPort = await getPort({ port: 7976 })
-    const wsPort = await getPort({ port: 7977 })
+    const tcpPort = await getPort({ port: 4001 })
+    const wsPort = await getPort({ port: 4002 })
     let webrtcPort: number | null = null
 
     // Only initialize WebRTC port if useWebRTC is explicitly true
