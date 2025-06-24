@@ -329,8 +329,11 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
       ctx?.logger.info(`[ipfs] Final directory CID: ${dirCid.toString()}`)
 
-      await this.helia.pins.add(dirCid)
-      ctx?.logger.info(`[ipfs] Pinned directory CID: ${dirCid.toString()}`)
+      // Pin **every** piece of the DAG, not just the root
+      for (const fileCid of addedCids) {
+        await this.helia.pins.add(fileCid)
+        ctx?.logger.info(`[ipfs] Pinned CID: ${fileCid.toString()}`)
+      }
 
       // Provide all added CIDs to DHT
       const maxProvideRetries = 3
