@@ -170,6 +170,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         autoNAT: autoNAT(),
         autoTLS: autoTLS(),
         dcutr: dcutr(),
+        // TODO: run a delegated routing instance for helia
         delegatedRouting: () => createDelegatedRoutingV1HttpApiClient('https://delegated-ipfs.dev', delegatedHTTPRoutingDefaults()),
         dht: kadDHT({
           clientMode: false,
