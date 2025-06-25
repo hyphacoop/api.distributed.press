@@ -311,11 +311,6 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       await this.helia.pins.add(dirCid, { recursive: true })
       ctx?.logger.info(`[ipfs] Pinned directory CID recursively: ${dirCid.toString()}`)
 
-      // Optional: Pin all added CIDs to DHT for discoverability
-      // for (const cid of addedCids) {
-      //   await this.helia.libp2p.contentRouting.provide(cid)
-      // }
-
       // Provide the directory CID to DHT (optional: provide all CIDs for individual file discoverability)
       const maxProvideRetries = 3
       for (let attempt = 0; attempt < maxProvideRetries; attempt++) {
@@ -338,33 +333,6 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           }
         }
       }
-
-      // Optional: Provide all CIDs for direct file discoverability
-      // Uncomment the following block if individual file CIDs need to be advertised
-      /*
-      for (const cid of addedCids) {
-        for (let attempt = 0; attempt < maxProvideRetries; attempt++) {
-          try {
-            await this.helia.libp2p.contentRouting.provide(cid);
-            ctx?.logger.info(`[ipfs] Provided ${cid.toString()} to DHT (attempt ${attempt + 1})`);
-            break; // Success
-          } catch (err) {
-            if (err instanceof Error && err.name === 'QueryAbortedError') {
-              const delay = 2000 * (attempt + 1);
-              ctx?.logger.warn(`[ipfs] DHT provide aborted for ${cid.toString()} (attempt ${attempt + 1}/${maxProvideRetries}), retrying in ${delay}ms`);
-              if (attempt === maxProvideRetries - 1) {
-                ctx?.logger.error(`[ipfs] DHT provide failed for ${cid.toString()} after ${maxProvideRetries} attempts: ${err.message}`);
-              } else {
-                await new Promise(resolve => setTimeout(resolve, delay));
-              }
-            } else {
-              ctx?.logger.error(`[ipfs] DHT provide operation failed for ${cid.toString()}: ${err instanceof Error ? err.message : String(err)}`);
-              break;
-            }
-          }
-        }
-      }
-      */
 
       return dirCid
     } catch (err) {
