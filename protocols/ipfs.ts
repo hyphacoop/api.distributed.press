@@ -1,11 +1,10 @@
 import { createHelia, libp2pDefaults } from 'helia'
-import { unixfs } from '@helia/unixfs'
+import { unixfs, globSource } from '@helia/unixfs'
 import { ipns } from '@helia/ipns'
 import { FsDatastore } from 'datastore-fs'
 import { FsBlockstore } from 'blockstore-fs'
 import { noise } from '@chainsafe/libp2p-noise'
 import { yamux } from '@chainsafe/libp2p-yamux'
-import { mplex } from '@libp2p/mplex'
 import { keychain } from '@libp2p/keychain'
 import { ping } from '@libp2p/ping'
 import { autoTLS } from '@ipshipyard/libp2p-auto-tls'
@@ -13,9 +12,9 @@ import { autoNAT } from '@libp2p/autonat'
 import { uPnPNAT } from '@libp2p/upnp-nat'
 import { dcutr } from '@libp2p/dcutr'
 import { identify, identifyPush } from '@libp2p/identify'
-import { createDelegatedRoutingV1HttpApiClient } from '@helia/delegated-routing-v1-http-api-client'
-import { delegatedHTTPRoutingDefaults } from '@helia/routers'
-import { kadDHT } from '@libp2p/kad-dht'
+// import { createDelegatedRoutingV1HttpApiClient } from '@helia/delegated-routing-v1-http-api-client'
+// import { delegatedHTTPRoutingDefaults } from '@helia/routers'
+import { kadDHT, removePrivateAddressesMapper } from '@libp2p/kad-dht'
 import { ipnsSelector } from 'ipns/selector'
 import { ipnsValidator } from 'ipns/validator'
 import { tcp } from '@libp2p/tcp'
@@ -30,8 +29,7 @@ import {
 import type { PrivateKey } from '@libp2p/interface'
 import { CID } from 'multiformats/cid'
 import path from 'path'
-import { promises as fsPromises, createReadStream } from 'fs'
-import { Readable } from 'stream'
+import { promises as fsPromises } from 'fs'
 import makeDir from 'make-dir'
 import createError from 'http-errors'
 import { Static } from '@sinclair/typebox'
@@ -41,12 +39,14 @@ import getPort from 'get-port'
 import { peerIdFromPrivateKey } from '@libp2p/peer-id'
 import { base36 } from 'multiformats/bases/base36'
 
-// https://github.com/ipfs/helia/blob/main/packages/helia/src/utils/bootstrappers.ts
+// https://github.com/libp2p/js-libp2p-amino-dht-bootstrapper/blob/main/src/utils/default-config.ts
 const bootstrapConfig = {
   list: [
-    '/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
-    '/dnsaddr/bootstrap.libp2p.io/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
-    '/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt',
+    '/dns4/am6.bootstrap.libp2p.io/tcp/443/wss/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
+    '/dns4/sg1.bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt',
+    '/dns4/sv15.bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
+    // va1 is not in the TXT records for _dnsaddr.bootstrap.libp2p.io yet
+    // so use the host name directly
     '/dnsaddr/va1.bootstrap.libp2p.io/p2p/12D3KooWKnDdG3iXw9eTFijk3EWSunZcFi54Zka4wmtqtt6rPxc8',
     '/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ'
   ]
@@ -103,8 +103,8 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     const datastore = new FsDatastore(datastorePath)
     const blockstore = new FsBlockstore(blockstorePath)
 
-    const tcpPort = await getPort({ port: 7976 })
-    const wsPort = await getPort({ port: 7977 })
+    const tcpPort = await getPort({ port: 4001 })
+    const wsPort = await getPort({ port: 4002 })
     let webrtcPort: number | null = null
 
     // Only initialize WebRTC port if useWebRTC is explicitly true
@@ -163,23 +163,25 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         ...(this.options.useWebRTC === true ? [webRTCDirect()] : [])
       ],
       connectionEncrypters: [noise()],
-      streamMuxers: [yamux(), mplex()],
+      streamMuxers: [yamux()],
       peerDiscovery: [bootstrap(bootstrapConfig)],
       services: {
         ...defaults.services,
         autoNAT: autoNAT(),
         autoTLS: autoTLS(),
         dcutr: dcutr(),
-        delegatedRouting: () => createDelegatedRoutingV1HttpApiClient('https://delegated-ipfs.dev', delegatedHTTPRoutingDefaults()),
+        // delegatedRouting: () => createDelegatedRoutingV1HttpApiClient('https://delegated-ipfs.dev', delegatedHTTPRoutingDefaults()),
         dht: kadDHT({
+          clientMode: false,
+          allowQueryWithZeroPeers: true,
           validators: {
             ipns: ipnsValidator
           },
           selectors: {
             ipns: ipnsSelector
           },
-          clientMode: false,
-          allowQueryWithZeroPeers: true
+          peerInfoMapper: removePrivateAddressesMapper,
+          reprovide: { concurrency: 10 }
         }),
         identify: identify(),
         identifyPush: identifyPush(),
@@ -188,9 +190,9 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         upnpNAT: uPnPNAT()
       },
       connectionManager: {
-        maxConnections: 300,
-        maxParallelDials: 20,
-        dialTimeout: 10000
+        inboundConnectionThreshold: 100,
+        maxIncomingPendingConnections: 100,
+        maxConnections: 500
       }
     }
 
@@ -286,36 +288,17 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     }
 
     try {
-      // Read directory contents to log what's being added
-      const files = await fsPromises.readdir(folderPath, { withFileTypes: true })
-      ctx?.logger.info(`[ipfs] Found ${String(files.length)} entries in directory: ${files.map(f => `${f.name} (isFile: ${String(f.isFile())})`).join(', ')}`)
-
-      if (files.length === 0) {
-        ctx?.logger.warn(`[ipfs] No files found in directory: ${folderPath}`)
-        return CID.parse('bafyaabakaieac') // Empty directory CID
-      }
-
-      // Use unixfs.addAll to recursively add the directory
-      const readable = Readable.from(
-        (async function * () {
-          for (const file of files) {
-            const fullPath = path.join(folderPath, file.name)
-            if (file.isFile()) {
-              const stat = await fsPromises.stat(fullPath)
-              const content = createReadStream(fullPath)
-              yield { path: file.name, content }
-              ctx?.logger.info(`[ipfs] Queued file for addition: ${file.name} (${String(stat.size)} bytes)`)
-            } else if (file.isDirectory()) {
-              ctx?.logger.info(`[ipfs] Skipping subdirectory: ${file.name}`)
-            }
-          }
-        })()
-      )
-
+      // Use globSource to recursively add all files in the directory
+      const source = globSource(folderPath, '**/*')
       let dirCid: CID | null = null
-      for await (const entry of fs.addAll(readable, { wrapWithDirectory: true, cidVersion: 1 })) {
+      const addedCids: CID[] = []
+
+      for await (const entry of fs.addAll(source, { wrapWithDirectory: true, cidVersion: 1 })) {
         ctx?.logger.info(`[ipfs] Added entry: ${String(entry.path)} => ${String(entry.cid)}`)
-        dirCid = entry.cid
+        addedCids.push(entry.cid)
+        if (entry.path === '') {
+          dirCid = entry.cid // The root directory CID
+        }
       }
 
       if (dirCid == null) {
@@ -324,13 +307,32 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
       ctx?.logger.info(`[ipfs] Final directory CID: ${dirCid.toString()}`)
 
-      // Pin the directory
-      await this.helia.pins.add(dirCid)
-      ctx?.logger.info(`[ipfs] Pinned directory CID: ${dirCid.toString()}`)
+      // Pin the directory CID recursively to ensure all contents are persisted
+      await this.helia.pins.add(dirCid, { recursive: true })
+      ctx?.logger.info(`[ipfs] Pinned directory CID recursively: ${dirCid.toString()}`)
 
-      // Advertise the directory CID in the DHT
-      await this.helia.libp2p.contentRouting.provide(dirCid)
-      ctx?.logger.info(`Provided ${dirCid.toString()} to DHT`)
+      // Provide the directory CID to DHT (optional: provide all CIDs for individual file discoverability)
+      const maxProvideRetries = 3
+      for (let attempt = 0; attempt < maxProvideRetries; attempt++) {
+        try {
+          await this.helia.libp2p.contentRouting.provide(dirCid)
+          ctx?.logger.info(`[ipfs] Provided ${dirCid.toString()} to DHT (attempt ${attempt + 1})`)
+          break // Success
+        } catch (err) {
+          if (err instanceof Error && err.name === 'QueryAbortedError') {
+            const delay = 2000 * (attempt + 1)
+            ctx?.logger.warn(`[ipfs] DHT provide aborted for ${dirCid.toString()} (attempt ${attempt + 1}/${maxProvideRetries}), retrying in ${delay}ms`)
+            if (attempt === maxProvideRetries - 1) {
+              ctx?.logger.error(`[ipfs] DHT provide failed for ${dirCid.toString()} after ${maxProvideRetries} attempts: ${err.message}`)
+            } else {
+              await new Promise(resolve => setTimeout(resolve, delay))
+            }
+          } else {
+            ctx?.logger.error(`[ipfs] DHT provide operation failed for ${dirCid.toString()}: ${err instanceof Error ? err.message : String(err)}`)
+            break
+          }
+        }
+      }
 
       return dirCid
     } catch (err) {
@@ -349,7 +351,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     }
 
     ctx?.logger.info(`[ipfs] Publishing CID ${cid.toString()} (type: ${typeof cid}, isValidCID: ${String(!(CID.asCID(cid) == null))}) to IPNS with key ${String(name)}`)
-    await this.ipns.publish(privateKey, cid, { signal: AbortSignal.timeout(60000) })
+    await this.ipns.publish(privateKey, cid, { signal: AbortSignal.timeout(120000) })
     ctx?.logger.info('[ipfs] Successfully published to IPNS, verifying resolution...')
 
     // Verify the published value
@@ -395,7 +397,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     const privateKey = await this.loadKey(name)
     if (privateKey != null) {
       const EMPTY = CID.parse('bafyaabakaieac')
-      await this.ipns.publish(privateKey, EMPTY, { signal: AbortSignal.timeout(5000) })
+      await this.ipns.publish(privateKey, EMPTY, { signal: AbortSignal.timeout(120000) })
       ctx?.logger.info(`[ipfs] Unsynced ${id}`)
     } else {
       ctx?.logger.warn(`[ipfs] No key for ${id}`)

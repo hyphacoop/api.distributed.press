@@ -43,7 +43,7 @@ export interface ServerI {
 const cfg: ServerI = {
   port: Number(argv.port ?? process.env.PORT ?? '8080'),
   dnsport: Number(argv.dnsport ?? process.env.DNSPORT ?? '53'),
-  host: argv.host ?? process.env.HOST ?? 'localhost',
+  host: argv.host ?? process.env.HOST ?? '0.0.0.0',
   domain: argv.domain ?? process.env.DOMAIN ?? 'localhost',
   storage: argv.data ?? paths.data,
   useWebRTC: argv.useWebRTC ?? (process.env.USE_WEBRTC?.toLowerCase() === 'false' ? false : process.env.CI !== 'true')
