@@ -72,6 +72,9 @@
 - name: "Enable libp2p WebSocket TCP traffic through firewall"
   shell: "ufw allow in 4002/tcp"
 
+- name: "Enable libp2p WebSocket Secure (WSS) traffic through firewall on port 4003"
+  shell: "ufw allow in 4003/tcp"
+
 - name: "Enable libp2p WebRTC UDP traffic through firewall (50000-60000)"
   shell: "ufw allow 50000:60000/udp"
 
