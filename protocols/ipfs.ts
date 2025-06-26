@@ -146,7 +146,9 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           `/ip4/0.0.0.0/tcp/${wsPort}/ws`,
           `/ip6/::/tcp/${tcpPort}`,
           `/ip6/::/tcp/${wsPort}/ws`,
+          `/ip4/0.0.0.0/udp/${quicPort}/quic-v1`,
           `/ip4/0.0.0.0/udp/${quicPort}/quic-v1/webtransport`,
+          `/ip6/::/udp/${quicPort}/quic-v1`,
           `/ip6/::/udp/${quicPort}/quic-v1/webtransport`,
           ...(this.options.useWebRTC === true
             ? [
@@ -159,6 +161,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         announce: [
           `/ip4/${publicIP}/tcp/${tcpPort}`,
           `/ip4/${publicIP}/tcp/${wsPort}/ws`,
+          `/ip4/${publicIP}/udp/${quicPort}/quic-v1`,
           `/ip4/${publicIP}/udp/${quicPort}/quic-v1/webtransport`
         ]
       },
