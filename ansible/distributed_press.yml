@@ -3,5 +3,5 @@
   become: true
   roles:
   - role: morgangraphics.ansible_role_nvm
-    nodejs_version: "19.9.0"
+    nodejs_version: "20"
   - distributed_press
