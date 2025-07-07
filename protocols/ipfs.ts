@@ -208,10 +208,14 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     this.ipns = ipns(this.helia)
     console.timeEnd('Helia Initialization') // Log init time
 
-    // Log the Helia node ID (Peer ID) after initialization
+    // Log the Helia node ID and multiaddrs (Peer ID) after initialization
     const nodeId: string = this.helia.libp2p.peerId.toString()
     console.log(`[ipfs] Helia node initialized with ID: ${nodeId}`)
 
+    this.helia.libp2p.getMultiaddrs().forEach((ma: any) => {
+      console.log(`[ipfs] multiaddr: ${ma.toString()}`)
+    })
+    
     this.onCleanup.push(async () => {
       await this.helia.stop()
     })
