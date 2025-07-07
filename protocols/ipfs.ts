@@ -17,6 +17,7 @@ import { delegatedHTTPRoutingDefaults } from '@helia/routers'
 import { kadDHT, removePrivateAddressesMapper } from '@libp2p/kad-dht'
 import { ipnsSelector } from 'ipns/selector'
 import { ipnsValidator } from 'ipns/validator'
+import { userAgent } from 'libp2p/user-agent'
 import { tcp } from '@libp2p/tcp'
 import { webSockets } from '@libp2p/websockets'
 import { webRTCDirect } from '@libp2p/webrtc'
@@ -129,6 +130,8 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       }
     }
 
+    const agentVersion = `api.distributed.press/v1 ${userAgent()}`
+
     // Default libp2p config: https://github.com/ipfs/helia/blob/main/packages/helia/src/utils/libp2p-defaults.ts
     const defaults = await libp2pDefaults()
 
@@ -138,6 +141,9 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
     const libp2pOptions = {
       ...defaults,
+      nodeInfo: {
+        userAgent: agentVersion
+      },
       addresses: {
         listen: [
           `/ip4/0.0.0.0/tcp/${tcpPort}`,
