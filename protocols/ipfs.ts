@@ -367,7 +367,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     }
 
     ctx?.logger.info(`[ipfs] Publishing CID ${cid.toString()} (type: ${typeof cid}, isValidCID: ${String(!(CID.asCID(cid) == null))}) to IPNS with key ${String(name)}`)
-    await this.ipns.publish(privateKey, cid, { signal: AbortSignal.timeout(120000) })
+    await this.ipns.publish(privateKey, cid, { signal: AbortSignal.timeout(300000) })
     ctx?.logger.info('[ipfs] Successfully published to IPNS, verifying resolution...')
 
     // Verify the published value
@@ -413,7 +413,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     const privateKey = await this.loadKey(name)
     if (privateKey != null) {
       const EMPTY = CID.parse('bafyaabakaieac')
-      await this.ipns.publish(privateKey, EMPTY, { signal: AbortSignal.timeout(120000) })
+      await this.ipns.publish(privateKey, EMPTY, { signal: AbortSignal.timeout(300000) })
       ctx?.logger.info(`[ipfs] Unsynced ${id}`)
     } else {
       ctx?.logger.warn(`[ipfs] No key for ${id}`)
