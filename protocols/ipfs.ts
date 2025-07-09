@@ -207,10 +207,6 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     this.ipfsFs = unixfs(this.helia)
     this.ipns = ipns(this.helia)
 
-    // Start the node to connect to the network
-    console.log('[ipfs] Starting Helia node...')
-    await this.helia.start()
-    console.log('[ipfs] Helia node started and online.')
     console.timeEnd('Helia Initialization') // Log init time
 
     // Log the Helia node ID and multiaddrs (Peer ID) after initialization
