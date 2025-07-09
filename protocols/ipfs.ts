@@ -319,15 +319,27 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       await this.helia.pins.add(dirCid, { recursive: true })
       ctx?.logger.info(`[ipfs] Pinned directory CID recursively: ${dirCid.toString()}`)
 
-      // Provide the directory CID to DHT with a single attempt and timeout
-      try {
-        await this.helia.libp2p.contentRouting.provide(dirCid, {
-          signal: AbortSignal.timeout(120000)
-        })
-        ctx?.logger.info(`[ipfs] Provided ${dirCid.toString()} to DHT`)
-      } catch (err) {
-        ctx?.logger.error(`[ipfs] Failed to provide ${dirCid.toString()} to DHT: ${err instanceof Error ? err.message : String(err)}`)
-        // Continue even if provide fails, as pinning is complete
+      // Provide the directory CID to DHT (optional: provide all CIDs for individual file discoverability)
+      const maxProvideRetries = 3
+      for (let attempt = 0; attempt < maxProvideRetries; attempt++) {
+        try {
+          await this.helia.libp2p.contentRouting.provide(dirCid)
+          ctx?.logger.info(`[ipfs] Provided ${dirCid.toString()} to DHT (attempt ${attempt + 1})`)
+          break // Success
+        } catch (err) {
+          if (err instanceof Error && err.name === 'QueryAbortedError') {
+            const delay = 2000 * (attempt + 1)
+            ctx?.logger.warn(`[ipfs] DHT provide aborted for ${dirCid.toString()} (attempt ${attempt + 1}/${maxProvideRetries}), retrying in ${delay}ms`)
+            if (attempt === maxProvideRetries - 1) {
+              ctx?.logger.error(`[ipfs] DHT provide failed for ${dirCid.toString()} after ${maxProvideRetries} attempts: ${err.message}`)
+            } else {
+              await new Promise(resolve => setTimeout(resolve, delay))
+            }
+          } else {
+            ctx?.logger.error(`[ipfs] DHT provide operation failed for ${dirCid.toString()}: ${err instanceof Error ? err.message : String(err)}`)
+            break
+          }
+        }
       }
 
       return dirCid
