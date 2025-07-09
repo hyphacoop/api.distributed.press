@@ -326,7 +326,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       // Provide the directory CID to DHT with a single attempt and timeout
       try {
         await this.helia.libp2p.contentRouting.provide(dirCid, {
-          signal: AbortSignal.timeout(300000)
+          signal: AbortSignal.timeout(120000)
         })
         ctx?.logger.info(`[ipfs] Provided ${dirCid.toString()} to DHT`)
       } catch (err) {
@@ -351,7 +351,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     }
 
     ctx?.logger.info(`[ipfs] Publishing CID ${cid.toString()} (type: ${typeof cid}, isValidCID: ${String(!(CID.asCID(cid) == null))}) to IPNS with key ${String(name)}`)
-    await this.ipns.publish(privateKey, cid, { signal: AbortSignal.timeout(300000) })
+    await this.ipns.publish(privateKey, cid, { signal: AbortSignal.timeout(120000) })
     ctx?.logger.info('[ipfs] Successfully published to IPNS, verifying resolution...')
 
     // Verify the published value
