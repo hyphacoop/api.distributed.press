@@ -90,7 +90,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
   ipns: any | null
 
   constructor (options: IPFSProtocolOptions) {
-    this.options = { ...options, useWebRTC: options.useWebRTC ?? false }
+    this.options = { ...options, useWebRTC: options.useWebRTC ?? true }
     this.onCleanup = []
     this.helia = null
     this.ipfsFs = null
