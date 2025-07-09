@@ -20,6 +20,8 @@ import { ipnsValidator } from 'ipns/validator'
 import { userAgent } from 'libp2p/user-agent'
 import { tcp } from '@libp2p/tcp'
 import { webSockets } from '@libp2p/websockets'
+import { quic } from '@chainsafe/libp2p-quic'
+import { webTransport } from '@libp2p/webtransport'
 import { webRTCDirect } from '@libp2p/webrtc'
 import { bootstrap } from '@libp2p/bootstrap'
 import {
@@ -73,6 +75,7 @@ function getRandomPortInRange (min: number, max: number): number {
 export interface IPFSProtocolOptions {
   path: string
   useWebRTC?: boolean
+  useQUIC?: boolean
 }
 
 export interface PublishResult {
@@ -90,7 +93,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
   ipns: any | null
 
   constructor (options: IPFSProtocolOptions) {
-    this.options = { ...options, useWebRTC: options.useWebRTC ?? true }
+    this.options = { ...options, useWebRTC: options.useWebRTC ?? true, useQUIC: options.useQUIC ?? true }
     this.onCleanup = []
     this.helia = null
     this.ipfsFs = null
@@ -106,6 +109,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
     const tcpPort = await getPort({ port: 4001 })
     const wsPort = await getPort({ port: 4002 })
+    const quicPort = await getPort({ port: 4003 })
     let webrtcPort: number | null = null
 
     // Only initialize WebRTC port if useWebRTC is explicitly true
@@ -150,6 +154,14 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           `/ip4/0.0.0.0/tcp/${wsPort}/ws`,
           `/ip6/::/tcp/${tcpPort}`,
           `/ip6/::/tcp/${wsPort}/ws`,
+          ...(this.options.useQUIC === true
+            ? [
+              `/ip4/0.0.0.0/udp/${quicPort}/quic-v1`,
+              `/ip6/::/udp/${quicPort}/quic-v1`,
+              `/ip4/0.0.0.0/udp/${quicPort}/quic-v1/webtransport`,
+              `/ip6/::/udp/${quicPort}/quic-v1/webtransport`
+              ]
+            : []),
           ...(this.options.useWebRTC === true
             ? [
               `/ip4/0.0.0.0/udp/${String(webrtcPort)}/webrtc-direct`,
@@ -160,12 +172,19 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
         ],
         announce: [
           `/ip4/${publicIP}/tcp/${tcpPort}`,
-          `/ip4/${publicIP}/tcp/${wsPort}/ws`
+          `/ip4/${publicIP}/tcp/${wsPort}/ws`,
+          ...(this.options.useQUIC === true
+            ? [
+              `/ip4/${publicIP}/udp/${quicPort}/quic-v1`,
+              `/ip4/${publicIP}/udp/${quicPort}/quic-v1/webtransport`
+              ]
+            : [])
         ]
       },
       transports: [
         tcp(),
         webSockets(),
+        ...(this.options.useQUIC === true ? [quic(), webTransport()] : []),
         ...(this.options.useWebRTC === true ? [webRTCDirect()] : [])
       ],
       connectionEncrypters: [noise()],

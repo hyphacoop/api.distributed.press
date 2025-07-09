@@ -28,7 +28,8 @@ const argv = yargs(hideBin(process.argv)).options({
   host: { type: 'string' },
   domain: { type: 'string' },
   data: { type: 'string' },
-  useWebRTC: { type: 'boolean', default: undefined }
+  useWebRTC: { type: 'boolean', default: undefined },
+  useQUIC: { type: 'boolean', default: undefined }
 }).parseSync()
 
 export interface ServerI {
@@ -38,6 +39,7 @@ export interface ServerI {
   domain: string
   storage: string
   useWebRTC?: boolean
+  useQUIC?: boolean
 }
 
 const cfg: ServerI = {
@@ -46,7 +48,8 @@ const cfg: ServerI = {
   host: argv.host ?? process.env.HOST ?? '0.0.0.0',
   domain: argv.domain ?? process.env.DOMAIN ?? 'localhost',
   storage: argv.data ?? paths.data,
-  useWebRTC: argv.useWebRTC ?? (process.env.USE_WEBRTC?.toLowerCase() === 'false' ? false : process.env.CI !== 'true')
+  useWebRTC: argv.useWebRTC ?? (process.env.USE_WEBRTC?.toLowerCase() === 'false' ? false : process.env.CI !== 'true'),
+  useQUIC: argv.useQUIC ?? (process.env.USE_QUIC?.toLowerCase() === 'false' ? false : process.env.CI !== 'true')
 }
 
 const server = await apiBuilder({
