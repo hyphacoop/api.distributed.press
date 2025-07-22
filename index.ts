@@ -46,7 +46,7 @@ const cfg: ServerI = {
   host: argv.host ?? process.env.HOST ?? '0.0.0.0',
   domain: argv.domain ?? process.env.DOMAIN ?? 'localhost',
   storage: argv.data ?? paths.data,
-  useWebRTC: argv.useWebRTC ?? (process.env.USE_WEBRTC?.toLowerCase() === 'false' ? false : process.env.CI !== 'true')
+  useWebRTC: false
 }
 
 const server = await apiBuilder({
