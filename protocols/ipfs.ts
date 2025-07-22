@@ -15,6 +15,7 @@ import { identify, identifyPush } from '@libp2p/identify'
 // import { createDelegatedRoutingV1HttpApiClient } from '@helia/delegated-routing-v1-http-api-client'
 // import { delegatedHTTPRoutingDefaults } from '@helia/routers'
 import { kadDHT, removePrivateAddressesMapper } from '@libp2p/kad-dht'
+import { circuitRelayTransport } from '@libp2p/circuit-relay-v2'
 import { ipnsSelector } from 'ipns/selector'
 import { ipnsValidator } from 'ipns/validator'
 import { userAgent } from 'libp2p/user-agent'
@@ -159,14 +160,17 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           '/p2p-circuit'
         ],
         announce: [
-          `/ip4/${publicIP}/tcp/${tcpPort}`,
-          `/ip4/${publicIP}/tcp/${wsPort}/ws`
+          ...(publicIP !== '0.0.0.0' ? [`/ip4/${publicIP}/tcp/${tcpPort}`] : []),
+          ...(publicIP !== '0.0.0.0' ? [`/ip4/${publicIP}/tcp/${wsPort}/ws`] : []),
+          ...(this.options.useWebRTC === true && webrtcPort !== null && publicIP !== '0.0.0.0'
+            ? [`/ip4/${publicIP}/udp/${String(webrtcPort)}/webrtc-direct`]
+            : [])
         ]
       },
       transports: [
         tcp(),
         webSockets(),
-        ...(this.options.useWebRTC === true ? [webRTCDirect()] : [])
+        ...(this.options.useWebRTC === true ? [webRTCDirect(), circuitRelayTransport()] : [])
       ],
       connectionEncrypters: [noise()],
       streamMuxers: [yamux()],
