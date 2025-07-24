@@ -176,8 +176,8 @@
       - certbot
       - nginx
       - python3-certbot-nginx
-    state: latest
-    update_cache: true
+    state: present
+    update_cache: no
 
 - name: "Enable NGINX firewall"
   shell: "ufw allow 'Nginx Full'"
