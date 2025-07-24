@@ -156,12 +156,14 @@
     enabled: true
     name: "{{social_inbox_service_name}}"
 
-- name: "Add cron job to restart api.distributed.press service every few days"
+- name: "Add cron job to restart api.distributed.press service every day"
   cron:
     name: "Restart api.distributed.press service"
     hour: "0"
     minute: "0"
-    weekday: "6" # Saturday
+    day: "*"
+    month: "*"
+    weekday: "*"
     job: "/bin/systemctl restart {{ distributed_press_service_name }}"
   become: yes
   tags:
