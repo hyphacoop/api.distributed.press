@@ -1,3 +1,4 @@
+cat ansible/roles/distributed_press/tasks/main.yml
 # Vars are prefixed with distributed_press_
 
 - name: Ensure user exists for DP service
@@ -54,12 +55,17 @@
     clone: yes
     update: yes
 
-- name: Install NPM Dependencies
+- name: Install NPM Dependencies (via nvm)
   become: yes
   become_user: "{{distributed_press_user}}"
   shell: |
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+    nvm use --lts
     cd {{distributed_press_source}}
     npm ci
+  args:
+    executable: /bin/bash
 
 - name: "Enable Node to bind to port 53 for DNS"
   shell: setcap CAP_NET_BIND_SERVICE=+eip /usr/bin/node
@@ -81,13 +87,18 @@
     path: "{{distributed_press_data}}/keys/"
   register: distributed_press_keys
 
-- name: "Generate keys for JWT"
+- name: "Generate keys for JWT (via nvm)"
   when: not distributed_press_keys.stat.exists
   become: yes
   become_user: "{{distributed_press_user}}"
   shell: |
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+    nvm use --lts
     cd {{distributed_press_source}}
     npm run keygen
+  args:
+    executable: /bin/bash
 
 - name: "Run distributed.press service"
   systemd:
@@ -135,7 +146,7 @@
   become_user: "{{social_inbox_user}}"
   shell: |
     cd {{social_inbox_source}}
-    npm run import-blocklist -- --list {{social_inbox_blocklist}}
+    NODE_OPTIONS='--loader ts-node/esm' npm run import-blocklist -- --list {{social_inbox_blocklist}}
 
 
 - name: Import admin list for social inbox
@@ -242,4 +253,3 @@
     state: restarted
     enabled: true
     name: nginx
-
