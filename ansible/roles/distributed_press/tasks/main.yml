@@ -135,7 +135,7 @@
   become_user: "{{social_inbox_user}}"
   shell: |
     cd {{social_inbox_source}}
-    npm run import-blocklist -- --list {{social_inbox_blocklist}}
+    NODE_OPTIONS='--loader ts-node/esm' npm run import-blocklist -- --list {{social_inbox_blocklist}}
 
 
 - name: Import admin list for social inbox
