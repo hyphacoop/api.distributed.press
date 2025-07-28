@@ -1,4 +1,3 @@
-cat ansible/roles/distributed_press/tasks/main.yml
 # Vars are prefixed with distributed_press_
 
 - name: Ensure user exists for DP service
