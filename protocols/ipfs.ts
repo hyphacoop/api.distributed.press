@@ -202,9 +202,9 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
           },
           peerInfoMapper: removePrivateAddressesMapper,
           reprovide: { 
-            concurrency: 20,
+            concurrency: 10,
             interval: 60 * 60 * 1000,
-            threshold: 24 * 60 * 60 * 1000
+            threshold: 12 * 60 * 60 * 1000
           }
         }),
         identify: identify(),
