@@ -1,8 +1,8 @@
 import { createHelia, libp2pDefaults } from 'helia'
 import { unixfs, globSource } from '@helia/unixfs'
 import { ipns } from '@helia/ipns'
-import { FsDatastore } from 'datastore-fs'
-import { FsBlockstore } from 'blockstore-fs'
+import { LevelDatastore } from 'datastore-level'
+import { LevelBlockstore } from 'blockstore-level'
 import { noise } from '@chainsafe/libp2p-noise'
 import { yamux } from '@chainsafe/libp2p-yamux'
 import { keychain } from '@libp2p/keychain'
@@ -88,6 +88,8 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
   helia: any | null
   ipfsFs: any | null
   ipns: any | null
+  datastore: any | null
+  blockstore: any | null
 
   constructor (options: IPFSProtocolOptions) {
     this.options = { ...options, useWebRTC: options.useWebRTC ?? true }
@@ -95,14 +97,25 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     this.helia = null
     this.ipfsFs = null
     this.ipns = null
+    this.datastore = null
+    this.blockstore = null
   }
 
   async load (): Promise<void> {
+    // Prevent multiple initialization
+    if (this.helia != null) {
+      return
+    }
+    
     console.time('Helia Initialization') // Start timing
     const datastorePath = path.join(this.options.path, 'datastore')
     const blockstorePath = path.join(this.options.path, 'blockstore')
-    const datastore = new FsDatastore(datastorePath)
-    const blockstore = new FsBlockstore(blockstorePath)
+    this.datastore = new LevelDatastore(datastorePath)
+    this.blockstore = new LevelBlockstore(blockstorePath)
+    
+    // Open the level databases
+    await this.datastore.open()
+    await this.blockstore.open()
 
     const tcpPort = await getPort({ port: 4001 })
     const wsPort = await getPort({ port: 4002 })
@@ -207,7 +220,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       }
     }
 
-    this.helia = await createHelia({ datastore, blockstore, libp2p: libp2pOptions })
+    this.helia = await createHelia({ datastore: this.datastore, blockstore: this.blockstore, libp2p: libp2pOptions })
     this.ipfsFs = unixfs(this.helia)
     this.ipns = ipns(this.helia)
 
@@ -225,6 +238,16 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
   async unload (): Promise<void> {
     for (const onCleanup of this.onCleanup) {
       await onCleanup()
+    }
+    
+    // Close the level databases
+    if (this.datastore != null) {
+      await this.datastore.close()
+      this.datastore = null
+    }
+    if (this.blockstore != null) {
+      await this.blockstore.close()
+      this.blockstore = null
     }
   }
 
