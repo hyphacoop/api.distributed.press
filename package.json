@@ -50,7 +50,7 @@
     "@libp2p/autonat": "^2.0.30",
     "@libp2p/crypto": "^5.1.1",
     "@libp2p/interface": "^2.9.0",
-    "@libp2p/kad-dht": "^15.0.2",
+    "@libp2p/kad-dht": "^15.1.11",
     "@libp2p/keychain": "^5.2.1",
     "@libp2p/peer-id": "^5.1.2",
     "@libp2p/peer-id-factory": "^4.2.4",
