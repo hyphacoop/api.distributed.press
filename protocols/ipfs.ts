@@ -359,7 +359,7 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
 
       // Provide the directory CID to DHT in background (non-blocking for faster response)
       this.provideToDHTBackground(dirCid, ctx).catch(err => {
-        ctx?.logger.error(`[ipfs] Background DHT provide failed for ${dirCid.toString()}: ${err instanceof Error ? err.message : String(err)}`)
+        ctx?.logger.error(`[ipfs] Background DHT provide failed for ${dirCid?.toString() ?? 'unknown'}: ${err instanceof Error ? err.message : String(err)}`)
       })
       ctx?.logger.info(`[ipfs] Started background DHT providing for ${dirCid.toString()}`)
 
