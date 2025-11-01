@@ -279,25 +279,12 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
     const ipfsFs = unixfs(this.helia)
     ctx?.logger.info('[ipfs] Created fresh UnixFS instance for sync')
 
-    // Read directory contents first to verify what we're about to add
-    const files = await fsPromises.readdir(folderPath)
-    const fileContents = new Map<string, string>()
-    for (const file of files) {
-      const fullPath = path.join(folderPath, file)
-      try {
-        const content = await fsPromises.readFile(fullPath, 'utf8')
-        fileContents.set(file, content)
-        ctx?.logger.info(`[ipfs] Read file ${String(file)} (${String(content.length)} bytes)`)
-      } catch (err) {
-        ctx?.logger.error(`[ipfs] Error reading file ${file}: ${err instanceof Error ? err.message : String(err)}`)
-      }
-    }
-
+    console.timeLog(timerLabel, 'Starting directory addition') // Log before directory addition
     const cid = await this.addDirectory(folderPath, ctx, ipfsFs)
-    await this.listDirectory(cid, ctx)
     console.timeLog(timerLabel, 'Directory Added') // Log after directory
     ctx?.logger.info(`[ipfs] Added directory with CID ${cid.toString()} (type: ${typeof cid})`)
 
+    console.timeLog(timerLabel, 'Starting IPNS publishing') // Log before IPNS publishing
     const { publishKey, cid: publishedCid } = await this.publishSite(id, cid, ctx)
     console.timeLog(timerLabel, 'Site Published') // Log after publish
     ctx?.logger.info(`[ipfs] Published CID comparison - Original: ${cid.toString()}, Published: ${String(publishedCid)}`)
@@ -311,6 +298,30 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       cid: publishedCid,
       pubKey: `ipns://${publishKey}/`,
       dnslink: `/ipns/${publishKey}/`
+    }
+  }
+
+  async provideToDHTBackground (cid: CID, ctx?: Ctx): Promise<void> {
+    const maxProvideRetries = 1 // Reduced from 3 for background operation
+    for (let attempt = 0; attempt < maxProvideRetries; attempt++) {
+      try {
+        await this.helia.libp2p.contentRouting.provide(cid)
+        ctx?.logger.info(`[ipfs] Provided ${cid.toString()} to DHT (background attempt ${attempt + 1})`)
+        return // Success
+      } catch (err) {
+        if (err instanceof Error && err.name === 'QueryAbortedError') {
+          const delay = 1000 * (attempt + 1) // Reduced delay for background operation
+          ctx?.logger.warn(`[ipfs] Background DHT provide aborted for ${cid.toString()} (attempt ${attempt + 1}/${maxProvideRetries}), retrying in ${delay}ms`)
+          if (attempt === maxProvideRetries - 1) {
+            ctx?.logger.error(`[ipfs] Background DHT provide failed for ${cid.toString()} after ${maxProvideRetries} attempts: ${err.message}`)
+          } else {
+            await new Promise(resolve => setTimeout(resolve, delay))
+          }
+        } else {
+          ctx?.logger.error(`[ipfs] Background DHT provide operation failed for ${cid.toString()}: ${err instanceof Error ? err.message : String(err)}`)
+          return
+        }
+      }
     }
   }
 
@@ -346,28 +357,11 @@ export class IPFSProtocol implements Protocol<Static<typeof IPFSProtocolFields>>
       await this.helia.pins.add(dirCid, { recursive: true })
       ctx?.logger.info(`[ipfs] Pinned directory CID recursively: ${dirCid.toString()}`)
 
-      // Provide the directory CID to DHT (optional: provide all CIDs for individual file discoverability)
-      const maxProvideRetries = 3
-      for (let attempt = 0; attempt < maxProvideRetries; attempt++) {
-        try {
-          await this.helia.libp2p.contentRouting.provide(dirCid)
-          ctx?.logger.info(`[ipfs] Provided ${dirCid.toString()} to DHT (attempt ${attempt + 1})`)
-          break // Success
-        } catch (err) {
-          if (err instanceof Error && err.name === 'QueryAbortedError') {
-            const delay = 2000 * (attempt + 1)
-            ctx?.logger.warn(`[ipfs] DHT provide aborted for ${dirCid.toString()} (attempt ${attempt + 1}/${maxProvideRetries}), retrying in ${delay}ms`)
-            if (attempt === maxProvideRetries - 1) {
-              ctx?.logger.error(`[ipfs] DHT provide failed for ${dirCid.toString()} after ${maxProvideRetries} attempts: ${err.message}`)
-            } else {
-              await new Promise(resolve => setTimeout(resolve, delay))
-            }
-          } else {
-            ctx?.logger.error(`[ipfs] DHT provide operation failed for ${dirCid.toString()}: ${err instanceof Error ? err.message : String(err)}`)
-            break
-          }
-        }
-      }
+      // Provide the directory CID to DHT in background (non-blocking for faster response)
+      this.provideToDHTBackground(dirCid, ctx).catch(err => {
+        ctx?.logger.error(`[ipfs] Background DHT provide failed for ${dirCid?.toString() ?? 'unknown'}: ${err instanceof Error ? err.message : String(err)}`)
+      })
+      ctx?.logger.info(`[ipfs] Started background DHT providing for ${dirCid.toString()}`)
 
       return dirCid
     } catch (err) {
