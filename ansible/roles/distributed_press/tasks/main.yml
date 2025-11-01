@@ -30,8 +30,9 @@
     pkg:
       - git
       - ufw
-    state: latest
-    update_cache: true
+    state: present
+    update_cache: yes
+    cache_valid_time: 3600 
 
 - name: Add distributed.press systemd service
   template:
@@ -66,11 +67,14 @@
 - name: "Enable DNS traffic through firewall"
   shell: "ufw allow in 53/udp"
 
-- name: "Enable libp2p udp traffic through firewall"
-  shell: "ufw allow in 7976/udp"
-
 - name: "Enable libp2p tcp traffic through firewall"
-  shell: "ufw allow in 7976/tcp"
+  shell: "ufw allow in 4001/tcp"
+
+- name: "Enable libp2p WebSocket TCP traffic through firewall"
+  shell: "ufw allow in 4002/tcp"
+
+- name: "Enable libp2p WebRTC UDP traffic through firewall (50000-60000)"
+  shell: "ufw allow 50000:60000/udp"
 
 - name: "Check if JWT keys got generated already"
   stat:
@@ -153,12 +157,14 @@
     enabled: true
     name: "{{social_inbox_service_name}}"
 
-- name: "Add cron job to restart api.distributed.press service every few days"
+- name: "Add cron job to restart api.distributed.press service every day"
   cron:
     name: "Restart api.distributed.press service"
     hour: "0"
     minute: "0"
-    weekday: "6" # Saturday
+    day: "*"
+    month: "*"
+    weekday: "*"
     job: "/bin/systemctl restart {{ distributed_press_service_name }}"
   become: yes
   tags:
@@ -170,8 +176,8 @@
       - certbot
       - nginx
       - python3-certbot-nginx
-    state: latest
-    update_cache: true
+    state: present
+    update_cache: no
 
 - name: "Enable NGINX firewall"
   shell: "ufw allow 'Nginx Full'"

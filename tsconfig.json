@@ -12,9 +12,11 @@
     "rootDir": ".",
     "typeRoots": ["./@types"],
     "strict": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "skipLibCheck": true
   },
   "ts-node": {
-    "files": true
+    "files": true,
+    "esm": true
   }
 }

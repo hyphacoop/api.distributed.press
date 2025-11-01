@@ -42,6 +42,7 @@ export type APIConfig = Partial<{
   useMemoryBackedDB: boolean
   useSigIntHandler: boolean
   useWebringDirectoryListing: boolean
+  useWebRTC: boolean
 }> & ServerI
 
 async function apiBuilder (cfg: APIConfig): Promise<FastifyTypebox> {
@@ -55,7 +56,7 @@ async function apiBuilder (cfg: APIConfig): Promise<FastifyTypebox> {
   const protocols = new ConcreteProtocolManager({
     ipfs: {
       path: path.join(protocolStoragePath, 'ipfs'),
-      provider: cfg.ipfsProvider
+      useWebRTC: cfg.useWebRTC ?? true
     },
     hyper: {
       path: path.join(protocolStoragePath, 'hyper')

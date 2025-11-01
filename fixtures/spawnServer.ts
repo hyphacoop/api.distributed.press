@@ -5,7 +5,6 @@ import fs from 'fs'
 import { generateKeyPair } from '../authorization/jwt.js'
 import apiBuilder, { FastifyTypebox } from '../api/index.js'
 import { nanoid } from 'nanoid'
-import { BUILTIN } from '../protocols/ipfs.js'
 import getPort from 'get-port'
 
 const paths = envPaths('distributed-press')
@@ -22,7 +21,6 @@ export async function spawnTestServer (): Promise<FastifyTypebox> {
     dnsport: await getPort(),
     host: 'localhost',
     domain: 'example.com',
-    storage: storagePath,
-    ipfsProvider: BUILTIN
+    storage: storagePath
   })
 }
